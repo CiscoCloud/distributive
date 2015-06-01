@@ -1,4 +1,8 @@
 {
     "Name": "CPU temperature threshold",
-    "temp": 80
+    "Checklist" : [
+        {
+            "temp": 80
+        }
+    ]
 }

@@ -1,5 +1,9 @@
 {
     "Name": "sleep-error",
     "Notes": "Example of a check that will report an error",
-    "Command": "sleep error"
+    "Checklist" : [
+        {
+            "Command": "sleep error"
+        }
+    ]
 }

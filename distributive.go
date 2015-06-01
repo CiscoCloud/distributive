@@ -24,10 +24,41 @@ func fatal(e error) {
 // Check is a struct for a unified interface for health checks
 // It passes its check-specific fields to that check's Thunk constructor
 type Check struct {
-	Id, Name, Notes, Service_id         string
-	Command, Running, Exists, Installed string // hold inputs for checks
-	Port, Temp                          int    // more check inputs
+	Name, Notes                         string
+	Command, Installed, Exists, Running string
+	Port, Temp                          int // more check inputs
 	Fun                                 Thunk
+}
+
+// Checklist is a struct that provides a concise way of thinking about doing
+// several checks and then returning some kind of output.
+type Checklist struct {
+	Name, Notes string
+	Checklist   []Check // list of Checks to run
+	Codes       []int
+	Messages    []string
+	Report      string
+}
+
+// makeReport creates an output
+func makeReport(chklst Checklist) (report string) {
+	failMessages := []string{}
+	passed := 0
+	failed := 0
+	for i, code := range chklst.Codes {
+		if code != 0 {
+			failed++
+			failMessages = append(failMessages, "\n"+chklst.Messages[i])
+		} else {
+			passed++
+		}
+	}
+	report += "Passed: " + fmt.Sprint(passed) + "\n"
+	report += "Failed: " + fmt.Sprint(failed) + "\n"
+	for _, msg := range failMessages {
+		report += msg
+	}
+	return report
 }
 
 // getThunk passes a Check to the proper Thunk constructor based on which
@@ -52,31 +83,42 @@ func getThunk(chk Check) Thunk {
 	return nil
 }
 
-// getCheck loads a JSON file located at path, and Unmarshals it into a Check
-// struct, leaving unspecified fields as their zero types.
-func getCheck(path string) (chk Check) {
+// getChecklist loads a JSON file located at path, and Unmarshals it into a
+// Checklist struct, leaving unspecified fields as their zero types.
+func getChecklist(path string) (chklst Checklist) {
+	//var list []Check
 	fileJSON, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal("Couldn't find .json at specified location: " + path)
 	}
-	err = json.Unmarshal(fileJSON, &chk)
+	err = json.Unmarshal(fileJSON, &chklst)
 	fatal(err)
-	chk.Fun = getThunk(chk)
-	return chk
+	for i, _ := range chklst.Checklist {
+		chklst.Checklist[i].Fun = getThunk(chklst.Checklist[i])
+	}
+	return
 }
 
 // main reads the command line flag -f, runs the Check specified in the JSON,
 // and exits with the appropriate message and exit code.
 func main() {
-	// run a check, print output, and exit
-	run := func(chk Check) {
-		c, m := chk.Fun()
-		fmt.Printf(m)
-		os.Exit(c) // exit with Consul-compatible error code : 0 | 1
-	}
-
 	fn := flag.String("f", "", "Use the health check JSON located at this path")
 	flag.Parse()
-	chk := getCheck(*fn)
-	run(chk)
+	chklst := getChecklist(*fn)
+	// run checks, populate error codes and messages
+	for _, chk := range chklst.Checklist {
+		code, message := chk.Fun()
+		chklst.Codes = append(chklst.Codes, code)
+		chklst.Messages = append(chklst.Messages, message)
+	}
+	// make a printable report
+	chklst.Report = makeReport(chklst) // run tests, get messages
+	fmt.Println(chklst.Report)
+	// exit with the proper code
+	for _, code := range chklst.Codes {
+		if code != 0 {
+			os.Exit(1)
+		}
+	}
+	os.Exit(0)
 }

@@ -1,5 +1,9 @@
 {
     "Name": "Firefox Health Check",
     "Notes": "Is FF running?",
-    "running" : "firefox"
+    "Checklist" : [
+        {
+            "running" : "firefox"
+        }
+    ]
 }

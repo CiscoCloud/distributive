@@ -1,4 +1,8 @@
 {
     "Name": "DPKG installation check",
-    "Installed" : "dpkg"
+    "Checklist" : [
+        {
+            "Installed" : "dpkg"
+        }
+    ]
 }

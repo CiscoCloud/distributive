@@ -6,7 +6,8 @@ is such that some external server will ask the host to execute this program,
 reading in from some JSON file, and will record this
 program's exit code and standard out.
 
-The exit code meanings are defined as [Consul recognizes them] [1]
+The exit code meanings are defined as [Consul] [1] and [Sensu] [2] recognize
+them.
  * Exit code 0 - Check is passing
  * Exit code 1 - Check is warning
  * Any other code - Check is failing
@@ -22,8 +23,8 @@ distributive -f ./health-checks/sleep.json
 
 ## JSON format
 General field names:
- * "Name" : Descriptive name for this check.
- * "Notes" : Human-readable description of this service (not used by Distributive).
+ * "Name" : Descriptive name for a check/list
+ * "Notes" : Human-readable description of this check/list (not used by Distributive).
 
 Specific checks:
  * "Command" : Run a shell command.
@@ -72,3 +73,4 @@ work well with both Sensu and Consul, which have similar architecture with
 regards to their health checks.
 
 [1]: https://www.consul.io/docs/agent/checks.html "Consul"
+[2]: https://sensuapp.org/docs/0.18/checks "Sensu"
