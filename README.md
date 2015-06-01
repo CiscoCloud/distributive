@@ -1,9 +1,9 @@
 # Overview
 
 Distributive is a tool for running distributed health checks in server clusters.
-It was designed with Consul in mind, but is platform agnostic.
-The architecture is such that some external server will ask the host to
-execute this program, reading in from some JSON file, and will record this
+It was designed with Consul in mind, but is platform agnostic.  The architecture
+is such that some external server will ask the host to execute this program,
+reading in from some JSON file, and will record this
 program's exit code and standard out.
 
 The exit code meanings are defined as [Consul recognizes them] [1]
@@ -61,7 +61,14 @@ Nagios is an end-to-end monitoring, security, and notification framework. It is
 designed around the central control server approach to monitoring. Nagios provides
 many other services not included in Distributive, but may not be suitable for
 some projects due to its size, complexity, and centralized architecture.
-Distributive is simple, lightweight, and easy to configure.
+Distributive is simple, lightweight, and easy to configure, and doesn't provide
+its own scheduling, dashboard, etc. It is designed to be used within frameworks
+such as Sensu and Consul.
 
+## Supported Frameworks
+
+Distributive attempts to be as framework-agnostic as possible. It is known to
+work well with both Sensu and Consul, which have similar architecture with
+regards to their health checks.
 
 [1]: https://www.consul.io/docs/agent/checks.html "Consul"
