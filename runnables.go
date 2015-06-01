@@ -1,5 +1,5 @@
-// Runnables provides functions that construct functions in the format that
-// Checkr expects, namely the Runnable type, that can be used as health checks.
+// Thunks provides functions that construct functions in the format that
+// Checkr expects, namely the Thunk type, that can be used as health checks.
 package main
 
 import (
@@ -14,14 +14,14 @@ import (
 	"strings"
 )
 
-// Runnable is the type of function that runs without parameters and returns
+// Thunk is the type of function that runs without parameters and returns
 // an error code and an exit message to be printed to stdout.
 // Generally, if exitCode == 0, exitMessage == "".
-type Runnable func() (exitCode int, exitMessage string)
+type Thunk func() (exitCode int, exitMessage string)
 
 // Command runs a shell command, and collapses its error code into the range [0-1]
 // It outputs stderr and stdout if the command has error code != 0.
-func Command(toExec string) Runnable {
+func Command(toExec string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		params := strings.Split(toExec, " ")
 		cmd := exec.Command(params[0], params[1:]...)
@@ -57,7 +57,7 @@ func Command(toExec string) Runnable {
 // Running checks if a process is running using `ps aux`, and searching for the
 // process name, excluding this process (in case the process name is in the JSON
 // file name)
-func Running(proc string) Runnable {
+func Running(proc string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		cmd := exec.Command("ps", "aux")
 		stdoutText, err := cmd.Output()
@@ -76,7 +76,7 @@ func Running(proc string) Runnable {
 }
 
 // Exists checks to see if a file/dir exists at given path
-func Exists(path string) Runnable {
+func Exists(path string) Thunk {
 	// does the file at this path exist?
 	exists := func(path string) bool {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -94,7 +94,7 @@ func Exists(path string) Runnable {
 
 // Installed detects whether the OS is using dpkg, rpm, or pacman, queries
 // a package accoringly, and returns an error if it is not installed.
-func Installed(pkg string) Runnable {
+func Installed(pkg string) Thunk {
 	// getManager returns the program to use for the query
 	getManager := func(managers []string) string {
 		for _, program := range managers {
@@ -141,7 +141,7 @@ func Installed(pkg string) Runnable {
 
 // Temp parses the output of lm_sensors and determines if Core 0 (all cores) are
 // over a certain threshold as specified in the JSON.
-func Temp(max int) Runnable {
+func Temp(max int) Thunk {
 	// getCoreTemp returns an integer temperature for a certain core
 	getCoreTemp := func(core int) (temp int) {
 		out, err := exec.Command("sensors").Output()
@@ -170,7 +170,7 @@ func Temp(max int) Runnable {
 
 // Port parses /proc/net/tcp to determine if a given port is in an open state
 // and returns an error if it is not.
-func Port(port int) Runnable {
+func Port(port int) Thunk {
 	// strHexToDecimal converts from string containing hex number to int
 	strHexToDecimal := func(hex string) int {
 		portInt, err := strconv.ParseInt(hex, 16, 64)

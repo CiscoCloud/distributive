@@ -22,18 +22,18 @@ func fatal(e error) {
 }
 
 // Check is a struct for a unified interface for health checks
-// It passes its check-specific fields to that check's Runnable constructor
+// It passes its check-specific fields to that check's Thunk constructor
 type Check struct {
 	Id, Name, Notes, Service_id         string
 	Command, Running, Exists, Installed string // hold inputs for checks
 	Port, Temp                          int    // more check inputs
-	Fun                                 Runnable
+	Fun                                 Thunk
 }
 
-// getRunnable passes a Check to the proper Runnable constructor based on which
+// getThunk passes a Check to the proper Thunk constructor based on which
 // of its fields were filled when it was read from JSON.
 // Fields that weren't specified in the JSON take on zero values for their type
-func getRunnable(chk Check) Runnable {
+func getThunk(chk Check) Thunk {
 	if chk.Command != "" {
 		return Command(chk.Command)
 	} else if chk.Running != "" {
@@ -61,7 +61,7 @@ func getCheck(path string) (chk Check) {
 	}
 	err = json.Unmarshal(fileJSON, &chk)
 	fatal(err)
-	chk.Fun = getRunnable(chk)
+	chk.Fun = getThunk(chk)
 	return chk
 }
 
