@@ -5,6 +5,9 @@
 // each node, instead of one central server, and allows for more types of checks.
 package main
 
+// TODO rework public and private methods. Likely, nothing needs to be public
+// from the thunk side of things
+
 import (
 	"encoding/json"
 	"flag"
@@ -120,6 +123,12 @@ func getThunk(chk Check) Thunk {
 	case "ip6":
 		checkParameterLength(2)
 		return Ip6(chk.Parameters[0], chk.Parameters[1])
+	case "module":
+		checkParameterLength(1)
+		return Module(chk.Parameters[0])
+	case "kernelParameter":
+		checkParameterLength(1)
+		return KernelParameter(chk.Parameters[0])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)

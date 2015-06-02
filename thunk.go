@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 )
+
+// TODO: eliminate thunks that are simple if/else statements by abstracting that
+// interaction: create a new type called boolThunk, and pass it to a method
 
 // Thunk is the type of function that runs without parameters and returns
 // an error code and an exit message to be printed to stdout.
@@ -147,6 +151,55 @@ func Temp(max int) Thunk {
 		if temp < max {
 			return 0, ""
 		}
-		return 1, "Core temp " + fmt.Sprint(temp) + " exceeds defined max of " + fmt.Sprint(max) + "\n"
+		return 1, "Core temp exceeds defined maximum: " + fmt.Sprint(temp)
+	}
+}
+
+// Module checks to see if a kernel module is installed
+func Module(name string) Thunk {
+	// kernelModules returns a list of all modules that are currently loaded
+	kernelModules := func() (modules [][]byte) {
+		out, err := exec.Command("/sbin/lsmod").Output()
+		fatal(err)
+		for _, line := range bytes.Split(out, []byte("\n"))[1:] {
+			module := bytes.Split(line, []byte(" "))[0]
+			modules = append(modules, module)
+		}
+		return modules
+	}
+	// isLoaded returns whether or not a kernel module is currently loaded
+	isLoaded := func(name string) bool {
+		for _, module := range kernelModules() {
+			if string(module) == name {
+				return true
+			}
+		}
+		return false
+	}
+	return func() (exitCode int, exitMessage string) {
+		if isLoaded(name) {
+			return 0, ""
+		}
+		return 1, "Module is not loaded: " + name
+	}
+}
+
+// KernelParameter checks to see if a kernel parameter was set
+func KernelParameter(name string) Thunk {
+	// parameterValue returns the value of a kernel parameter
+	parameterSet := func(name string) bool {
+		_, err := exec.Command("/sbin/sysctl", "-q", "-n", name).Output()
+		// failed on incorrect module name
+		if err != nil && strings.Contains(err.Error(), "255") {
+			return false
+		}
+		fatal(err)
+		return true
+	}
+	return func() (exitCode int, exitMessage string) {
+		if parameterSet(name) {
+			return 0, ""
+		}
+		return 1, "Kernel parameter not set: " + name
 	}
 }
