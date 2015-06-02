@@ -22,13 +22,14 @@ distributive -f ./samples/file-checks.json
 ```
 
 ## JSON format
-#### General field names:
+
+#### General field names
  * "Name" : Descriptive name for a check/list (string)
  * "Notes" : Human-readable description of this check/list (not used by Distributive).
  * "Check" : Name/type of the check to be run (string)
  * "Parameters" : Parameters to pass to the check (array of string)
 
-#### Check names:
+#### Check names
  * "command" : Run a shell command.
  * "running" : Is this service running on the server?
  * "file" : Is there a file at this path?
@@ -40,8 +41,9 @@ distributive -f ./samples/file-checks.json
  * "interface" : Does this network interface exist?
  * "up" : Is this network interface up?
  * "ip4" : Does this interface have the specified IP address (two parameters)?
+ * "ip6" : Does this interface have the specified IP address (two parameters)?
 
-#### Dependencies for certain checks:
+#### Dependencies for certain checks
 
 All dependencies should be installed on Linux systems by default, except for
 lm_sensors.

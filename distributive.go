@@ -63,39 +63,62 @@ func makeReport(chklst Checklist) (report string) {
 	return report
 }
 
-// getThunk passes a Check to the proper Thunk constructor based on which
-// of its fields were filled when it was read from JSON.
-// Fields that weren't specified in the JSON take on zero values for their type
+// getThunk passes a Check's parameters to the correct Thunk constructor based
+// on the Check's name. It also makes sure that the correct number of parameters
+// were specified.
 func getThunk(chk Check) Thunk {
-	// TODO handle errors here, log effectively (separate function?) TODO TODO
+	// checkParameterLength ensures that the Check has the proper number of
+	// parameters, and exits otherwise. Can't do much with a broken check!
+	checkParameterLength := func(expected int) {
+		given := len(chk.Parameters)
+		if given != expected {
+			msg := "Invalid check parameters for check: " + chk.Name
+			msg += "\nExpected: " + fmt.Sprint(expected)
+			msg += "\nGiven: " + fmt.Sprint(given)
+			msg += "\nParameters: " + fmt.Sprint(chk.Parameters)
+			log.Fatal(msg)
+		}
+	}
 	switch chk.Check {
 	case "command":
+		checkParameterLength(1)
 		return Command(chk.Parameters[0])
 	case "running":
+		checkParameterLength(1)
 		return Running(chk.Parameters[0])
 	case "file":
+		checkParameterLength(1)
 		return File(chk.Parameters[0])
 	case "directory":
+		checkParameterLength(1)
 		return Directory(chk.Parameters[0])
 	case "symlink":
+		checkParameterLength(1)
 		return Symlink(chk.Parameters[0])
 	case "installed":
+		checkParameterLength(1)
 		return Installed(chk.Parameters[0])
 	case "temp":
+		checkParameterLength(1)
 		tempInt, err := strconv.ParseInt(chk.Parameters[0], 10, 32)
 		fatal(err)
 		return Temp(int(tempInt))
 	case "port":
+		checkParameterLength(1)
 		portInt, err := strconv.ParseInt(chk.Parameters[0], 10, 32)
 		fatal(err)
 		return Port(int(portInt))
 	case "interface":
+		checkParameterLength(1)
 		return Interface(chk.Parameters[0])
 	case "up":
+		checkParameterLength(1)
 		return Up(chk.Parameters[0])
 	case "ip4":
+		checkParameterLength(2)
 		return Ip4(chk.Parameters[0], chk.Parameters[1])
 	case "ip6":
+		checkParameterLength(2)
 		return Ip6(chk.Parameters[0], chk.Parameters[1])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "

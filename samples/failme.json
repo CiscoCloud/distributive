@@ -1,0 +1,16 @@
+{
+    "Name": "An example of a malformed check",
+    "Checklist" : [
+        {
+            "Name" : "Names give more helpful error messages",
+            "Check" : "file",
+            "Parameters" : ["this", "won't", "work"]
+        },
+        {
+            "Name" : "Won't even run",
+            "Notes" : "When encountering a malformed check, Distributive halts",
+            "Check" : "symlink",
+            "Parameters" : ["wontrun"]
+        }
+    ]
+}
