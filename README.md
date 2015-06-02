@@ -6,7 +6,6 @@
 - [Overview](#overview)
     - [Usage](#usage)
     - [JSON format](#json-format)
-        - [-](#-)
         - [Check names](#check-names)
         - [Dependencies for certain checks](#dependencies-for-certain-checks)
     - [Comparison to Other Software](#comparison-to-other-software)
