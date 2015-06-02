@@ -18,15 +18,17 @@ As of right now, only exit codes 0 and 1 are used, even if a check fails.
 Run the binary with the command line flag `f` and an argument pointing to the
 json file containing the check you wish to run.
 ```
-distributive -f ./samples/sleep.json
+distributive -f ./samples/file-checks.json
 ```
 
 ## JSON format
 General field names:
- * "Name" : Descriptive name for a check/list
+ * "Name" : Descriptive name for a check/list (string)
  * "Notes" : Human-readable description of this check/list (not used by Distributive).
+ * "Check" : Name/type of the check to be run (string)
+ * "Parameters" : Parameters to pass to the check (array of string)
 
-Specific checks:
+Check names:
  * "Command" : Run a shell command.
  * "Running" : Is this service running on the server?
  * "File" : Is there a file at this path?
