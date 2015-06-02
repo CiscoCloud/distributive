@@ -1,5 +1,22 @@
 # Overview
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
+**Table of Contents**
+
+- [Overview](#overview)
+    - [Usage](#usage)
+    - [JSON format](#json-format)
+        - [-](#-)
+        - [Check names:](#check-names)
+        - [Dependencies for certain checks:](#dependencies-for-certain-checks)
+    - [Comparison to Other Software](#comparison-to-other-software)
+        - [Serverspec](#serverspec)
+        - [Nagios](#nagios)
+    - [Supported Frameworks](#supported-frameworks)
+
+<!-- markdown-toc end -->
+
+
 Distributive is a tool for running distributed health checks in server clusters.
 It was designed with Consul in mind, but is platform agnostic.  The architecture
 is such that some external server will ask the host to execute this program,
