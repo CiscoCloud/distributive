@@ -29,7 +29,9 @@ General field names:
 Specific checks:
  * "Command" : Run a shell command.
  * "Running" : Is this service running on the server?
- * "Exists" : Does this file exist on the server?
+ * "File" : Is there a file at this path?
+ * "Directory" : Is there a directory at this path?
+ * "Symlink" : Is there a symlink at this path?
  * "Installed" : Is this program installed on the server?
  * "Temp" : Does the CPU temp exceed this integer (Celcius)?
 

@@ -24,10 +24,11 @@ func fatal(e error) {
 // Check is a struct for a unified interface for health checks
 // It passes its check-specific fields to that check's Thunk constructor
 type Check struct {
-	Name, Notes                         string
-	Command, Installed, Exists, Running string
-	Port, Temp                          int // more check inputs
-	Fun                                 Thunk
+	Name, Notes                 string
+	Command, Installed, Running string
+	File, Directory, Symlink    string
+	Port, Temp                  int // more check inputs
+	Fun                         Thunk
 }
 
 // Checklist is a struct that provides a concise way of thinking about doing
@@ -40,7 +41,8 @@ type Checklist struct {
 	Report      string
 }
 
-// makeReport creates an output
+// makeReport returns a string used for a checklist.Report attribute, printed
+// after all the checks have been run
 func makeReport(chklst Checklist) (report string) {
 	failMessages := []string{}
 	passed := 0
@@ -69,8 +71,12 @@ func getThunk(chk Check) Thunk {
 		return Command(chk.Command)
 	} else if chk.Running != "" {
 		return Running(chk.Running)
-	} else if chk.Exists != "" {
-		return Exists(chk.Exists)
+	} else if chk.File != "" {
+		return File(chk.File)
+	} else if chk.Directory != "" {
+		return Directory(chk.Directory)
+	} else if chk.Symlink != "" {
+		return Symlink(chk.Symlink)
 	} else if chk.Installed != "" {
 		return Installed(chk.Installed)
 	} else if chk.Temp != 0 {
@@ -89,7 +95,10 @@ func getChecklist(path string) (chklst Checklist) {
 	//var list []Check
 	fileJSON, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal("Couldn't find .json at specified location: " + path)
+		if path == "" {
+			log.Fatal("No path specified (use -f option)")
+		}
+		log.Fatal("Couldn't read JSON at specified location: " + path)
 	}
 	err = json.Unmarshal(fileJSON, &chklst)
 	fatal(err)

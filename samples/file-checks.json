@@ -1,0 +1,23 @@
+{
+    "Name": "Filesystem checks",
+    "Checklist" : [
+        {
+            "File": "/swapfile"
+        },
+        {
+            "Directory": "/proc"
+        },
+        {
+            "Symlink" : "/home/lb/Dropbox/workspace/www"
+        },
+        {
+            "File" : "/etc/"
+        },
+        {
+            "Directory" : "/bin/bash"
+        },
+        {
+            "Symlink" : "/var/"
+        }
+    ]
+}

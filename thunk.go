@@ -1,5 +1,5 @@
-// Thunks provides functions that construct functions in the format that
-// Checkr expects, namely the Thunk type, that can be used as health checks.
+// thunks.go provides functions that construct functions in the format that
+// Distributive expects, namely the Thunk type, that can be used as health checks.
 package main
 
 import (
@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -72,23 +71,6 @@ func Running(proc string) Thunk {
 		} else {
 			return 1, proc + " is not running"
 		}
-	}
-}
-
-// Exists checks to see if a file/dir exists at given path
-func Exists(path string) Thunk {
-	// does the file at this path exist?
-	exists := func(path string) bool {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			return false
-		}
-		return true
-	}
-	return func() (exitCode int, exitMessage string) {
-		if exists(path) {
-			return 0, ""
-		}
-		return 1, "File does not exist: " + path
 	}
 }
 
