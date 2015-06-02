@@ -7,8 +7,8 @@
     - [Usage](#usage)
     - [JSON format](#json-format)
         - [-](#-)
-        - [Check names:](#check-names)
-        - [Dependencies for certain checks:](#dependencies-for-certain-checks)
+        - [Check names](#check-names)
+        - [Dependencies for certain checks](#dependencies-for-certain-checks)
     - [Comparison to Other Software](#comparison-to-other-software)
         - [Serverspec](#serverspec)
         - [Nagios](#nagios)
@@ -25,9 +25,11 @@ program's exit code and standard out.
 
 The exit code meanings are defined as [Consul] [1] and [Sensu] [2] recognize
 them.
+
  * Exit code 0 - Check is passing
  * Exit code 1 - Check is warning
  * Any other code - Check is failing
+
 As of right now, only exit codes 0 and 1 are used, even if a check fails.
 
 ## Usage
@@ -39,13 +41,16 @@ distributive -f ./samples/file-checks.json
 ```
 
 ## JSON format
-#### General field names:
+
+#### General field names
+
  * "Name" : Descriptive name for a check/list (string)
  * "Notes" : Human-readable description of this check/list (not used by Distributive).
  * "Check" : Name/type of the check to be run (string)
  * "Parameters" : Parameters to pass to the check (array of string)
 
-#### Check names:
+#### Check names
+
  * "command" : Run a shell command.
  * "running" : Is this service running on the server?
  * "file" : Is there a file at this path?
@@ -58,7 +63,7 @@ distributive -f ./samples/file-checks.json
  * "up" : Is this network interface up?
  * "ip4" : Does this interface have the specified IP address (two parameters)?
 
-#### Dependencies for certain checks:
+#### Dependencies for certain checks
 
 All dependencies should be installed on Linux systems by default, except for
 lm_sensors.
