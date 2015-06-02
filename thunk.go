@@ -19,6 +19,7 @@ type Thunk func() (exitCode int, exitMessage string)
 
 // Command runs a shell command, and collapses its error code to 0 or 1.
 // It outputs stderr and stdout if the command has error code != 0.
+// TODO handle executable in PATH
 func Command(toExec string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		params := strings.Split(toExec, " ")

@@ -79,3 +79,42 @@ func Interface(name string) Thunk {
 		return 1, "Interface does not exist: " + name
 	}
 }
+
+// Up determines if a network interface is up and running or not
+func Up(name string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		interfaces, err := net.Interfaces()
+		fatal(err)
+		for _, iface := range interfaces {
+			if iface.Name == name && iface.Flags&net.FlagUp != 0 {
+				return 0, ""
+			}
+		}
+		return 1, "Interface is down: " + name
+	}
+}
+
+// Ip4 checks to see if this network interface has this ipv4 address
+func Ip4(name string, address string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		interfaces, err := net.Interfaces()
+		fatal(err)
+		for _, iface := range interfaces {
+			addresses, err := iface.Addrs
+			fatal(err)
+			for _, addr := range addresses {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				if ip.To4().String() == address && iface.Name == name {
+					return 0, ""
+				}
+			}
+		}
+		return 1, "Interface does not have IP: " + name + " " + address
+	}
+}

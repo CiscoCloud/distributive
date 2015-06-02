@@ -1,0 +1,21 @@
+{
+    "Name": "Miscellanious system checks",
+    "Checklist" : [
+        {
+            "Name": "CPU temperature threshold",
+            "Check": "temp",
+            "Parameters": ["80"]
+        },
+        {
+            "Name": "dnsmasq check",
+            "Check" : "running",
+            "Parameters": ["dnsmasq"]
+        },
+        {
+            "Name": "sleep-error",
+            "Notes": "Example of a check that will report an error",
+            "Check" : "command",
+            "Parameters" : ["failme"]
+        }
+    ]
+}

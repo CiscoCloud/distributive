@@ -16,6 +16,22 @@
         {
             "Check" : "interface",
             "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "up",
+            "Parameters": ["wlp1s0"]
+        },
+        {
+            "Check" : "up",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "ip4",
+            "Parameters" : ["wlp1s0", "192.168.0.5"]
+        },
+        {
+            "Check" : "ip4",
+            "Parameters" : ["wlp1s0", "10.60.89.178"]
         }
     ]
 }

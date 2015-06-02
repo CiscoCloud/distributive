@@ -38,6 +38,8 @@ distributive -f ./samples/file-checks.json
  * "temp" : Does the CPU temp exceed this integer (Celcius)?
  * "port" : Is this port in an open state?
  * "interface" : Does this network interface exist?
+ * "up" : Is this network interface up?
+ * "ip4" : Does this interface have the specified IP address (two parameters)?
 
 #### Dependencies for certain checks:
 

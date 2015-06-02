@@ -1,8 +1,0 @@
-{
-    "Name": "dnsmasq check",
-    "Checklist" : [
-        {
-            "running" : "dnsmasq"
-        }
-    ]
-}

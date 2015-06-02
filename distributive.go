@@ -91,6 +91,10 @@ func getThunk(chk Check) Thunk {
 		return Port(int(portInt))
 	case "interface":
 		return Interface(chk.Parameters[0])
+	case "up":
+		return Up(chk.Parameters[0])
+	case "ip4":
+		return Ip4(chk.Parameters[0], chk.Parameters[1])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)
