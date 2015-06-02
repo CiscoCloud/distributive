@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -18,7 +17,7 @@ import (
 // Generally, if exitCode == 0, exitMessage == "".
 type Thunk func() (exitCode int, exitMessage string)
 
-// Command runs a shell command, and collapses its error code into the range [0-1]
+// Command runs a shell command, and collapses its error code to 0 or 1.
 // It outputs stderr and stdout if the command has error code != 0.
 func Command(toExec string) Thunk {
 	return func() (exitCode int, exitMessage string) {
@@ -37,17 +36,17 @@ func Command(toExec string) Thunk {
 		if err != nil {
 			exitCode = 1
 		}
-		stdoutText, err := ioutil.ReadAll(stdout)
-		stderrText, err := ioutil.ReadAll(stderr)
+		stdoutBytes, err := ioutil.ReadAll(stdout)
+		stderrBytes, err := ioutil.ReadAll(stderr)
 		// Create output message
 		exitMessage = ""
 		if exitCode != 0 {
 			exitMessage = "Command " + toExec + " executed "
 			exitMessage += "with exit code " + fmt.Sprint(exitCode)
 			exitMessage += "\n\n"
-			exitMessage += "stdout: \n" + fmt.Sprint(stdoutText)
+			exitMessage += "stdout: \n" + fmt.Sprint(stdoutBytes)
 			exitMessage += "\n\n"
-			exitMessage += "stderr: \n" + fmt.Sprint(stderrText)
+			exitMessage += "stderr: \n" + fmt.Sprint(stderrBytes)
 		}
 		return exitCode, exitMessage
 	}
@@ -59,13 +58,13 @@ func Command(toExec string) Thunk {
 func Running(proc string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		cmd := exec.Command("ps", "aux")
-		stdoutText, err := cmd.Output()
+		stdoutBytes, err := cmd.Output()
 		fatal(err)
 		// this regex matches: flag, space, quote, path, filename.json, quote
 		re, e := regexp.Compile("-f\\s+\"*?.*?(health-checks/)*?[^/]*.json\"*")
 		fatal(e)
 		// remove this process from consideration
-		filtered := re.ReplaceAllString(string(stdoutText), "")
+		filtered := re.ReplaceAllString(string(stdoutBytes), "")
 		if strings.Contains(filtered, proc) {
 			return 0, ""
 		} else {
@@ -147,54 +146,5 @@ func Temp(max int) Thunk {
 			return 0, ""
 		}
 		return 1, "Core temp " + fmt.Sprint(temp) + " exceeds defined max of " + fmt.Sprint(max) + "\n"
-	}
-}
-
-// Port parses /proc/net/tcp to determine if a given port is in an open state
-// and returns an error if it is not.
-func Port(port int) Thunk {
-	// strHexToDecimal converts from string containing hex number to int
-	strHexToDecimal := func(hex string) int {
-		portInt, err := strconv.ParseInt(hex, 16, 64)
-		fatal(err)
-		return int(portInt)
-	}
-
-	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
-	getHexPorts := func() (ports []string) {
-		toReturn := []string{}
-		tcp, err := ioutil.ReadFile("/proc/net/tcp")
-		fatal(err)
-		// matches only the beginnings of lines
-		lines := bytes.Split(tcp, []byte("\n"))
-		portRe, err := regexp.Compile(":([0-9A-F]{4})")
-		for _, line := range lines {
-			port := portRe.Find(line) // only get first port, which is local
-			if port == nil {
-				continue
-			}
-			portString := string(port[1:])
-			fatal(err)
-			toReturn = append(toReturn, portString)
-		}
-		return toReturn
-	}
-
-	// getOpenPorts gets a list of open/listening ports as integers
-	getOpenPorts := func() (ports []int) {
-		for _, port := range getHexPorts() {
-			ports = append(ports, strHexToDecimal(port))
-		}
-		return ports
-
-	}
-
-	return func() (exitCode int, exitMessage string) {
-		for _, p := range getOpenPorts() {
-			if p == port {
-				return 0, ""
-			}
-		}
-		return 1, "Port " + fmt.Sprint(port) + " did not respond."
 	}
 }

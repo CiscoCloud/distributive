@@ -1,0 +1,21 @@
+{
+    "Name": "Network interfaces",
+    "Checklist" : [
+        {
+            "Check" : "interface",
+            "Parameters" : ["docker0"]
+        },
+        {
+            "Check" : "interface",
+            "Parameters" : ["wlp1s0"]
+        },
+        {
+            "Check" : "interface",
+            "Parameters" : ["lo"]
+        },
+        {
+            "Check" : "interface",
+            "Parameters" : ["failme"]
+        }
+    ]
+}

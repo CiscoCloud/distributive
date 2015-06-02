@@ -22,26 +22,31 @@ distributive -f ./samples/file-checks.json
 ```
 
 ## JSON format
-General field names:
+#### General field names:
  * "Name" : Descriptive name for a check/list (string)
  * "Notes" : Human-readable description of this check/list (not used by Distributive).
  * "Check" : Name/type of the check to be run (string)
  * "Parameters" : Parameters to pass to the check (array of string)
 
-Check names:
- * "Command" : Run a shell command.
- * "Running" : Is this service running on the server?
- * "File" : Is there a file at this path?
- * "Directory" : Is there a directory at this path?
- * "Symlink" : Is there a symlink at this path?
- * "Installed" : Is this program installed on the server?
- * "Temp" : Does the CPU temp exceed this integer (Celcius)?
+#### Check names:
+ * "command" : Run a shell command.
+ * "running" : Is this service running on the server?
+ * "file" : Is there a file at this path?
+ * "directory" : Is there a directory at this path?
+ * "symlink" : Is there a symlink at this path?
+ * "installed" : Is this program installed on the server?
+ * "temp" : Does the CPU temp exceed this integer (Celcius)?
+ * "port" : Is this port in an open state?
+ * "interface" : Does this network interface exist?
 
-Dependencies for certain checks:
- * "Running" depends on the ability to execute `ps aux`.
- * "Temp" depends on the package lm_sensors.
- * "Installed" depends on any of the three following package managers: dpkg, rpm, or pacman.
- * "Port" reads from `/proc/net/tcp`, and depends on its proper population for accuracy.
+#### Dependencies for certain checks:
+
+All dependencies should be installed on Linux systems by default, except for
+lm_sensors.
+ * "running" depends on the ability to execute `ps aux`.
+ * "temp" depends on the package lm_sensors.
+ * "installed" depends on any of the three following package managers: dpkg, rpm, or pacman.
+ * "port" reads from `/proc/net/tcp`, and depends on its proper population for accuracy.
 
 ## Comparison to Other Software
 
