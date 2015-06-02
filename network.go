@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"regexp"
 	"strconv"
@@ -94,14 +95,21 @@ func Up(name string) Thunk {
 	}
 }
 
-// Ip4 checks to see if this network interface has this ipv4 address
-func Ip4(name string, address string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		interfaces, err := net.Interfaces()
+// hasIP checks to see if the interface that goes by name has the right address,
+// given an IP version (4 or 6)
+func hasIP(name string, address string, version int) bool {
+	// ensure valid IP version
+	if version != 4 && version != 6 {
+		msg := "Misconfigured JSON: Unsupported IP version: "
+		log.Fatal(msg + fmt.Sprint(version))
+	}
+	interfaces, err := net.Interfaces()
+	fatal(err)
+	for _, iface := range interfaces {
+		addresses, err := iface.Addrs()
 		fatal(err)
-		for _, iface := range interfaces {
-			addresses, err := iface.Addrs
-			fatal(err)
+		// only check addresses if it is the correct interface
+		if iface.Name == name {
 			for _, addr := range addresses {
 				var ip net.IP
 				switch v := addr.(type) {
@@ -110,10 +118,32 @@ func Ip4(name string, address string) Thunk {
 				case *net.IPAddr:
 					ip = v.IP
 				}
-				if ip.To4().String() == address && iface.Name == name {
-					return 0, ""
+				if version == 4 && ip.To4().String() == address {
+					return true
+				} else if version == 6 && ip.To16().String() == address {
+					return true
 				}
 			}
+		}
+	}
+	return false
+}
+
+// Ip4 checks to see if this network interface has this ipv4 address
+func Ip4(name string, address string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		if hasIP(name, address, 4) {
+			return 0, ""
+		}
+		return 1, "Interface does not have IP: " + name + " " + address
+	}
+}
+
+// Ip6 checks to see if this network interface has this ipv6 address
+func Ip6(name string, address string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		if hasIP(name, address, 6) {
+			return 0, ""
 		}
 		return 1, "Interface does not have IP: " + name + " " + address
 	}

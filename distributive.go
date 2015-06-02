@@ -67,7 +67,7 @@ func makeReport(chklst Checklist) (report string) {
 // of its fields were filled when it was read from JSON.
 // Fields that weren't specified in the JSON take on zero values for their type
 func getThunk(chk Check) Thunk {
-	// TODO handle errors here, log effectively (separate function?)
+	// TODO handle errors here, log effectively (separate function?) TODO TODO
 	switch chk.Check {
 	case "command":
 		return Command(chk.Parameters[0])
@@ -95,6 +95,8 @@ func getThunk(chk Check) Thunk {
 		return Up(chk.Parameters[0])
 	case "ip4":
 		return Ip4(chk.Parameters[0], chk.Parameters[1])
+	case "ip6":
+		return Ip6(chk.Parameters[0], chk.Parameters[1])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)

@@ -32,6 +32,14 @@
         {
             "Check" : "ip4",
             "Parameters" : ["wlp1s0", "10.60.89.178"]
+        },
+        {
+            "Check" : "ip6",
+            "Parameters" : ["wlp1s0", "fe80::59bf:babe:f7bb:a327"]
+        },
+        {
+            "Check" : "ip6",
+            "Parameters" : ["eth0", "failme"]
         }
     ]
 }

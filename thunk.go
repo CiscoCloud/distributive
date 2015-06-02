@@ -19,7 +19,6 @@ type Thunk func() (exitCode int, exitMessage string)
 
 // Command runs a shell command, and collapses its error code to 0 or 1.
 // It outputs stderr and stdout if the command has error code != 0.
-// TODO handle executable in PATH
 func Command(toExec string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		params := strings.Split(toExec, " ")
@@ -31,7 +30,9 @@ func Command(toExec string) Thunk {
 		fatal(err)
 		// run the command
 		err = cmd.Start()
-		fatal(err)
+		if strings.Contains(err.Error(), "not found in $PATH") {
+			return 1, "Executable not found: " + params[0]
+		}
 		err = cmd.Wait()
 		exitCode = 0
 		if err != nil {
@@ -69,7 +70,7 @@ func Running(proc string) Thunk {
 		if strings.Contains(filtered, proc) {
 			return 0, ""
 		} else {
-			return 1, proc + " is not running"
+			return 1, "Process not running: " + proc
 		}
 	}
 }
