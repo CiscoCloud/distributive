@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 )
 
 // fatal simplifies error handling (instead of an if err != nil block)
@@ -24,11 +25,10 @@ func fatal(e error) {
 // Check is a struct for a unified interface for health checks
 // It passes its check-specific fields to that check's Thunk constructor
 type Check struct {
-	Name, Notes                 string
-	Command, Installed, Running string
-	File, Directory, Symlink    string
-	Port, Temp                  int // more check inputs
-	Fun                         Thunk
+	Name, Notes string
+	Check       string // type of check to run
+	Parameters  []string
+	Fun         Thunk
 }
 
 // Checklist is a struct that provides a concise way of thinking about doing
@@ -67,32 +67,37 @@ func makeReport(chklst Checklist) (report string) {
 // of its fields were filled when it was read from JSON.
 // Fields that weren't specified in the JSON take on zero values for their type
 func getThunk(chk Check) Thunk {
-	if chk.Command != "" {
-		return Command(chk.Command)
-	} else if chk.Running != "" {
-		return Running(chk.Running)
-	} else if chk.File != "" {
-		return File(chk.File)
-	} else if chk.Directory != "" {
-		return Directory(chk.Directory)
-	} else if chk.Symlink != "" {
-		return Symlink(chk.Symlink)
-	} else if chk.Installed != "" {
-		return Installed(chk.Installed)
-	} else if chk.Temp != 0 {
-		return Temp(chk.Temp)
-	} else if chk.Port != 0 {
-		return Port(chk.Port)
-	} else {
-		log.Fatal("JSON file didn't include any supported health check types")
+	switch chk.Check {
+	case "command":
+		return Command(chk.Parameters[0])
+	case "running":
+		return Running(chk.Parameters[0])
+	case "file":
+		return File(chk.Parameters[0])
+	case "directory":
+		return Directory(chk.Parameters[0])
+	case "symlink":
+		return Symlink(chk.Parameters[0])
+	case "installed":
+		return Installed(chk.Parameters[0])
+	case "temp":
+		tempInt, err := strconv.ParseInt(chk.Parameters[0], 10, 32)
+		fatal(err)
+		return Temp(int(tempInt))
+	case "port":
+		portInt, err := strconv.ParseInt(chk.Parameters[0], 10, 32)
+		fatal(err)
+		return Port(int(portInt))
+	default:
+		msg := "JSON file included one or more unsupported health checks: "
+		log.Fatal(msg + chk.Check)
+		return nil
 	}
-	return nil
 }
 
 // getChecklist loads a JSON file located at path, and Unmarshals it into a
 // Checklist struct, leaving unspecified fields as their zero types.
 func getChecklist(path string) (chklst Checklist) {
-	//var list []Check
 	fileJSON, err := ioutil.ReadFile(path)
 	if err != nil {
 		if path == "" {

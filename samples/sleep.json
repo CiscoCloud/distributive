@@ -1,9 +1,0 @@
-{
-    "Name": "sleeper",
-    "Notes": "An example of a successful BASH command",
-    "Checklist" : [
-        {
-            "Command": "sleep 10"
-        }
-    ]
-}

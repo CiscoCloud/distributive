@@ -2,22 +2,28 @@
     "Name": "Filesystem checks",
     "Checklist" : [
         {
-            "File": "/swapfile"
+            "Check" : "file",
+            "Parameters" : ["/swapfile"]
         },
         {
-            "Directory": "/proc"
+            "Check" : "directory",
+            "Parameters" : ["/proc"]
         },
         {
-            "Symlink" : "/home/lb/Dropbox/workspace/www"
+            "Check" : "symlink",
+            "Parameters" : ["/home/lb/Dropbox/workspace/www"]
         },
         {
-            "File" : "/etc/"
+            "Check" : "file",
+            "Parameters" : ["/etc/"]
         },
         {
-            "Directory" : "/bin/bash"
+            "Check" : "directory",
+            "Parameters" : ["/bin/bash"]
         },
         {
-            "Symlink" : "/var/"
+            "Check" : "symlink",
+            "Parameters" : ["/var/"]
         }
     ]
 }

@@ -18,7 +18,7 @@ As of right now, only exit codes 0 and 1 are used, even if a check fails.
 Run the binary with the command line flag `f` and an argument pointing to the
 json file containing the check you wish to run.
 ```
-distributive -f ./health-checks/sleep.json
+distributive -f ./samples/sleep.json
 ```
 
 ## JSON format
