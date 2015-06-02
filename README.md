@@ -42,21 +42,17 @@ distributive -f ./samples/file-checks.json
 
 ## JSON format
 
-#### General field names
-<<<<<<< HEAD
+General field names
 =======
 
->>>>>>> bb1892102e935cdae10c1a8d79c258e14adaaf07
  * "Name" : Descriptive name for a check/list (string)
  * "Notes" : Human-readable description of this check/list (not used by Distributive).
  * "Check" : Name/type of the check to be run (string)
  * "Parameters" : Parameters to pass to the check (array of string)
 
-#### Check names
-<<<<<<< HEAD
+Check names
 =======
 
->>>>>>> bb1892102e935cdae10c1a8d79c258e14adaaf07
  * "command" : Run a shell command.
  * "running" : Is this service running on the server?
  * "file" : Is there a file at this path?
