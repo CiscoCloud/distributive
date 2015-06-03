@@ -64,6 +64,10 @@ Check names
  * "up" : Is this network interface up?
  * "ip4" : Does this interface have the specified IP address (two parameters)?
  * "ip6" : Does this interface have the specified IP address (two parameters)?
+ * "gateway" : Does the default gateway have the specified IP address?
+ * "gatewayInterface" : Is the default gateway operating on this interface?
+ * "module" : Is this kernel module activated?
+ * "kernelParameter" : Is this kernel parameter specified?
 
 #### Dependencies for certain checks
 
@@ -73,6 +77,8 @@ lm_sensors.
  * "temp" depends on the package lm_sensors.
  * "installed" depends on any of the three following package managers: dpkg, rpm, or pacman.
  * "port" reads from `/proc/net/tcp`, and depends on its proper population for accuracy.
+ * "module" reads from the output of `/sbin/lsmod`.
+ * "kernelParameter" reads from the output of `/sbin/sysctl -q -n`.
 
 ## Comparison to Other Software
 

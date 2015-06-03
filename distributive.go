@@ -129,6 +129,12 @@ func getThunk(chk Check) Thunk {
 	case "kernelParameter":
 		checkParameterLength(1)
 		return KernelParameter(chk.Parameters[0])
+	case "gateway":
+		checkParameterLength(1)
+		return Gateway(chk.Parameters[0])
+	case "gatewayInterface":
+		checkParameterLength(1)
+		return GatewayInterface(chk.Parameters[0])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)

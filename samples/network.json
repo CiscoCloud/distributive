@@ -27,11 +27,7 @@
         },
         {
             "Check" : "ip4",
-            "Parameters" : ["wlp1s0", "192.168.0.5"]
-        },
-        {
-            "Check" : "ip4",
-            "Parameters" : ["wlp1s0", "10.60.89.178"]
+            "Parameters" : ["wlp1s0", "10.60.91.12"]
         },
         {
             "Check" : "ip6",
@@ -40,6 +36,22 @@
         {
             "Check" : "ip6",
             "Parameters" : ["eth0", "failme"]
+        },
+        {
+            "Check" : "gateway",
+            "Parameters" : ["10.60.0.1"]
+        },
+        {
+            "Check" : "gateway",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "gatewayInterface",
+            "Parameters" : ["wlp1s0"]
+        },
+        {
+            "Check" : "gatewayInterface",
+            "Parameters" : ["docker0"]
         }
     ]
 }

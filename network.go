@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os/exec"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Port parses /proc/net/tcp to determine if a given port is in an open state
@@ -146,5 +148,76 @@ func Ip6(name string, address string) Thunk {
 			return 0, ""
 		}
 		return 1, "Interface does not have IP: " + name + " " + address
+	}
+}
+
+// routeOutput returns the output of the command `route -n`, split into lines
+// and on whitespace, without header rows. First coordinate is row, second is column.
+func routeOutput() (toReturn [][]string) {
+	out, err := exec.Command("route", "-n").Output()
+	fatal(err)
+	if out == nil {
+		log.Fatal("Couldn't read output from `route -n`")
+	}
+	lines := strings.Split(string(out), "\n")
+	// cut out headers
+	if len(lines) == 0 {
+		return
+	}
+	// split on whitespace
+	re := regexp.MustCompile("\\s+")
+	for _, line := range lines {
+		if line != "" {
+			toReturn = append(toReturn, re.Split(line, -1))
+		}
+	}
+	return toReturn[2:]
+}
+
+// Gateway checks to see that the default gateway has a certain IP
+func Gateway(address string) Thunk {
+	// getGatewayAddress filters all gateway IPs for a non-zero value
+	getGatewayAddress := func() (addr string) {
+		// getAllGatewayAddresses returns all the IPs of all gateways
+		getAllGatewayAddresses := func() (addresses []string) {
+			out := routeOutput() // 2D array, out[row][col]
+			for _, row := range out {
+				gatewayIP := row[1]
+				addresses = append(addresses, gatewayIP)
+			}
+			return addresses
+		}
+		for _, ip := range getAllGatewayAddresses() {
+			if ip != "0.0.0.0" {
+				return ip
+			}
+		}
+		return "0.0.0.0"
+	}
+	return func() (exitCode int, exitMessage string) {
+		if address == getGatewayAddress() {
+			return 0, ""
+		}
+		return 1, "Gateway does not have address: " + address
+	}
+}
+
+// GatewayInterface checks that the default gateway is using a specified interface
+func GatewayInterface(name string) Thunk {
+	// getGatewayInterface returns the interface that the default gateway is
+	// operating on
+	getGatewayInterface := func() (iface string) {
+		for _, row := range routeOutput() {
+			if row[1] != "0.0.0.0" {
+				return row[7] // interface name
+			}
+		}
+		return ""
+	}
+	return func() (exitCode int, exitMessage string) {
+		if name == getGatewayInterface() {
+			return 0, ""
+		}
+		return 1, "Default gateway does not operate on interface: " + name
 	}
 }
