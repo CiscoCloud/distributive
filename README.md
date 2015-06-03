@@ -25,16 +25,17 @@ program's exit code and standard out.
 The exit code meanings are defined as [Consul] [1] and [Sensu] [2] recognize
 them.
 
- * Exit code 0 - Check is passing
- * Exit code 1 - Check is warning
- * Any other code - Check is failing
+ * Exit code 0 - Checklist is passing
+ * Exit code 1 - Checklist is warning
+ * Any other code - Checklist is failing
 
-As of right now, only exit codes 0 and 1 are used, even if a check fails.
+As of right now, only exit codes 0 and 1 are used, even if a checklist fails.
 
 ## Usage
 
-Run the binary with the command line flag `f` and an argument pointing to the
-json file containing the check you wish to run.
+Build a binary with `go build .` and run it with the command line flag `f`
+followed by an argument pointing to the json file containing the checklist you
+wish to run.
 ```
 distributive -f ./samples/file-checks.json
 ```
@@ -44,41 +45,41 @@ distributive -f ./samples/file-checks.json
 General field names
 =======
 
- * "Name" : Descriptive name for a check/list (string)
- * "Notes" : Human-readable description of this check/list (not used by Distributive).
- * "Check" : Name/type of the check to be run (string)
- * "Parameters" : Parameters to pass to the check (array of string)
+ * `"Name"` : Descriptive name for a check/list (string)
+ * `"Notes"` : Human-readable description of this check/list (not used by Distributive).
+ * `"Check"` : Type of check to be run (string)
+ * `"Parameters"` : Parameters to pass to the check (array of string)
 
 Check names
 =======
 
- * "command" : Run a shell command.
- * "running" : Is this service running on the server?
- * "file" : Is there a file at this path?
- * "directory" : Is there a directory at this path?
- * "symlink" : Is there a symlink at this path?
- * "installed" : Is this program installed on the server?
- * "temp" : Does the CPU temp exceed this integer (Celcius)?
- * "port" : Is this port in an open state?
- * "interface" : Does this network interface exist?
- * "up" : Is this network interface up?
- * "ip4" : Does this interface have the specified IP address (two parameters)?
- * "ip6" : Does this interface have the specified IP address (two parameters)?
- * "gateway" : Does the default gateway have the specified IP address?
- * "gatewayInterface" : Is the default gateway operating on this interface?
- * "module" : Is this kernel module activated?
- * "kernelParameter" : Is this kernel parameter specified?
+ * `"command"` : Run a shell command.
+ * `"running"` : Is this service running on the server?
+ * `"file"` : Is there a file at this path?
+ * `"directory"` : Is there a directory at this path?
+ * `"symlink"` : Is there a symlink at this path?
+ * `"installed"` : Is this program installed on the server?
+ * `"temp"` : Does the CPU temp exceed this integer (Celcius)?
+ * `"port"` : Is this port in an open state?
+ * `"interface"` : Does this network interface exist?
+ * `"up"` : Is this network interface up?
+ * `"ip4"` : Does this interface have the specified IP address (two parameters)?
+ * `"ip6"` : Does this interface have the specified IP address (two parameters)?
+ * `"gateway"` : Does the default gateway have the specified IP address?
+ * `"gatewayInterface"` : Is the default gateway operating on this interface?
+ * `"module"` : Is this kernel module activated?
+ * `"kernelParameter"` : Is this kernel parameter specified?
 
 #### Dependencies for certain checks
 
 All dependencies should be installed on Linux systems by default, except for
 lm_sensors.
- * "running" depends on the ability to execute `ps aux`.
- * "temp" depends on the package lm_sensors.
- * "installed" depends on any of the three following package managers: dpkg, rpm, or pacman.
- * "port" reads from `/proc/net/tcp`, and depends on its proper population for accuracy.
- * "module" reads from the output of `/sbin/lsmod`.
- * "kernelParameter" reads from the output of `/sbin/sysctl -q -n`.
+ * `"running"` depends on the ability to execute `ps aux`.
+ * `"temp"` depends on the package lm_sensors.
+ * `"installed"` depends on any of the three following package managers: dpkg, rpm, or pacman.
+ * `"port"` reads from `/proc/net/tcp`, and depends on its proper population for accuracy.
+ * `"module"` reads from the output of `/sbin/lsmod`.
+ * `"kernelParameter"` reads from the output of `/sbin/sysctl -q -n`.
 
 ## Comparison to Other Software
 
@@ -93,9 +94,10 @@ IP addresses.
 
 Serverspec runs on a single control server, and requires each check to be in a
 directory matching the hostname of the machine to run it on. Distributive was
-designed for dynamic systems with changing IPs, which can report into Consul or
-another framework as soon as they are ready, and require little or no centralized
-configuration.
+designed for dynamic systems with changing IPs, which can report into Consul,
+Sensu, or another framework as soon as they are ready, and require little or no
+centralized configuration. Additionally, Distributive attempts to rely as little
+as possible on external tools/commands, using mostly just the Go standard library.
 
 ### Nagios
 
