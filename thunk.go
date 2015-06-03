@@ -1,5 +1,3 @@
-// thunks.go provides functions that construct functions in the format that
-// Distributive expects, namely the Thunk type, that can be used as health checks.
 package main
 
 import (
@@ -43,6 +41,7 @@ func Command(toExec string) Thunk {
 			exitCode = 1
 		}
 		stdoutBytes, err := ioutil.ReadAll(stdout)
+		fatal(err)
 		stderrBytes, err := ioutil.ReadAll(stderr)
 		// Create output message
 		exitMessage = ""
@@ -67,8 +66,7 @@ func Running(proc string) Thunk {
 		stdoutBytes, err := cmd.Output()
 		fatal(err)
 		// this regex matches: flag, space, quote, path, filename.json, quote
-		re, e := regexp.Compile("-f\\s+\"*?.*?(health-checks/)*?[^/]*.json\"*")
-		fatal(e)
+		re := regexp.MustCompile("-f\\s+\"*?.*?(health-checks/)*?[^/]*.json\"*")
 		// remove this process from consideration
 		filtered := re.ReplaceAllString(string(stdoutBytes), "")
 		if strings.Contains(filtered, proc) {
@@ -134,12 +132,10 @@ func Temp(max int) Thunk {
 		out, err := exec.Command("sensors").Output()
 		fatal(err)
 		// get all-core line up to paren
-		lineRegex, err := regexp.Compile("Core " + fmt.Sprint(core) + ":?(.*)\\(")
-		fatal(err)
+		lineRegex := regexp.MustCompile("Core " + fmt.Sprint(core) + ":?(.*)\\(")
 		line := lineRegex.Find(out)
 		// get temp from that line
-		tempRegex, err := regexp.Compile("\\d+\\.\\d*")
-		fatal(err)
+		tempRegex := regexp.MustCompile("\\d+\\.\\d*")
 		tempString := string(tempRegex.Find(line))
 		tempFloat, err := strconv.ParseFloat(tempString, 64)
 		fatal(err)

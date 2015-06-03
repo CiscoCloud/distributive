@@ -1,4 +1,3 @@
-// filesystem.go provides filesystem related thunks.
 package main
 
 import (
