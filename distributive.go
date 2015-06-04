@@ -101,6 +101,9 @@ func getThunk(chk Check) Thunk {
 	case "installed":
 		checkParameterLength(1)
 		return Installed(chk.Parameters[0])
+	case "checksum":
+		checkParameterLength(3)
+		return Checksum(chk.Parameters[0], chk.Parameters[1], chk.Parameters[2])
 	case "temp":
 		checkParameterLength(1)
 		tempInt, err := strconv.ParseInt(chk.Parameters[0], 10, 32)

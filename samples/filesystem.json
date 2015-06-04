@@ -24,6 +24,18 @@
         {
             "Check" : "symlink",
             "Parameters" : ["/var/"]
+        },
+        {
+            "Check" : "checksum",
+            "Parameters" : ["MD5", "d41d8cd98f00b204e9800998ecf8427e", "/dev/null"]
+        },
+        {
+            "Check" : "checksum",
+            "Parameters" : ["SHA1", "failme", "/dev/null"]
+        },
+        {
+            "Check" : "checksum",
+            "Parameters" : ["SHA1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/dev/null"]
         }
     ]
 }

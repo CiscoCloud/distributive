@@ -1,7 +1,14 @@
 package main
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/hex"
+	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type fileTypeCheck func(path string) (bool, error)
@@ -64,5 +71,45 @@ func Symlink(path string) Thunk {
 	}
 	return func() (exitCode int, exitMessage string) {
 		return isType("symlink", isSymlink, path)
+	}
+}
+
+// Checksum checks the hash of a given file using the given algorithm
+func Checksum(algorithm string, checkAgainst string, path string) Thunk {
+	getChecksum := func(algorithm string, data []byte) (checksum string) {
+		algorithm = strings.ToUpper(algorithm)
+		// default
+		hasher := md5.New()
+		switch algorithm {
+		case "SHA1":
+			hasher = sha1.New()
+		case "SHA224":
+			hasher = sha256.New224()
+		case "SHA256":
+			hasher = sha256.New()
+		case "SHA384":
+			hasher = sha512.New384()
+		case "SHA512":
+			hasher = sha512.New()
+		}
+		hasher.Write(data)
+		str := hex.EncodeToString(hasher.Sum(nil))
+		return str
+
+	}
+	getFileChecksum := func(algorithm string, path string) (checksum string) {
+		data, err := ioutil.ReadFile(path)
+		fatal(err)
+		return getChecksum(algorithm, data)
+	}
+	return func() (exitCode int, exitMessage string) {
+		chksum := getFileChecksum(algorithm, path)
+		if chksum == checkAgainst {
+			return 0, ""
+		}
+		msg := "Checksums do not match for file: " + path + "\n"
+		msg += "Given: " + checkAgainst + "\n"
+		msg += "Calculated: " + chksum
+		return 1, msg
 	}
 }
