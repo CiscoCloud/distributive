@@ -58,6 +58,7 @@ Check names
  * `"file"` : Is there a file at this path?
  * `"directory"` : Is there a directory at this path?
  * `"symlink"` : Is there a symlink at this path?
+ * `"checksum"`: Using this algorithm and given this sum, is this file valid (three parameters)?
  * `"installed"` : Is this program installed on the server?
  * `"temp"` : Does the CPU temp exceed this integer (Celcius)?
  * `"port"` : Is this port in an open state?
