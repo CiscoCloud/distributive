@@ -9,13 +9,7 @@ import (
 	"strings"
 )
 
-// TODO: eliminate thunks that are simple if/else statements by abstracting that
-// interaction: create a new type called boolThunk, and pass it to a method
-
-// Thunk is the type of function that runs without parameters and returns
-// an error code and an exit message to be printed to stdout.
-// Generally, if exitCode == 0, exitMessage == "".
-type Thunk func() (exitCode int, exitMessage string)
+// php -r 'echo get_cfg_var("default_mimetype");
 
 // Command runs a shell command, and collapses its error code to 0 or 1.
 // It outputs stderr and stdout if the command has error code != 0.
@@ -48,14 +42,8 @@ func Command(toExec string) Thunk {
 func Running(proc string) Thunk {
 	// getRunningCommands returns the entries in the "COMMAND" column of `ps aux`
 	getRunningCommands := func() (commands []string) {
-		out, err := exec.Command("ps", "aux").Output()
-		fatal(err)
-		lines := stringToSlice(string(out))
-		commands = getColumn(10, lines)
-		if len(commands) > 0 {
-			return commands[1:]
-		}
-		return []string{}
+		cmd := exec.Command("ps", "aux")
+		return commandColumnNoHeader(10, cmd)
 	}
 	return func() (exitCode int, exitMessage string) {
 		// remove this process from consideration
@@ -151,13 +139,8 @@ func Temp(max int) Thunk {
 func Module(name string) Thunk {
 	// kernelModules returns a list of all modules that are currently loaded
 	kernelModules := func() (modules []string) {
-		out, err := exec.Command("/sbin/lsmod").Output()
-		fatal(err)
-		lines := stringToSlice(string(out))
-		if !(len(lines) > 0) {
-			return []string{}
-		}
-		return getColumn(0, lines[1:])
+		cmd := exec.Command("/sbin/lsmod")
+		return commandColumnNoHeader(0, cmd)
 	}
 	return func() (exitCode int, exitMessage string) {
 		if strIn(name, kernelModules()) {

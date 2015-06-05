@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,27 +8,22 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 // getHexPorts gets all open ports as hex strings from /proc/net/tcp
 func getHexPorts() (ports []string) {
-	// TODO use stringToSlice here
-	toReturn := []string{}
-	tcp, err := ioutil.ReadFile("/proc/net/tcp")
+	out, err := ioutil.ReadFile("/proc/net/tcp")
 	fatal(err)
-	// matches only the beginnings of lines
-	lines := bytes.Split(tcp, []byte("\n"))
+	localAddresses := getColumnNoHeader(1, stringToSlice(string(out)))
 	portRe := regexp.MustCompile(":([0-9A-F]{4})")
-	for _, line := range lines {
-		port := portRe.Find(line) // only get first port, which is local
-		if port == nil {
-			continue
+	for _, address := range localAddresses {
+		port := portRe.FindString(address)
+		if port != "" {
+			portString := string(port[1:])
+			ports = append(ports, portString)
 		}
-		portString := string(port[1:])
-		toReturn = append(toReturn, portString)
 	}
-	return toReturn
+	return ports
 }
 
 // strHexToDecimal converts from string containing hex number to int
@@ -150,44 +144,14 @@ func Ip6(name string, address string) Thunk {
 	}
 }
 
-// routeOutput returns the output of the command `route -n`, split into lines
-// and on whitespace, without header rows. First coordinate is row, second is column.
-func routeOutput() (toReturn [][]string) {
-	// TODO use stringToSlice here
-	out, err := exec.Command("route", "-n").Output()
-	fatal(err)
-	if out == nil {
-		log.Fatal("Couldn't read output from `route -n`")
-	}
-	lines := strings.Split(string(out), "\n")
-	// cut out headers
-	if len(lines) == 0 {
-		return
-	}
-	// split on whitespace
-	re := regexp.MustCompile("\\s+")
-	for _, line := range lines {
-		if line != "" {
-			toReturn = append(toReturn, re.Split(line, -1))
-		}
-	}
-	return toReturn[2:]
-}
-
 // Gateway checks to see that the default gateway has a certain IP
 func Gateway(address string) Thunk {
 	// getGatewayAddress filters all gateway IPs for a non-zero value
 	getGatewayAddress := func() (addr string) {
-		// getAllGatewayAddresses returns all the IPs of all gateways
-		getAllGatewayAddresses := func() (addresses []string) {
-			out := routeOutput() // 2D array, out[row][col]
-			for _, row := range out {
-				gatewayIP := row[1]
-				addresses = append(addresses, gatewayIP)
-			}
-			return addresses
-		}
-		for _, ip := range getAllGatewayAddresses() {
+		// first column in the output of route -n is the address of the gateway
+		cmd := exec.Command("route", "-n")
+		ips := commandColumnNoHeader(1, cmd)[1:] // has additional header row
+		for _, ip := range ips {
 			if ip != "0.0.0.0" {
 				return ip
 			}
@@ -207,9 +171,15 @@ func GatewayInterface(name string) Thunk {
 	// getGatewayInterface returns the interface that the default gateway is
 	// operating on
 	getGatewayInterface := func() (iface string) {
-		for _, row := range routeOutput() {
-			if row[1] != "0.0.0.0" {
-				return row[7] // interface name
+		cmd := exec.Command("route", "-n")
+		ips := commandColumnNoHeader(1, cmd)[1:] // has additional header row
+		// calling the same command twice doesn't work
+		cmd = exec.Command("route", "-n")
+		names := commandColumnNoHeader(7, cmd)[1:] // has additional header row
+		for i, ip := range ips {
+			if ip != "0.0.0.0" {
+				// TODO catch indexerror
+				return names[i] // interface name
 			}
 		}
 		return ""

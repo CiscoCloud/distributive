@@ -29,7 +29,7 @@ func isType(name string, checker fileTypeCheck, path string) (exitCode int, mess
 	return 1, "Is not a " + name + ": " + path
 }
 
-// Exists checks to see if a file exists at given path
+// File checks to see if the given path represents a normal file
 func File(path string) Thunk {
 	// returns true if there is a regular ol' file at path
 	isFile := func(path string) (bool, error) {
