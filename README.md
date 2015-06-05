@@ -15,7 +15,6 @@
 
 <!-- markdown-toc end -->
 
-
 Distributive is a tool for running distributed health checks in server clusters.
 It was designed with Consul in mind, but is platform agnostic.  The architecture
 is such that some external server will ask the host to execute this program,
@@ -31,14 +30,18 @@ them.
 
 As of right now, only exit codes 0 and 1 are used, even if a checklist fails.
 
-## Usage
+## Installation and Usage
 
-Build a binary with `go build .` and run it with the command line flag `f`
-followed by an argument pointing to the json file containing the checklist you
-wish to run.
-```
-distributive -f ./samples/file-checks.json
-```
+To install the development version (potentially unstable):
+ 1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
+ 2. Build a binary: `cd distributive && go build .`
+ 3. Run the binary: `./distributive -f ./samples/filesystem.json`
+
+We also provide premade RPM packages on
+[Bintray](https://bintray.com/ciscocloud/rpm/Distributive/view#files). The
+binary will be installed to `/bin/distributive` and the samples to
+`/usr/share/distributive/samples/`. After installing the RPM, usage is simple:
+`distributive -f /path/to/check.json`.
 
 ## JSON format
 
@@ -76,14 +79,9 @@ Check names
 
 #### Dependencies for certain checks
 
-All dependencies should be installed on Linux systems by default, except for
-lm_sensors.
- * `"running"` depends on the ability to execute `ps aux`.
  * `"temp"` depends on the package lm_sensors.
  * `"installed"` depends on any of the three following package managers: dpkg, rpm, or pacman.
- * `"port"` reads from `/proc/net/tcp`, and depends on its proper population for accuracy.
- * `"module"` reads from the output of `/sbin/lsmod`.
- * `"kernelParameter"` reads from the output of `/sbin/sysctl -q -n`.
+ * `"dockerImage"`, `"dockerRunning"` depend on Docker.
 
 ## Comparison to Other Software
 
