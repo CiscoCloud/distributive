@@ -14,6 +14,7 @@ import (
 
 // getHexPorts gets all open ports as hex strings from /proc/net/tcp
 func getHexPorts() (ports []string) {
+	// TODO use stringToSlice here
 	toReturn := []string{}
 	tcp, err := ioutil.ReadFile("/proc/net/tcp")
 	fatal(err)
@@ -152,6 +153,7 @@ func Ip6(name string, address string) Thunk {
 // routeOutput returns the output of the command `route -n`, split into lines
 // and on whitespace, without header rows. First coordinate is row, second is column.
 func routeOutput() (toReturn [][]string) {
+	// TODO use stringToSlice here
 	out, err := exec.Command("route", "-n").Output()
 	fatal(err)
 	if out == nil {

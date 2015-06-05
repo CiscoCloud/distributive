@@ -70,6 +70,9 @@ Check names
  * `"gatewayInterface"` : Is the default gateway operating on this interface?
  * `"module"` : Is this kernel module activated?
  * `"kernelParameter"` : Is this kernel parameter specified?
+ * `"dockerImage" : Does this Docker image exist on the host?
+ * `"dockerRunning" : Is this Docker container running (must include version,
+ e.g. user/container:latest)?
 
 #### Dependencies for certain checks
 

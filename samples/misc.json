@@ -36,6 +36,22 @@
         {
             "Check" : "kernelParameter",
             "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "dockerImage",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "dockerImage",
+            "Parameters" : ["ubuntu"]
+        },
+        {
+            "Check" : "dockerRunning",
+            "Parameters" : ["siddharthist/router:latest"]
+        },
+        {
+            "Check" : "dockerRunning",
+            "Parameters" : ["failme"]
         }
     ]
 }

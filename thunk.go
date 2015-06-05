@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os/exec"
 	"regexp"
@@ -24,34 +22,21 @@ type Thunk func() (exitCode int, exitMessage string)
 func Command(toExec string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		params := strings.Split(toExec, " ")
-		cmd := exec.Command(params[0], params[1:]...)
-		// capture outputs
-		stdout, err := cmd.StdoutPipe()
-		fatal(err)
-		stderr, err := cmd.StderrPipe()
-		fatal(err)
-		// run the command
-		err = cmd.Start()
+		out, err := exec.Command(params[0], params[1:]...).CombinedOutput()
 		if strings.Contains(err.Error(), "not found in $PATH") {
 			return 1, "Executable not found: " + params[0]
 		}
-		err = cmd.Wait()
 		exitCode = 0
 		if err != nil {
 			exitCode = 1
 		}
-		stdoutBytes, err := ioutil.ReadAll(stdout)
-		fatal(err)
-		stderrBytes, err := ioutil.ReadAll(stderr)
 		// Create output message
 		exitMessage = ""
 		if exitCode != 0 {
 			exitMessage = "Command " + toExec + " executed "
 			exitMessage += "with exit code " + fmt.Sprint(exitCode)
 			exitMessage += "\n\n"
-			exitMessage += "stdout: \n" + fmt.Sprint(stdoutBytes)
-			exitMessage += "\n\n"
-			exitMessage += "stderr: \n" + fmt.Sprint(stderrBytes)
+			exitMessage += "output: \n" + fmt.Sprint(out)
 		}
 		return exitCode, exitMessage
 	}
@@ -61,19 +46,30 @@ func Command(toExec string) Thunk {
 // process name, excluding this process (in case the process name is in the JSON
 // file name)
 func Running(proc string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		cmd := exec.Command("ps", "aux")
-		stdoutBytes, err := cmd.Output()
+	// getRunningCommands returns the entries in the "COMMAND" column of `ps aux`
+	getRunningCommands := func() (commands []string) {
+		out, err := exec.Command("ps", "aux").Output()
 		fatal(err)
-		// this regex matches: flag, space, quote, path, filename.json, quote
-		re := regexp.MustCompile("-f\\s+\"*?.*?(health-checks/)*?[^/]*.json\"*")
-		// remove this process from consideration
-		filtered := re.ReplaceAllString(string(stdoutBytes), "")
-		if strings.Contains(filtered, proc) {
-			return 0, ""
-		} else {
-			return 1, "Process not running: " + proc
+		lines := stringToSlice(string(out))
+		commands = getColumn(10, lines)
+		if len(commands) > 0 {
+			return commands[1:]
 		}
+		return []string{}
+	}
+	return func() (exitCode int, exitMessage string) {
+		// remove this process from consideration
+		commands := getRunningCommands()
+		var filtered []string
+		for _, cmd := range commands {
+			if !strings.Contains(cmd, "distributive") {
+				filtered = append(filtered, cmd)
+			}
+		}
+		if strIn(proc, filtered) {
+			return 0, ""
+		}
+		return 1, "Process not running: " + proc
 	}
 }
 
@@ -154,26 +150,17 @@ func Temp(max int) Thunk {
 // Module checks to see if a kernel module is installed
 func Module(name string) Thunk {
 	// kernelModules returns a list of all modules that are currently loaded
-	kernelModules := func() (modules [][]byte) {
+	kernelModules := func() (modules []string) {
 		out, err := exec.Command("/sbin/lsmod").Output()
 		fatal(err)
-		for _, line := range bytes.Split(out, []byte("\n"))[1:] {
-			module := bytes.Split(line, []byte(" "))[0]
-			modules = append(modules, module)
+		lines := stringToSlice(string(out))
+		if !(len(lines) > 0) {
+			return []string{}
 		}
-		return modules
-	}
-	// isLoaded returns whether or not a kernel module is currently loaded
-	isLoaded := func(name string) bool {
-		for _, module := range kernelModules() {
-			if string(module) == name {
-				return true
-			}
-		}
-		return false
+		return getColumn(0, lines[1:])
 	}
 	return func() (exitCode int, exitMessage string) {
-		if isLoaded(name) {
+		if strIn(name, kernelModules()) {
 			return 0, ""
 		}
 		return 1, "Module is not loaded: " + name

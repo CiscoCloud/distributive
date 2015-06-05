@@ -16,6 +16,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // fatal simplifies error handling (instead of an if err != nil block)
@@ -82,7 +83,7 @@ func getThunk(chk Check) Thunk {
 			log.Fatal(msg)
 		}
 	}
-	switch chk.Check {
+	switch strings.ToLower(chk.Check) {
 	case "command":
 		checkParameterLength(1)
 		return Command(chk.Parameters[0])
@@ -129,15 +130,21 @@ func getThunk(chk Check) Thunk {
 	case "module":
 		checkParameterLength(1)
 		return Module(chk.Parameters[0])
-	case "kernelParameter":
+	case "kernelparameter":
 		checkParameterLength(1)
 		return KernelParameter(chk.Parameters[0])
 	case "gateway":
 		checkParameterLength(1)
 		return Gateway(chk.Parameters[0])
-	case "gatewayInterface":
+	case "gatewayinterface":
 		checkParameterLength(1)
 		return GatewayInterface(chk.Parameters[0])
+	case "dockerimage":
+		checkParameterLength(1)
+		return DockerImage(chk.Parameters[0])
+	case "dockerrunning":
+		checkParameterLength(1)
+		return DockerRunning(chk.Parameters[0])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)
