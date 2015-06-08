@@ -72,6 +72,8 @@ Check names
  * `"ip6"` : Does this interface have the specified IP address (two parameters)?
  * `"gateway"` : Does the default gateway have the specified IP address?
  * `"gatewayInterface"` : Is the default gateway operating on this interface?
+ * `"TCP"` : Can this host be reached via a TCP connection?
+ * `"UDP"` : Can this host be reached via a UDP connection?
  * `"module"` : Is this kernel module activated?
  * `"kernelParameter"` : Is this kernel parameter specified?
  * `"dockerImage"` : Does this Docker image exist on the host?

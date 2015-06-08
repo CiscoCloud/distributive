@@ -130,18 +130,27 @@ func getThunk(chk Check) Thunk {
 	case "ip6":
 		checkParameterLength(2)
 		return Ip6(chk.Parameters[0], chk.Parameters[1])
-	case "module":
-		checkParameterLength(1)
-		return Module(chk.Parameters[0])
-	case "kernelparameter":
-		checkParameterLength(1)
-		return KernelParameter(chk.Parameters[0])
 	case "gateway":
 		checkParameterLength(1)
 		return Gateway(chk.Parameters[0])
 	case "gatewayinterface":
 		checkParameterLength(1)
 		return GatewayInterface(chk.Parameters[0])
+	case "host":
+		checkParameterLength(1)
+		return Host(chk.Parameters[0])
+	case "tcp":
+		checkParameterLength(1)
+		return TCP(chk.Parameters[0])
+	case "udp":
+		checkParameterLength(1)
+		return UDP(chk.Parameters[0])
+	case "module":
+		checkParameterLength(1)
+		return Module(chk.Parameters[0])
+	case "kernelparameter":
+		checkParameterLength(1)
+		return KernelParameter(chk.Parameters[0])
 	case "dockerimage":
 		checkParameterLength(1)
 		return DockerImage(chk.Parameters[0])

@@ -191,3 +191,78 @@ func GatewayInterface(name string) Thunk {
 		return 1, "Default gateway does not operate on interface: " + name
 	}
 }
+
+// Host checks if a given host can be resolved.
+func Host(host string) Thunk {
+	// resolvable  determines whether a given host can be reached
+	resolvable := func(name string) bool {
+		_, err := net.LookupHost(host)
+		if err == nil {
+			return true
+		}
+		return false
+	}
+	return func() (exitCode int, exitMessage string) {
+		if resolvable(host) {
+			return 0, ""
+		}
+		return 1, "Host cannot be resolved: " + host
+	}
+}
+
+// canConnect tests whether a connection can be made to a given host on its
+// given port using protocol ("TCP"|"UDP")
+func canConnect(host string, protocol string) bool {
+	parseerr := func(err error) {
+		if err != nil {
+			log.Fatal("Could not parse " + protocol + " address: " + host)
+		}
+	}
+	switch protocol {
+	case "TCP":
+		tcpaddr, err := net.ResolveTCPAddr("tcp", host)
+		parseerr(err)
+		conn, err := net.DialTCP("tcp", nil, tcpaddr)
+		if conn != nil {
+			defer conn.Close()
+		}
+		if err == nil {
+			return true
+		}
+		return false
+	case "UDP":
+		udpaddr, err := net.ResolveUDPAddr("udp", host)
+		parseerr(err)
+		conn, err := net.DialUDP("udp", nil, udpaddr)
+		if conn != nil {
+			defer conn.Close()
+		}
+		if err == nil {
+			return true
+		}
+		return false
+	default:
+		log.Fatal("Unsupported protocol: " + protocol)
+	}
+	return false
+}
+
+// TCP sees ig a given IP/port can be reached with a TCP connection
+func TCP(host string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		if canConnect(host, "TCP") {
+			return 0, ""
+		}
+		return 1, "Could not connect over TCP to host: " + host
+	}
+}
+
+// UDP is like TCP but with UDP instead.
+func UDP(host string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		if canConnect(host, "UDP") {
+			return 0, ""
+		}
+		return 1, "Could not connect over UDP to host: " + host
+	}
+}

@@ -52,6 +52,30 @@
         {
             "Check" : "gatewayInterface",
             "Parameters" : ["docker0"]
+        },
+        {
+            "Check" : "host",
+            "Parameters" : ["google.com"]
+        },
+        {
+            "Check" : "host",
+            "Parameters" : ["failme.fail"]
+        },
+        {
+            "Check" : "TCP",
+            "Parameters" : ["google.com:80"]
+        },
+        {
+            "Check" : "TCP",
+            "Parameters" : ["localhost:80"]
+        },
+        {
+            "Check" : "UDP",
+            "Parameters" : ["google.com:80"]
+        },
+        {
+            "Check" : "UDP",
+            "Parameters" : ["yahoo.com:80"]
         }
     ]
 }
