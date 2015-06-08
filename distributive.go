@@ -67,109 +67,118 @@ func makeReport(chklst Checklist) (report string) {
 	return report
 }
 
-// getThunk passes a Check's parameters to the correct Thunk constructor based
-// on the Check's name. It also makes sure that the correct number of parameters
-// were specified.
-func getThunk(chk Check) Thunk {
+// validateParameters asks whether or not this check has the correct number of
+// parameters specified
+func validateParameters(chk Check) {
 	// checkParameterLength ensures that the Check has the proper number of
 	// parameters, and exits otherwise. Can't do much with a broken check!
-	checkParameterLength := func(expected int) {
+	checkParameterLength := func(chk Check, expected int) {
 		given := len(chk.Parameters)
 		if given != expected {
 			msg := "Invalid check parameters for check: " + chk.Name
+			msg += "\nCheck type: " + chk.Check
 			msg += "\nExpected: " + fmt.Sprint(expected)
 			msg += "\nGiven: " + fmt.Sprint(given)
 			msg += "\nParameters: " + fmt.Sprint(chk.Parameters)
 			log.Fatal(msg)
 		}
 	}
+	// a dictionary with the number of parameters that each method takes
+	numParameters := map[string]int{
+		"command": 1, "running": 1, "file": 1, "directory": 1, "symlink": 1,
+		"installed": 1, "ppa": 1, "checksum": 3, "temp": 1, "port": 1,
+		"interface": 1, "up": 1, "ip4": 2, "ip6": 2, "gateway": 1,
+		"gatewayinterface": 1, "host": 1, "tcp": 1, "udp": 1, "module": 1,
+		"kernelparameter": 1, "dockerimage": 1, "dockerrunning": 1,
+		"groupexists": 1, "useringroup": 2, "groupid": 2, "userexists": 1,
+		"userhasuid": 2, "userhasgid": 2, "userhasusername": 2, "userhasname": 2,
+		"userhashomedir": 2,
+	}
+	checkParameterLength(chk, numParameters[strings.ToLower(chk.Check)])
+}
+
+// getThunk passes a Check's parameters to the correct Thunk constructor based
+// on the Check's name. It also makes sure that the correct number of parameters
+// were specified.
+func getThunk(chk Check) Thunk {
+	validateParameters(chk)
 	switch strings.ToLower(chk.Check) {
 	case "command":
-		checkParameterLength(1)
 		return Command(chk.Parameters[0])
 	case "running":
-		checkParameterLength(1)
 		return Running(chk.Parameters[0])
 	case "file":
-		checkParameterLength(1)
 		return File(chk.Parameters[0])
 	case "directory":
-		checkParameterLength(1)
 		return Directory(chk.Parameters[0])
 	case "symlink":
-		checkParameterLength(1)
 		return Symlink(chk.Parameters[0])
 	case "installed":
-		checkParameterLength(1)
 		return Installed(chk.Parameters[0])
 	case "ppa":
-		checkParameterLength(1)
 		return PPA(chk.Parameters[0])
 	case "checksum":
-		checkParameterLength(3)
 		return Checksum(chk.Parameters[0], chk.Parameters[1], chk.Parameters[2])
 	case "temp":
-		checkParameterLength(1)
 		tempInt, err := strconv.ParseInt(chk.Parameters[0], 10, 32)
-		fatal(err)
+		if err != nil {
+			log.Fatal("Could not parse temperature: " + chk.Parameters[0])
+		}
 		return Temp(int(tempInt))
 	case "port":
-		checkParameterLength(1)
 		portInt, err := strconv.ParseInt(chk.Parameters[0], 10, 32)
-		fatal(err)
+		if err != nil {
+			log.Fatal("Could not parse port number: " + chk.Parameters[0])
+		}
 		return Port(int(portInt))
 	case "interface":
-		checkParameterLength(1)
 		return Interface(chk.Parameters[0])
 	case "up":
-		checkParameterLength(1)
 		return Up(chk.Parameters[0])
 	case "ip4":
-		checkParameterLength(2)
 		return Ip4(chk.Parameters[0], chk.Parameters[1])
 	case "ip6":
-		checkParameterLength(2)
 		return Ip6(chk.Parameters[0], chk.Parameters[1])
 	case "gateway":
-		checkParameterLength(1)
 		return Gateway(chk.Parameters[0])
 	case "gatewayinterface":
-		checkParameterLength(1)
 		return GatewayInterface(chk.Parameters[0])
 	case "host":
-		checkParameterLength(1)
 		return Host(chk.Parameters[0])
 	case "tcp":
-		checkParameterLength(1)
 		return TCP(chk.Parameters[0])
 	case "udp":
-		checkParameterLength(1)
 		return UDP(chk.Parameters[0])
 	case "module":
-		checkParameterLength(1)
 		return Module(chk.Parameters[0])
 	case "kernelparameter":
-		checkParameterLength(1)
 		return KernelParameter(chk.Parameters[0])
 	case "dockerimage":
-		checkParameterLength(1)
 		return DockerImage(chk.Parameters[0])
 	case "dockerrunning":
-		checkParameterLength(1)
 		return DockerRunning(chk.Parameters[0])
 	case "groupexists":
-		checkParameterLength(1)
 		return GroupExists(chk.Parameters[0])
 	case "useringroup":
-		checkParameterLength(2)
 		return UserInGroup(chk.Parameters[0], chk.Parameters[1])
 	case "groupid":
-		checkParameterLength(2)
 		tempInt, err := strconv.ParseInt(chk.Parameters[1], 10, 32)
 		if err != nil {
 			log.Fatal("Could not parse group ID for group: " + chk.Parameters[0])
 		}
 		return GroupId(chk.Parameters[0], int(tempInt))
+	case "userexists":
+		return UserExists(chk.Parameters[0])
+	case "userhasuid":
+		return UserHasUID(chk.Parameters[0], chk.Parameters[1])
+	case "userhasgid":
+		return UserHasGID(chk.Parameters[0], chk.Parameters[1])
+	case "userhasusername":
+		return UserHasUsername(chk.Parameters[0], chk.Parameters[1])
+	case "userhasname":
+		return UserHasName(chk.Parameters[0], chk.Parameters[1])
+	case "userhashomedir":
+		return UserHasHomeDir(chk.Parameters[0], chk.Parameters[1])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)
@@ -201,10 +210,21 @@ func getChecklist(path string) (chklst Checklist) {
 // and exits with the appropriate message and exit code.
 func main() {
 	fn := flag.String("f", "", "Use the health check JSON located at this path")
+	verbose := flag.Bool("v", false, "Increase output verbosity")
 	flag.Parse()
 	chklst := getChecklist(*fn)
+	if *verbose {
+		fmt.Println("Creating checklist...")
+	}
 	// run checks, populate error codes and messages
 	for _, chk := range chklst.Checklist {
+		if *verbose {
+			name := ": " + chk.Name
+			if chk.Name == "" {
+				name = ""
+			}
+			fmt.Println("Running check" + name + " of type: " + chk.Check)
+		}
 		code, message := chk.Fun()
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, message)

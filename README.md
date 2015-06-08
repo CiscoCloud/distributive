@@ -53,8 +53,10 @@ General field names
  * `"Check"` : Type of check to be run (string)
  * `"Parameters"` : Parameters to pass to the check (array of string)
 
-Check names
+Checks
 =======
+
+All check parameters should be formatted as a list of JSON strings.
 
  * `"command"` : Run a shell command.
  * `"running"` : Is this service running on the server?
@@ -82,6 +84,15 @@ Check names
  * `"groupExists"` : Does a group by this name exist on the host?
  * `"groupId"` : Does a group by this name have this group id?
  * `"userInGroup"` : Is this user a member of this group?
+
+ For all of the following checks, the user can either be specified by their
+ username or by their UID.
+ * `"userExists"` : Does this user exist?
+ * `"userHasUID"` : Does this user have this UID?
+ * `"userHasGID"` : Does this user have this primary GID?
+ * `"userHasUsername"` : Does this user have this username?
+ * `"userHasName"` : Does this user have this name?
+ * `"userHasHomeDir"` : Is this the path of this user's home directory?
 
 #### Dependencies for certain checks
 

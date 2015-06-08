@@ -24,6 +24,26 @@
         {
             "Check" : "groupId",
             "Parameters" : ["failme", "0"]
+        },
+        {
+            "Check" : "userExists",
+            "Parameters" : ["root"]
+        },
+        {
+            "Check" : "userHasUID",
+            "Parameters" : ["root", "0"]
+        },
+        {
+            "Check" : "userHasGID",
+            "Parameters" : ["lb", "1000"]
+        },
+        {
+            "Check" : "UserHasHomeDir",
+            "Parameters" : ["root", "/root"]
+        },
+        {
+            "Check" : "UserHasHomeDir",
+            "Parameters" : ["lb", "/home/lb"]
         }
     ]
 }
