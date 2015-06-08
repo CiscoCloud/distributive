@@ -12,14 +12,6 @@ import (
 // Generally, if exitCode == 0, exitMessage == "".
 type Thunk func() (exitCode int, exitMessage string)
 
-/*
-func fileToLines(path string) [][]byte {
-	data, err := ioutil.ReadFile(path)
-	fatal(err)
-	return bytes.Split(data, []byte("\n"))
-}
-*/
-
 // separateString is an abstraction of stringToSlice that takes two kinds of
 // separators, and splits a string into a 2D slice based on those separators
 func separateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (output [][]string) {
@@ -83,6 +75,16 @@ func strIn(str string, slice []string) bool {
 }
 
 /*
+// byteSliceToStrSlice takes a slice of byte slices and returns the equivalent
+// slice of strings
+func byteSliceToStrSlice(byteSlice [][]byte) (strSlice []string) {
+	for _, word := range byteSlice {
+		strSlice = append(strSlice, string(word))
+	}
+	return strSlice
+}
+*/
+/*
 // anyContains checks to see whether any of the strings in the given slice
 // contain the substring str
 func anyContains(str string, slice []string) bool {
@@ -92,5 +94,13 @@ func anyContains(str string, slice []string) bool {
 		}
 	}
 	return false
+}
+*/
+
+/*
+func fileToLines(path string) [][]byte {
+	data, err := ioutil.ReadFile(path)
+	fatal(err)
+	return bytes.Split(data, []byte("\n"))
 }
 */

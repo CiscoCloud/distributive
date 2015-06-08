@@ -148,6 +148,19 @@ func getThunk(chk Check) Thunk {
 	case "dockerrunning":
 		checkParameterLength(1)
 		return DockerRunning(chk.Parameters[0])
+	case "groupexists":
+		checkParameterLength(1)
+		return GroupExists(chk.Parameters[0])
+	case "useringroup":
+		checkParameterLength(2)
+		return UserInGroup(chk.Parameters[0], chk.Parameters[1])
+	case "groupid":
+		checkParameterLength(2)
+		tempInt, err := strconv.ParseInt(chk.Parameters[1], 10, 32)
+		if err != nil {
+			log.Fatal("Could not parse group ID for group: " + chk.Parameters[0])
+		}
+		return GroupId(chk.Parameters[0], int(tempInt))
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)
@@ -166,7 +179,9 @@ func getChecklist(path string) (chklst Checklist) {
 		log.Fatal("Couldn't read JSON at specified location: " + path)
 	}
 	err = json.Unmarshal(fileJSON, &chklst)
-	fatal(err)
+	if err != nil {
+		log.Fatal("Could not parse JSON: " + err.Error())
+	}
 	for i, _ := range chklst.Checklist {
 		chklst.Checklist[i].Fun = getThunk(chklst.Checklist[i])
 	}

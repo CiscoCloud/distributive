@@ -1,0 +1,29 @@
+{
+    "Name": "Group checks",
+    "Checklist" : [
+        {
+            "Check" : "groupExists",
+            "Parameters" : ["wheel"]
+        },
+        {
+            "Check" : "userInGroup",
+            "Parameters" : ["root", "wheel"]
+        },
+        {
+            "Check" : "groupExists",
+            "Parameters" : ["bin"]
+        },
+        {
+            "Check" : "userInGroup",
+            "Parameters" : ["daemon", "failme"]
+        },
+        {
+            "Check" : "groupId",
+            "Parameters" : ["root", "0"]
+        },
+        {
+            "Check" : "groupId",
+            "Parameters" : ["failme", "0"]
+        }
+    ]
+}

@@ -77,8 +77,14 @@ Check names
  * `"dockerImage"` : Does this Docker image exist on the host?
  * `"dockerRunning"` : Is this Docker container running (must include version,
  e.g. user/container:latest)?
+ * `"groupExists"` : Does a group by this name exist on the host?
+ * `"groupId"` : Does a group by this name have this group id?
+ * `"userInGroup"` : Is this user a member of this group?
 
 #### Dependencies for certain checks
+
+All of these checks should run on any Linux system (and most on any Unix system)
+without any external dependencies other than these:
 
  * `"temp"` depends on the package lm_sensors.
  * `"installed"` depends on any of the three following package managers: dpkg, rpm, or pacman.
