@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/url"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -167,5 +169,52 @@ func KernelParameter(name string) Thunk {
 			return 0, ""
 		}
 		return 1, "Kernel parameter not set: " + name
+	}
+}
+
+// PPA checks to see whether a given PPA is enabled on Ubuntu-based systems
+func PPA(name string) Thunk {
+	// TODO split into one method that just gets all urls of all sources,
+	// another that filters them for just binaries, and this one that filters
+	// them for PPAs with valid URLs
+	// getPPAs returns a list of all PPAs in sources.list
+	getPPAs := func(path string) []string {
+		data, err := ioutil.ReadFile(path)
+		fatal(err)
+		// only matches non-source, uncommented, PPAs
+		re := regexp.MustCompile("[^#]deb\\s+.+ppa.+")
+		filteredLines := re.FindAll(data, -1)
+		var filteredLinesStr []string
+		for _, line := range filteredLines {
+			filteredLinesStr = append(filteredLinesStr, string(line))
+		}
+		// get the urls of only PPAs
+		whitespaceRegex := regexp.MustCompile("\\s+")
+		var ppas []string
+		for _, line := range filteredLines {
+			split := whitespaceRegex.Split(string(line), -1)
+			url := split[2]
+			ppas = append(ppas, url)
+		}
+		return ppas
+	}
+	// valid URL uses net/url's Parse function to determine if the given url
+	// was indeed valid
+	validURL := func(urlstr string) bool {
+		_, err := url.Parse(urlstr)
+		if err == nil {
+			return true
+		}
+		return false
+	}
+	return func() (exitCode int, exitMessage string) {
+		for _, ppa := range getPPAs("/etc/apt/sources.list") {
+			if !validURL(ppa) {
+				return 1, "PPA URL invalid: " + ppa
+			} else if strings.Contains(ppa, name) {
+				return 0, ""
+			}
+		}
+		return 1, "PPA not found: " + name
 	}
 }

@@ -1,0 +1,21 @@
+{
+    "Name": "Docker checks (requires root permissions)",
+    "Checklist" : [
+        {
+            "Check" : "dockerImage",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "dockerImage",
+            "Parameters" : ["ubuntu"]
+        },
+        {
+            "Check" : "dockerRunning",
+            "Parameters" : ["siddharthist/router:latest"]
+        },
+        {
+            "Check" : "dockerRunning",
+            "Parameters" : ["failme"]
+        }
+    ]
+}

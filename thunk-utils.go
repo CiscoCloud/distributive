@@ -7,13 +7,18 @@ import (
 	"strings"
 )
 
-// TODO: eliminate thunks that are simple if/else statements by abstracting that
-// interaction: create a new type called boolThunk, and pass it to a method
-
 // Thunk is the type of function that runs without parameters and returns
 // an error code and an exit message to be printed to stdout.
 // Generally, if exitCode == 0, exitMessage == "".
 type Thunk func() (exitCode int, exitMessage string)
+
+/*
+func fileToLines(path string) [][]byte {
+	data, err := ioutil.ReadFile(path)
+	fatal(err)
+	return bytes.Split(data, []byte("\n"))
+}
+*/
 
 // separateString is an abstraction of stringToSlice that takes two kinds of
 // separators, and splits a string into a 2D slice based on those separators
@@ -33,17 +38,19 @@ func stringToSlice(str string) (output [][]string) {
 	return separateString(rowSep, colSep, str)
 }
 
+// getColumn isolates the entries of a single column from a 2D slice
+// it is currently only used by PPA for reading /etc/apt/sources.list
+func getColumn(col int, slice [][]string) (column []string) {
+	for _, line := range slice {
+		if len(line) > col {
+			column = append(column, line[col])
+		}
+	}
+	return column
+}
+
 // getColumnNoHeader safely removes the first element from a column
 func getColumnNoHeader(col int, slice [][]string) []string {
-	// getColumn isolates the entries of a single column from a 2D slice
-	getColumn := func(col int, slice [][]string) (column []string) {
-		for _, line := range slice {
-			if len(line) > col {
-				column = append(column, line[col])
-			}
-		}
-		return column
-	}
 
 	column := getColumn(col, slice)
 	if len(column) < 1 {
@@ -74,3 +81,16 @@ func strIn(str string, slice []string) bool {
 	}
 	return false
 }
+
+/*
+// anyContains checks to see whether any of the strings in the given slice
+// contain the substring str
+func anyContains(str string, slice []string) bool {
+	for _, sliceString := range slice {
+		if strings.Contains(sliceString, str) {
+			return true
+		}
+	}
+	return false
+}
+*/

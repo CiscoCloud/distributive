@@ -63,6 +63,7 @@ Check names
  * `"symlink"` : Is there a symlink at this path?
  * `"checksum"`: Using this algorithm and given this sum, is this file valid (three parameters)?
  * `"installed"` : Is this program installed on the server?
+ * `"ppa"` : Is the PPA at this URL present?
  * `"temp"` : Does the CPU temp exceed this integer (Celcius)?
  * `"port"` : Is this port in an open state?
  * `"interface"` : Does this network interface exist?
