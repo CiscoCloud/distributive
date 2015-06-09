@@ -1,19 +1,25 @@
-# Overview
-
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
 **Table of Contents**
 
 - [Overview](#overview)
-    - [Usage](#usage)
-    - [JSON format](#json-format)
-        - [Check names](#check-names)
-        - [Dependencies for certain checks](#dependencies-for-certain-checks)
-    - [Comparison to Other Software](#comparison-to-other-software)
-        - [Serverspec](#serverspec)
-        - [Nagios](#nagios)
-    - [Supported Frameworks](#supported-frameworks)
+- [Installation and Usage](#installation-and-usage)
+- [Checks](#checks)
+    - [General Fields](#general-fields)
+    - [Filesystem](#filesystem)
+    - [Packages](#packages)
+    - [Network](#network)
+    - [Users and Groups](#users-and-groups)
+    - [System/Misc](#system/misc)
+- [Dependencies](#dependencies)
+- [Comparison to Other Software](#comparison-to-other-software)
+    - [Serverspec](#serverspec)
+    - [Nagios](#nagios)
+- [Supported Frameworks](#supported-frameworks)
 
 <!-- markdown-toc end -->
+
+Overview
+========
 
 Distributive is a tool for running distributed health checks in server clusters.
 It was designed with Consul in mind, but is platform agnostic.  The architecture
@@ -30,7 +36,8 @@ them.
 
 As of right now, only exit codes 0 and 1 are used, even if a checklist fails.
 
-## Installation and Usage
+Installation and Usage
+======================
 
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
@@ -43,20 +50,17 @@ binary will be installed to `/bin/distributive` and the samples to
 `/usr/share/distributive/samples/`. After installing the RPM, usage is simple:
 `distributive -f /path/to/check.json`.
 
-## JSON format
-
-General field names
-=======
-
- * `"Name"` : Descriptive name for a check/list (string)
- * `"Notes"` : Human-readable description of this check/list (not used by Distributive).
- * `"Check"` : Type of check to be run (string)
- * `"Parameters"` : Parameters to pass to the check (array of string)
 
 Checks
 =======
 
-All check parameters should be formatted as a list of JSON strings.
+General Fields
+-----------
+
+ * `"Name"` : Descriptive name for a check/list (string)
+ * `"Notes"` : Human-readable description of this check/list (not used by Distributive).
+ * `"Check"` : Type of check to be run (string)
+ * `"Parameters"` : Parameters to pass to the check (always a list of strings)
 
 Filesystem
 ----------
@@ -114,16 +118,18 @@ System/Misc
  * `"dockerRunning"` : Is this Docker container running (must include version,
  e.g. user/container:latest)?
 
-#### Dependencies for certain checks
+Dependencies
+============
 
-All of these checks should run on any Linux system (and most on any Unix system)
-without any external dependencies other than these:
+Distributive itself has no dependencies, it is compiled as a standalone Go
+binary. Some checks, however, rely on output from specific packages.
 
  * `"temp"` depends on the package lm_sensors.
  * `"installed"` depends on any of the three following package managers: dpkg, rpm, or pacman.
  * `"dockerImage"`, `"dockerRunning"` depend on Docker.
 
-## Comparison to Other Software
+Comparison to Other Software
+============================
 
 Distributive was created with the idea of pushing responsibiliy to the nodes,
 which grants the program a certain flexibility in what kind of checks it can run.
@@ -132,7 +138,8 @@ by another server. It was also designed around the idea of constantly changing
 infrastructure, with servers being added and destroyed constantly, and changing
 IP addresses.
 
-### Serverspec
+Serverspec
+----------
 
 Serverspec runs on a single control server, and requires each check to be in a
 directory matching the hostname of the machine to run it on. Distributive was
@@ -141,7 +148,8 @@ Sensu, or another framework as soon as they are ready, and require little or no
 centralized configuration. Additionally, Distributive attempts to rely as little
 as possible on external tools/commands, using mostly just the Go standard library.
 
-### Nagios
+Nagios
+------
 
 Nagios is an end-to-end monitoring, security, and notification framework. It is
 designed around the central control server approach to monitoring. Nagios provides
@@ -151,7 +159,8 @@ Distributive is simple, lightweight, and easy to configure, and doesn't provide
 its own scheduling, dashboard, etc. It is designed to be used within frameworks
 such as Sensu and Consul.
 
-## Supported Frameworks
+Supported Frameworks
+====================
 
 Distributive attempts to be as framework-agnostic as possible. It is known to
 work well with both Sensu and Consul, which have similar architecture with
