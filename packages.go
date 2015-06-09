@@ -27,9 +27,10 @@ func Installed(pkg string) Thunk {
 				return program
 			}
 		}
-		log.Fatal("No package manager found")
-		return "No package manager found"
+		log.Fatal("No package manager found. Attempted: " + fmt.Sprint(managers))
+		return "" // never reaches this return
 	}
+	// TODO refactor this and `managers` as a one dict
 	// getQuery returns the command that should be used to query the pkg
 	getQuery := func(program string) (name string, options string) {
 		switch program {
@@ -40,8 +41,8 @@ func Installed(pkg string) Thunk {
 		case "pacman":
 			return "pacman", "-Qs"
 		default:
-			log.Fatal("Unsupported package manager")
-			return "echo " + program + " is not supported. ", ""
+			log.Fatal("Unsupported package manager: " + program)
+			return "", "" // never reaches this return
 		}
 	}
 
@@ -50,10 +51,13 @@ func Installed(pkg string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		name, options := getQuery(getManager(managers))
 		out, _ := exec.Command(name, options, pkg).Output()
-		if strings.Contains(string(out), pkg) == false {
-			return 1, "Package " + pkg + " was not found with " + name + "\n"
+		if strings.Contains(string(out), pkg) {
+			return 0, ""
 		}
-		return 0, ""
+		msg := "Package was not found:"
+		msg += "\n\tPackage name: " + pkg
+		msg += "\n\tPackage manager: " + name
+		return 1, msg
 	}
 }
 
@@ -62,8 +66,12 @@ func PPA(name string) Thunk {
 	// getAptSources returns all the urls of all apt sources (including source
 	// code repositories
 	getAptSources := func(path string) (urls []string) {
+		// TODO create abstraction of this that handles the error, utilize it
+		// everywhere
 		data, err := ioutil.ReadFile(path)
-		fatal(err)
+		if err != nil {
+			log.Fatal("Could not read file " + path + "\n\t" + err.Error())
+		}
 		split := stringToSlice(string(data))
 		// filter out comments
 		commentRegex := regexp.MustCompile("^\\s*#.*")
@@ -93,14 +101,15 @@ func PPA(name string) Thunk {
 		return false
 	}
 	return func() (exitCode int, exitMessage string) {
-		for _, ppa := range getPPAs("/etc/apt/sources.list") {
+		ppas := getPPAs("/etc/apt/sources.list")
+		for _, ppa := range ppas {
 			if !validURL(ppa) {
 				return 1, "PPA URL invalid: " + ppa
 			} else if strings.Contains(ppa, name) {
 				return 0, ""
 			}
 		}
-		return 1, "PPA not found: " + name
+		return notInError("PPA not found:", name, ppas)
 	}
 }
 
@@ -165,11 +174,8 @@ func existsRepoWithProperty(prop string, val string) (int, string) {
 	if strIn(val, properties) {
 		return 0, ""
 	}
-	msg := "Yum repo with given property not found: "
-	msg += "\n\tProperty: " + prop
-	msg += "\n\tGiven: " + val
-	msg += "\n\tAvailable: " + fmt.Sprint(properties)
-	return 1, msg
+	msg := "Yum repo with given " + prop + " not found:"
+	return notInError(msg, val, properties)
 }
 
 // YumRepo checks to see that a given yum repo is currently active

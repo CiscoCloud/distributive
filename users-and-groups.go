@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os/user"
 	"reflect"
@@ -20,11 +19,10 @@ type Group struct {
 
 // getGroups returns a list of Group structs, as parsed from /etc/group
 func getGroups() (groups []Group) {
-	data, err := ioutil.ReadFile("/etc/group")
-	fatal(err)
+	data := fileToString("/etc/group")
 	rowSep := regexp.MustCompile("\n")
 	colSep := regexp.MustCompile(":")
-	lines := separateString(rowSep, colSep, string(data))
+	lines := separateString(rowSep, colSep, data)
 	commaRegexp := regexp.MustCompile(",")
 	for _, line := range lines {
 		if len(line) > 3 { // only lines that have all fields (non-empty)
@@ -48,9 +46,7 @@ func groupNotFound(name string) (int, string) {
 	for _, group := range getGroups() {
 		existing = append(existing, group.Name)
 	}
-	msg := "Group not found: " + name
-	msg += "\nExisting groups: " + fmt.Sprint(existing)
-	return 1, msg
+	return notInError("Group not found:", name, existing)
 }
 
 // GroupExists determines whether a certain UNIX user group exists
@@ -82,7 +78,7 @@ func UserInGroup(user string, group string) Thunk {
 				if strIn(user, g.Users) {
 					return 0, ""
 				}
-				return 1, "User not found in group: " + user + " " + group
+				return notInError("User not found in group", user, g.Users)
 			}
 		}
 		return groupNotFound(group)
@@ -98,10 +94,8 @@ func GroupId(name string, id int) Thunk {
 				if g.Id == id {
 					return 0, ""
 				}
-				msg := "Group does not have expected ID: "
-				msg += "\n\tGroup name: " + name
-				msg += "\n\tGiven: " + fmt.Sprint(id)
-				return 1, msg
+				msg := "Group does not have expected ID:"
+				return notInError(msg, fmt.Sprint(id), []string{fmt.Sprint(g.Id)})
 			}
 		}
 		return groupNotFound(name)
@@ -136,8 +130,11 @@ func userHasField(usernameOrUid string, fieldName string, givenValue string) (bo
 	fieldVal := val.FieldByName(fieldName)
 	// check to see if the field is a string
 	if fieldVal.Kind() != reflect.String {
-		msg := "Field " + fieldName + " of user " + user.Username
-		log.Fatal(msg + " is not a string")
+		msg := "Failure during reflection: Field is not a string:"
+		msg += "\n\tField name: " + fieldName
+		msg += "\n\tField Kind: " + fmt.Sprint(fieldVal.Kind())
+		msg += "\n\tUser: " + user.Username
+		log.Fatal(msg)
 	}
 	actualValue := fieldVal.String()
 	return actualValue == givenValue, nil

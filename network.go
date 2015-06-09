@@ -13,7 +13,9 @@ import (
 // getHexPorts gets all open ports as hex strings from /proc/net/tcp
 func getHexPorts() (ports []string) {
 	out, err := ioutil.ReadFile("/proc/net/tcp")
-	fatal(err)
+	if err != nil {
+		log.Fatal("Could not read /proc/net/tcp:\n\t" + err.Error())
+	}
 	localAddresses := getColumnNoHeader(1, stringToSlice(string(out)))
 	portRe := regexp.MustCompile(":([0-9A-F]{4})")
 	for _, address := range localAddresses {
@@ -29,7 +31,9 @@ func getHexPorts() (ports []string) {
 // strHexToDecimal converts from string containing hex number to int
 func strHexToDecimal(hex string) int {
 	portInt, err := strconv.ParseInt(hex, 16, 64)
-	fatal(err)
+	if err != nil {
+		log.Fatal("Couldn't parse hex number " + hex + ":\n\t" + err.Error())
+	}
 	return int(portInt)
 }
 
@@ -39,72 +43,95 @@ func getOpenPorts() (ports []int) {
 		ports = append(ports, strHexToDecimal(port))
 	}
 	return ports
-
 }
 
 // Port parses /proc/net/tcp to determine if a given port is in an open state
 // and returns an error if it is not.
 func Port(port int) Thunk {
 	return func() (exitCode int, exitMessage string) {
-		for _, p := range getOpenPorts() {
+		open := getOpenPorts()
+		for _, p := range open {
 			if p == port {
 				return 0, ""
 			}
 		}
-		return 1, "Port " + fmt.Sprint(port) + " did not respond."
+		// Convert ports to string to send to notInError
+		var strPorts []string
+		for _, port := range open {
+			strPorts = append(strPorts, fmt.Sprint(port))
+		}
+		return notInError("Port not open:", fmt.Sprint(port), strPorts)
 	}
+}
+
+// getInterfaces returns a list of network interfaces and handles any associated
+// error. Just for DRY.
+func getInterfaces() []net.Interface {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.Fatal("Could not read network interfaces:\n\t" + err.Error())
+	}
+	return ifaces
 }
 
 // Interface detects if a network interface exists
 func Interface(name string) Thunk {
 	// getInterfaceNames returns the names of all network interfaces
 	getInterfaceNames := func() (interfaces []string) {
-		ifaces, err := net.Interfaces()
-		fatal(err)
-		for _, iface := range ifaces {
+		for _, iface := range getInterfaces() {
 			interfaces = append(interfaces, iface.Name)
 		}
 		return
 	}
 	return func() (exitCode int, exitMessage string) {
-		for _, iface := range getInterfaceNames() {
+		interfaces := getInterfaceNames()
+		for _, iface := range interfaces {
 			if iface == name {
 				return 0, ""
 			}
 		}
-		return 1, "Interface does not exist: " + name
+		return notInError("Interface does not exist:", name, interfaces)
 	}
 }
 
 // Up determines if a network interface is up and running or not
 func Up(name string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		interfaces, err := net.Interfaces()
-		fatal(err)
-		for _, iface := range interfaces {
-			if iface.Name == name && iface.Flags&net.FlagUp != 0 {
-				return 0, ""
+	// getUpInterfaces returns all the names of the interfaces that are up
+	getUpInterfaces := func() (interfaceNames []string) {
+		for _, iface := range getInterfaces() {
+			if iface.Flags&net.FlagUp != 0 {
+				interfaceNames = append(interfaceNames, iface.Name)
 			}
 		}
-		return 1, "Interface is down: " + name
+		return interfaceNames
+
+	}
+	return func() (exitCode int, exitMessage string) {
+		upInterfaces := getUpInterfaces()
+		if strIn(name, upInterfaces) {
+			return 0, ""
+		}
+		return notInError("Interface is not up:", name, upInterfaces)
 	}
 }
 
-// hasIP checks to see if the interface that goes by name has the right address,
-// given an IP version (4 or 6)
-func hasIP(name string, address string, version int) bool {
+// getIPs gets all the associated IP addresses of a given interface as a slice
+// of strings, with a given IP protocol version (4|6)
+func getInterfaceIPs(name string, version int) (ifaceAddresses []string) {
 	// ensure valid IP version
 	if version != 4 && version != 6 {
 		msg := "Misconfigured JSON: Unsupported IP version: "
 		log.Fatal(msg + fmt.Sprint(version))
 	}
-	interfaces, err := net.Interfaces()
-	fatal(err)
-	for _, iface := range interfaces {
-		addresses, err := iface.Addrs()
-		fatal(err)
-		// only check addresses if it is the correct interface
+	for _, iface := range getInterfaces() {
 		if iface.Name == name {
+			addresses, err := iface.Addrs()
+			if err != nil {
+				msg := "Could not get network addressed from interface: "
+				msg += "\n\tInterface name: " + iface.Name
+				msg += "\n\tError: " + err.Error()
+				log.Fatal(msg)
+			}
 			for _, addr := range addresses {
 				var ip net.IP
 				switch v := addr.(type) {
@@ -113,35 +140,39 @@ func hasIP(name string, address string, version int) bool {
 				case *net.IPAddr:
 					ip = v.IP
 				}
-				if version == 4 && ip.To4().String() == address {
-					return true
-				} else if version == 6 && ip.To16().String() == address {
-					return true
+				switch version {
+				case 4:
+					ifaceAddresses = append(ifaceAddresses, ip.To4().String())
+				case 6:
+					ifaceAddresses = append(ifaceAddresses, ip.To16().String())
 				}
 			}
+			return ifaceAddresses
+
 		}
+	} // will only reach this line if the interface didn't exist
+	return ifaceAddresses // will be empty
+}
+
+// getIPThunk is an abstraction of Ip4 and Ip6
+func getIPThunk(name string, address string, version int) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		ips := getInterfaceIPs(name, version)
+		if strIn(address, ips) {
+			return 0, ""
+		}
+		return notInError("Interface does not have IP:", address, ips)
 	}
-	return false
 }
 
 // Ip4 checks to see if this network interface has this ipv4 address
 func Ip4(name string, address string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		if hasIP(name, address, 4) {
-			return 0, ""
-		}
-		return 1, "Interface does not have IP: " + name + " " + address
-	}
+	return getIPThunk(name, address, 4)
 }
 
 // Ip6 checks to see if this network interface has this ipv6 address
 func Ip6(name string, address string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		if hasIP(name, address, 6) {
-			return 0, ""
-		}
-		return 1, "Interface does not have IP: " + name + " " + address
-	}
+	return getIPThunk(name, address, 6)
 }
 
 // Gateway checks to see that the default gateway has a certain IP
@@ -159,10 +190,12 @@ func Gateway(address string) Thunk {
 		return "0.0.0.0"
 	}
 	return func() (exitCode int, exitMessage string) {
-		if address == getGatewayAddress() {
+		gatewayIP := getGatewayAddress()
+		if address == gatewayIP {
 			return 0, ""
 		}
-		return 1, "Gateway does not have address: " + address
+		msg := "Gateway does not have address:"
+		return notInError(msg, address, []string{gatewayIP})
 	}
 }
 
@@ -185,10 +218,12 @@ func GatewayInterface(name string) Thunk {
 		return ""
 	}
 	return func() (exitCode int, exitMessage string) {
-		if name == getGatewayInterface() {
+		iface := getGatewayInterface()
+		if name == iface {
 			return 0, ""
 		}
-		return 1, "Default gateway does not operate on interface: " + name
+		msg := "Default gateway does not operate on interface:"
+		return notInError(msg, name, []string{iface})
 	}
 }
 
@@ -247,22 +282,22 @@ func canConnect(host string, protocol string) bool {
 	return false
 }
 
-// TCP sees ig a given IP/port can be reached with a TCP connection
-func TCP(host string) Thunk {
+// getConnectionThunk is an abstraction of TCP and UDP
+func getConnectionThunk(host string, protocol string) Thunk {
 	return func() (exitCode int, exitMessage string) {
-		if canConnect(host, "TCP") {
+		if canConnect(host, protocol) {
 			return 0, ""
 		}
-		return 1, "Could not connect over TCP to host: " + host
+		return 1, "Could not connect over " + protocol + " to host: " + host
 	}
+}
+
+// TCP sees ig a given IP/port can be reached with a TCP connection
+func TCP(host string) Thunk {
+	return getConnectionThunk(host, "TCP")
 }
 
 // UDP is like TCP but with UDP instead.
 func UDP(host string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		if canConnect(host, "UDP") {
-			return 0, ""
-		}
-		return 1, "Could not connect over UDP to host: " + host
-	}
+	return getConnectionThunk(host, "UDP")
 }

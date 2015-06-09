@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -61,8 +62,13 @@ func commandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	outstr := string(out)
 	if strings.Contains(outstr, "permission denied") {
 		log.Fatal("Permission denied when running: " + cmd.Path)
+	} else if err != nil {
+		msg := "Error while executing command:"
+		msg += "\n\tCommand: " + cmd.Path
+		msg += "\n\tArguments: " + fmt.Sprint(cmd.Args)
+		msg += "\n\tError: " + err.Error()
+		log.Fatal(msg)
 	}
-	fatal(err)
 	return getColumnNoHeader(col, stringToSlice(string(out)))
 }
 
@@ -74,6 +80,49 @@ func strIn(str string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+// couldntReadError logs.Fatal an error related to reading a file
+func couldntReadError(path string, err error) {
+	if err != nil {
+		msg := "Couldn't read file:"
+		msg += "\n\tPath: " + path
+		msg += "\n\tError: " + err.Error()
+	}
+}
+
+// fileToBytes reads a file and handles the error
+// TODO run through all checks, use this where appropriate
+func fileToBytes(path string) []byte {
+	data, err := ioutil.ReadFile(path)
+	couldntReadError(path, err)
+	return data
+}
+
+// fileToString reads in a file at a path, handles errors, and returns that file
+// as a string
+func fileToString(path string) string {
+	return string(fileToBytes(path))
+}
+
+// fileToLines reads in a file at a path, handles errors, splits it into lines,
+// and returns those lines as byte slices
+func fileToLines(path string) [][]byte {
+	return bytes.Split(fileToBytes(path), []byte("\n"))
+}
+
+// notInError is a general error where the requested variable was not found in
+// a given list of variables. This is pure DRY.
+// TODO make the output of this function depend on a verbosity level, as made
+// a global state variable when command line flags are parsed
+func notInError(msg string, name string, available []string) (exitCode int, exitMessage string) {
+	msg += "\n\tSpecified: " + name
+	msg += "\n\tActual: "
+	if len(available) == 1 {
+		msg += fmt.Sprint(available[0])
+	}
+	msg += fmt.Sprint(available)
+	return 1, msg
 }
 
 /*
@@ -98,11 +147,3 @@ func anyContains(str string, slice []string) bool {
 	return false
 }
 */
-
-func fileToLines(path string) [][]byte {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal("Couldn't read file at " + path)
-	}
-	return bytes.Split(data, []byte("\n"))
-}

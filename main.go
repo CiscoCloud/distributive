@@ -19,13 +19,6 @@ import (
 	"strings"
 )
 
-// fatal simplifies error handling (instead of an if err != nil block)
-func fatal(e error) {
-	if e != nil {
-		log.Fatal(e)
-	}
-}
-
 // Check is a struct for a unified interface for health checks
 // It passes its check-specific fields to that check's Thunk constructor
 type Check struct {
@@ -58,6 +51,10 @@ func makeReport(chklst Checklist) (report string) {
 		} else {
 			passed++
 		}
+	}
+	// No output on all sucess - the Unix way!
+	if failed == 0 {
+		return ""
 	}
 	report += "Passed: " + fmt.Sprint(passed) + "\n"
 	report += "Failed: " + fmt.Sprint(failed) + "\n"
@@ -185,7 +182,10 @@ func getThunk(chk Check) Thunk {
 		return YumRepoURL(chk.Parameters[0])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
-		log.Fatal(msg + chk.Check)
+		msg += "\n\tName: " + chk.Name
+		msg += "\n\tCheck type: " + chk.Check
+		msg += "\n\tParameters: " + fmt.Sprint(chk.Parameters)
+		log.Fatal(msg)
 		return nil
 	}
 }
@@ -196,13 +196,13 @@ func getChecklist(path string) (chklst Checklist) {
 	fileJSON, err := ioutil.ReadFile(path)
 	if err != nil {
 		if path == "" {
-			log.Fatal("No path specified (use -f option)")
+			log.Fatal("No path specified (use -f option to specify a path)")
 		}
 		log.Fatal("Couldn't read JSON at specified location: " + path)
 	}
 	err = json.Unmarshal(fileJSON, &chklst)
 	if err != nil {
-		log.Fatal("Could not parse JSON: " + err.Error())
+		log.Fatal("Could not parse JSON at " + path + ":\n\t" + err.Error())
 	}
 	// TODO make this concurrent
 	for i, _ := range chklst.Checklist {

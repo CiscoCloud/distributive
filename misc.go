@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -19,19 +20,16 @@ func Command(toExec string) Thunk {
 		if strings.Contains(err.Error(), "not found in $PATH") {
 			return 1, "Executable not found: " + params[0]
 		}
-		exitCode = 0
-		if err != nil {
-			exitCode = 1
+		if err == nil {
+			return 0, ""
 		}
 		// Create output message
-		exitMessage = ""
-		if exitCode != 0 {
-			exitMessage = "Command " + toExec + " executed "
-			exitMessage += "with exit code " + fmt.Sprint(exitCode)
-			exitMessage += "\n\n"
-			exitMessage += "output: \n" + fmt.Sprint(out)
-		}
-		return exitCode, exitMessage
+		exitMessage += "Command exited with non-zero exit code:"
+		exitMessage += "\n\tCommand: " + toExec
+		exitMessage += "\n\tExit code: " + fmt.Sprint(exitCode)
+		exitMessage += "\n\tExit code: " + fmt.Sprint(exitCode)
+		exitMessage += "\n\tOutput: " + fmt.Sprint(out)
+		return 1, exitMessage
 	}
 }
 
@@ -66,7 +64,9 @@ func Temp(max int) Thunk {
 	// getCoreTemp returns an integer temperature for a certain core
 	getCoreTemp := func(core int) (temp int) {
 		out, err := exec.Command("sensors").Output()
-		fatal(err)
+		if err != nil {
+			log.Fatal("Error while executing `sensors`:\n\t" + err.Error())
+		}
 		// get all-core line up to paren
 		lineRegex := regexp.MustCompile("Core " + fmt.Sprint(core) + ":?(.*)\\(")
 		line := lineRegex.Find(out)
@@ -74,7 +74,10 @@ func Temp(max int) Thunk {
 		tempRegex := regexp.MustCompile("\\d+\\.\\d*")
 		tempString := string(tempRegex.Find(line))
 		tempFloat, err := strconv.ParseFloat(tempString, 64)
-		fatal(err)
+		if err != nil {
+			msg := "Error while parsing output from `sensors`:\n\t"
+			log.Fatal(msg + err.Error())
+		}
 		return int(tempFloat)
 
 	}
@@ -83,7 +86,8 @@ func Temp(max int) Thunk {
 		if temp < max {
 			return 0, ""
 		}
-		return 1, "Core temp exceeds defined maximum: " + fmt.Sprint(temp)
+		msg := "Core temp exceeds defined maximum:"
+		return notInError(msg, fmt.Sprint(temp), []string{fmt.Sprint(max)})
 	}
 }
 
@@ -95,10 +99,11 @@ func Module(name string) Thunk {
 		return commandColumnNoHeader(0, cmd)
 	}
 	return func() (exitCode int, exitMessage string) {
-		if strIn(name, kernelModules()) {
+		modules := kernelModules()
+		if strIn(name, modules) {
 			return 0, ""
 		}
-		return 1, "Module is not loaded: " + name
+		return notInError("Module is not loaded:", name, modules)
 	}
 }
 
@@ -110,8 +115,9 @@ func KernelParameter(name string) Thunk {
 		// failed on incorrect module name
 		if err != nil && strings.Contains(err.Error(), "255") {
 			return false
+		} else if err != nil {
+			log.Fatal("Error while executing /sbin/systctl:\n\tError: " + err.Error())
 		}
-		fatal(err)
 		return true
 	}
 	return func() (exitCode int, exitMessage string) {

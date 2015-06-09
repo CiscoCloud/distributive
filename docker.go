@@ -15,10 +15,11 @@ func DockerImage(name string) Thunk {
 		return commandColumnNoHeader(0, cmd)
 	}
 	return func() (exitCode int, exitMessage string) {
-		if strIn(name, getDockerImages()) {
+		images := getDockerImages()
+		if strIn(name, images) {
 			return 0, ""
 		}
-		return 1, "Docker image was not found: " + name
+		return notInError("Docker image was not found: ", name, images)
 	}
 }
 
@@ -32,7 +33,9 @@ func DockerRunning(name string) Thunk {
 		if strings.Contains(outstr, "permission denied") {
 			log.Fatal("Permission denied when running: docker ps -a")
 		}
-		fatal(err)
+		if err != nil {
+			log.Fatal("Error while running `docker ps -a`" + "\n\t" + err.Error())
+		}
 		// the output of `docker ps -a` has spaces in columns, but each column
 		// is separated by 2 or more spaces (which requires different parsing
 		// than most commands)
@@ -52,9 +55,10 @@ func DockerRunning(name string) Thunk {
 		return images
 	}
 	return func() (exitCode int, exitMessage string) {
-		if strIn(name, getRunningContainers()) {
+		running := getRunningContainers()
+		if strIn(name, running) {
 			return 0, ""
 		}
-		return 1, "Docker container not runnning: " + name
+		return notInError("Docker container not runnning: ", name, running)
 	}
 }
