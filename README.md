@@ -21,6 +21,8 @@
 Overview
 ========
 
+This readme documents the current (development) version of distributive.
+
 Distributive is a tool for running distributed health checks in server clusters.
 It was designed with Consul in mind, but is platform agnostic.  The architecture
 is such that some external server will ask the host to execute this program,
@@ -39,17 +41,37 @@ As of right now, only exit codes 0 and 1 are used, even if a checklist fails.
 Installation and Usage
 ======================
 
+Installation
+------------
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
  2. Build a binary: `cd distributive && go build .`
- 3. Run the binary: `./distributive -f ./samples/filesystem.json`
+ 3. Run the binary (as outlined in "Usage") with `./distributive`.
 
 We also provide premade RPM packages on
 [Bintray](https://bintray.com/ciscocloud/rpm/Distributive/view#files). The
 binary will be installed to `/bin/distributive` and the samples to
-`/usr/share/distributive/samples/`. After installing the RPM, usage is simple:
-`distributive -f /path/to/check.json`.
+`/usr/share/distributive/samples/`.
 
+Usage
+-----
+
+```
+$ distributive --help
+Usage of ./distributive:
+  -f="": Use the health check JSON located at this path
+  -v=0: Output verbosity level (valid values are [0-3])
+     0: (Default) Display only errors, with no other output.
+     1: Display errors and some information.
+     2: Display everything that's happening.
+```
+
+Examples:
+
+```
+$ /path/to/distributive -v=2 -f ./samples/filesystem.json
+$ distributive -f /usr/share/distributive/samples/network.json -v=3
+```
 
 Checks
 =======

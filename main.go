@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-var maxVerbosity int = 3
+var maxVerbosity int = 2
 var minVerbosity int = 0
 var verbosity int // global program verbosity
 
@@ -214,9 +214,9 @@ func main() {
 	// Set up and parse flags
 	verbosityMsg := "Output verbosity level (valid values are "
 	verbosityMsg += "[" + fmt.Sprint(minVerbosity) + "-" + fmt.Sprint(maxVerbosity) + "])"
-	verbosityMsg += "\n 0: (Default) Display only errors, with no other output."
-	verbosityMsg += "\n 1: Display errors and some information."
-	verbosityMsg += "\n 2: Display everything that's happening."
+	verbosityMsg += "\n\t 0: (Default) Display only errors, with no other output."
+	verbosityMsg += "\n\t 1: Display errors and some information."
+	verbosityMsg += "\n\t 2: Display everything that's happening."
 	pathMsg := "Use the health check JSON located at this path"
 	path := flag.String("f", "", pathMsg)
 	verbosityFlag := flag.Int("v", 0, verbosityMsg)
