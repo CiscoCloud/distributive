@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
 	"log"
 	"os/exec"
 	"regexp"
@@ -97,10 +99,10 @@ func anyContains(str string, slice []string) bool {
 }
 */
 
-/*
 func fileToLines(path string) [][]byte {
 	data, err := ioutil.ReadFile(path)
-	fatal(err)
+	if err != nil {
+		log.Fatal("Couldn't read file at " + path)
+	}
 	return bytes.Split(data, []byte("\n"))
 }
-*/

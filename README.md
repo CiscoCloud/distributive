@@ -58,15 +58,24 @@ Checks
 
 All check parameters should be formatted as a list of JSON strings.
 
- * `"command"` : Run a shell command.
- * `"running"` : Is this service running on the server?
+Filesystem
+----------
  * `"file"` : Is there a file at this path?
  * `"directory"` : Is there a directory at this path?
  * `"symlink"` : Is there a symlink at this path?
  * `"checksum"`: Using this algorithm and given this sum, is this file valid (three parameters)?
+
+Packages
+--------
+
  * `"installed"` : Is this program installed on the server?
  * `"ppa"` : Is the PPA at this URL present?
- * `"temp"` : Does the CPU temp exceed this integer (Celcius)?
+ * `"yumRepo"` : Is the Yum repo with this (short) name configured?
+ * `"yumRepoURL"` : Is the Yum repo with this URL configured?
+
+Network
+-------
+
  * `"port"` : Is this port in an open state?
  * `"interface"` : Does this network interface exist?
  * `"up"` : Is this network interface up?
@@ -76,23 +85,34 @@ All check parameters should be formatted as a list of JSON strings.
  * `"gatewayInterface"` : Is the default gateway operating on this interface?
  * `"TCP"` : Can this host be reached via a TCP connection?
  * `"UDP"` : Can this host be reached via a UDP connection?
- * `"module"` : Is this kernel module activated?
- * `"kernelParameter"` : Is this kernel parameter specified?
- * `"dockerImage"` : Does this Docker image exist on the host?
- * `"dockerRunning"` : Is this Docker container running (must include version,
- e.g. user/container:latest)?
+
+Users and Groups
+----------------
+
+For all of the following checks, the user can either be specified by their
+username or by their UID. Except `"userInGroup"`, which requires a username.
+
  * `"groupExists"` : Does a group by this name exist on the host?
  * `"groupId"` : Does a group by this name have this group id?
  * `"userInGroup"` : Is this user a member of this group?
-
- For all of the following checks, the user can either be specified by their
- username or by their UID.
  * `"userExists"` : Does this user exist?
  * `"userHasUID"` : Does this user have this UID?
  * `"userHasGID"` : Does this user have this primary GID?
  * `"userHasUsername"` : Does this user have this username?
  * `"userHasName"` : Does this user have this name?
  * `"userHasHomeDir"` : Is this the path of this user's home directory?
+
+System/Misc
+-----------
+
+ * `"command"` : Run a shell command.
+ * `"running"` : Is this service running on the server?
+ * `"temp"` : Does the CPU temp exceed this integer (Celcius)?
+ * `"module"` : Is this kernel module activated?
+ * `"kernelParameter"` : Is this kernel parameter specified?
+ * `"dockerImage"` : Does this Docker image exist on the host?
+ * `"dockerRunning"` : Is this Docker container running (must include version,
+ e.g. user/container:latest)?
 
 #### Dependencies for certain checks
 

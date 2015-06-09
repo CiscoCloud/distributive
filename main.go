@@ -92,7 +92,7 @@ func validateParameters(chk Check) {
 		"kernelparameter": 1, "dockerimage": 1, "dockerrunning": 1,
 		"groupexists": 1, "useringroup": 2, "groupid": 2, "userexists": 1,
 		"userhasuid": 2, "userhasgid": 2, "userhasusername": 2, "userhasname": 2,
-		"userhashomedir": 2,
+		"userhashomedir": 2, "yumrepo": 1, "yumrepourl": 1,
 	}
 	checkParameterLength(chk, numParameters[strings.ToLower(chk.Check)])
 }
@@ -113,10 +113,6 @@ func getThunk(chk Check) Thunk {
 		return Directory(chk.Parameters[0])
 	case "symlink":
 		return Symlink(chk.Parameters[0])
-	case "installed":
-		return Installed(chk.Parameters[0])
-	case "ppa":
-		return PPA(chk.Parameters[0])
 	case "checksum":
 		return Checksum(chk.Parameters[0], chk.Parameters[1], chk.Parameters[2])
 	case "temp":
@@ -179,6 +175,14 @@ func getThunk(chk Check) Thunk {
 		return UserHasName(chk.Parameters[0], chk.Parameters[1])
 	case "userhashomedir":
 		return UserHasHomeDir(chk.Parameters[0], chk.Parameters[1])
+	case "installed":
+		return Installed(chk.Parameters[0])
+	case "ppa":
+		return PPA(chk.Parameters[0])
+	case "yumrepo":
+		return YumRepoExists(chk.Parameters[0])
+	case "yumrepourl":
+		return YumRepoURL(chk.Parameters[0])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		log.Fatal(msg + chk.Check)
@@ -200,6 +204,7 @@ func getChecklist(path string) (chklst Checklist) {
 	if err != nil {
 		log.Fatal("Could not parse JSON: " + err.Error())
 	}
+	// TODO make this concurrent
 	for i, _ := range chklst.Checklist {
 		chklst.Checklist[i].Fun = getThunk(chklst.Checklist[i])
 	}
@@ -217,6 +222,7 @@ func main() {
 		fmt.Println("Creating checklist...")
 	}
 	// run checks, populate error codes and messages
+	// TODO make this concurrent
 	for _, chk := range chklst.Checklist {
 		if *verbose {
 			name := ": " + chk.Name

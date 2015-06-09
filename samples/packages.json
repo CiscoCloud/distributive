@@ -1,0 +1,25 @@
+{
+    "Name": "Package related checks",
+    "Checklist" : [
+        {
+            "Check" : "installed",
+            "Parameters" : ["urxvt"]
+        },
+        {
+            "Check" : "PPA",
+            "Parameters" : ["http://ppa.launchpad.net/ubuntu-langpack/ppa/ubuntu"]
+        },
+        {
+            "Check" : "yumRepoURL",
+            "Parameters" : ["http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
+        },
+        {
+            "Check" : "yumRepo",
+            "Parameters" : ["core"]
+        },
+        {
+            "Check" : "yumRepo",
+            "Parameters" : ["failme"]
+        }
+    ]
+}

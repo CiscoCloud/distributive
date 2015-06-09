@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/url"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -60,53 +57,6 @@ func Running(proc string) Thunk {
 			return 0, ""
 		}
 		return 1, "Process not running: " + proc
-	}
-}
-
-// Installed detects whether the OS is using dpkg, rpm, or pacman, queries
-// a package accoringly, and returns an error if it is not installed.
-func Installed(pkg string) Thunk {
-	// getManager returns the program to use for the query
-	getManager := func(managers []string) string {
-		for _, program := range managers {
-			cmd := exec.Command(program, "--version")
-			err := cmd.Start()
-			// as long as the command was found, return that manager
-			message := ""
-			if err != nil {
-				message = err.Error()
-			}
-			if strings.Contains(message, "not found") == false {
-				return program
-			}
-		}
-		log.Fatal("No package manager found")
-		return "No package manager found"
-	}
-	// getQuery returns the command that should be used to query the pkg
-	getQuery := func(program string) (name string, options string) {
-		switch program {
-		case "dpkg":
-			return "dpkg", "-s"
-		case "rpm":
-			return "rpm", "-q"
-		case "pacman":
-			return "pacman", "-Qs"
-		default:
-			log.Fatal("Unsupported package manager")
-			return "echo " + program + " is not supported. ", ""
-		}
-	}
-
-	managers := []string{"dpkg", "rpm", "pacman"}
-
-	return func() (exitCode int, exitMessage string) {
-		name, options := getQuery(getManager(managers))
-		out, _ := exec.Command(name, options, pkg).Output()
-		if strings.Contains(string(out), pkg) == false {
-			return 1, "Package " + pkg + " was not found with " + name + "\n"
-		}
-		return 0, ""
 	}
 }
 
@@ -169,52 +119,5 @@ func KernelParameter(name string) Thunk {
 			return 0, ""
 		}
 		return 1, "Kernel parameter not set: " + name
-	}
-}
-
-// PPA checks to see whether a given PPA is enabled on Ubuntu-based systems
-func PPA(name string) Thunk {
-	// TODO split into one method that just gets all urls of all sources,
-	// another that filters them for just binaries, and this one that filters
-	// them for PPAs with valid URLs
-	// getPPAs returns a list of all PPAs in sources.list
-	getPPAs := func(path string) []string {
-		data, err := ioutil.ReadFile(path)
-		fatal(err)
-		// only matches non-source, uncommented, PPAs
-		re := regexp.MustCompile("[^#]deb\\s+.+ppa.+")
-		filteredLines := re.FindAll(data, -1)
-		var filteredLinesStr []string
-		for _, line := range filteredLines {
-			filteredLinesStr = append(filteredLinesStr, string(line))
-		}
-		// get the urls of only PPAs
-		whitespaceRegex := regexp.MustCompile("\\s+")
-		var ppas []string
-		for _, line := range filteredLines {
-			split := whitespaceRegex.Split(string(line), -1)
-			url := split[2]
-			ppas = append(ppas, url)
-		}
-		return ppas
-	}
-	// valid URL uses net/url's Parse function to determine if the given url
-	// was indeed valid
-	validURL := func(urlstr string) bool {
-		_, err := url.Parse(urlstr)
-		if err == nil {
-			return true
-		}
-		return false
-	}
-	return func() (exitCode int, exitMessage string) {
-		for _, ppa := range getPPAs("/etc/apt/sources.list") {
-			if !validURL(ppa) {
-				return 1, "PPA URL invalid: " + ppa
-			} else if strings.Contains(ppa, name) {
-				return 0, ""
-			}
-		}
-		return 1, "PPA not found: " + name
 	}
 }
