@@ -76,6 +76,18 @@
         {
             "Check" : "UDP",
             "Parameters" : ["yahoo.com:80"]
+        },
+        {
+            "Check" : "routingTableDestination",
+            "Parameters" : ["192.168.0.0"]
+        },
+        {
+            "Check" : "routingTableInterface",
+            "Parameters" : ["docker0"]
+        },
+        {
+            "Check" : "routingTableGateway",
+            "Parameters" : ["192.168.0.1"]
         }
     ]
 }

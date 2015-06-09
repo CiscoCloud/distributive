@@ -74,12 +74,18 @@ func validateParameters(chk Check) {
 	// parameters, and exits otherwise. Can't do much with a broken check!
 	checkParameterLength := func(chk Check, expected int) {
 		given := len(chk.Parameters)
+		if given == 0 {
+			msg := "Invalid check:"
+			msg += "\n\tCheck type: " + chk.Check
+			log.Fatal(msg)
+		}
 		if given != expected {
-			msg := "Invalid check parameters for check: " + chk.Name
-			msg += "\nCheck type: " + chk.Check
-			msg += "\nExpected: " + fmt.Sprint(expected)
-			msg += "\nGiven: " + fmt.Sprint(given)
-			msg += "\nParameters: " + fmt.Sprint(chk.Parameters)
+			msg := "Invalid check parameters: "
+			msg += "\n\tName: " + chk.Name
+			msg += "\n\tCheck type: " + chk.Check
+			msg += "\n\tExpected: " + fmt.Sprint(expected)
+			msg += "\n\tGiven: " + fmt.Sprint(given)
+			msg += "\n\tParameters: " + fmt.Sprint(chk.Parameters)
 			log.Fatal(msg)
 		}
 	}
@@ -93,6 +99,8 @@ func validateParameters(chk Check) {
 		"groupexists": 1, "useringroup": 2, "groupid": 2, "userexists": 1,
 		"userhasuid": 2, "userhasgid": 2, "userhasusername": 2, "userhasname": 2,
 		"userhashomedir": 2, "yumrepo": 1, "yumrepourl": 1,
+		"routingtablegateway": 1, "routingtableinterface": 1,
+		"routingtabledestination": 1,
 	}
 	checkParameterLength(chk, numParameters[strings.ToLower(chk.Check)])
 }
@@ -145,6 +153,12 @@ func getThunk(chk Check) Thunk {
 		return TCP(chk.Parameters[0])
 	case "udp":
 		return UDP(chk.Parameters[0])
+	case "routingtabledestination":
+		return RoutingTableDestination(chk.Parameters[0])
+	case "routingtableinterface":
+		return RoutingTableInterface(chk.Parameters[0])
+	case "routingtablegateway":
+		return RoutingTableGateway(chk.Parameters[0])
 	case "module":
 		return Module(chk.Parameters[0])
 	case "kernelparameter":
@@ -214,12 +228,12 @@ func main() {
 	// Set up and parse flags
 	verbosityMsg := "Output verbosity level (valid values are "
 	verbosityMsg += "[" + fmt.Sprint(minVerbosity) + "-" + fmt.Sprint(maxVerbosity) + "])"
-	verbosityMsg += "\n\t 0: (Default) Display only errors, with no other output."
+	verbosityMsg += "\n\t 0: Display only errors, with no other output."
 	verbosityMsg += "\n\t 1: Display errors and some information."
 	verbosityMsg += "\n\t 2: Display everything that's happening."
 	pathMsg := "Use the health check JSON located at this path"
 	path := flag.String("f", "", pathMsg)
-	verbosityFlag := flag.Int("v", 0, verbosityMsg)
+	verbosityFlag := flag.Int("v", 1, verbosityMsg)
 	flag.Parse()
 	verbosity = *verbosityFlag
 	// check for invalid options

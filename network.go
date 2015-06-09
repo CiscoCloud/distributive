@@ -175,9 +175,7 @@ func Ip6(name string, address string) Thunk {
 func Gateway(address string) Thunk {
 	// getGatewayAddress filters all gateway IPs for a non-zero value
 	getGatewayAddress := func() (addr string) {
-		// first column in the output of route -n is the address of the gateway
-		cmd := exec.Command("route", "-n")
-		ips := commandColumnNoHeader(1, cmd)[1:] // has additional header row
+		ips := routingTableColumn(1)
 		for _, ip := range ips {
 			if ip != "0.0.0.0" {
 				return ip
@@ -296,4 +294,42 @@ func TCP(host string) Thunk {
 // UDP is like TCP but with UDP instead.
 func UDP(host string) Thunk {
 	return getConnectionThunk(host, "UDP")
+}
+
+// returns a column of the routing table as a slice of strings
+func routingTableColumn(column int) []string {
+	cmd := exec.Command("route", "-n")
+	return commandColumnNoHeader(column, cmd)[1:]
+}
+
+// routingTableMatchThunk constructs a thunk that returns whether or not the
+// given string was found in the given column of the routing table. It is an
+// astraction of routingTableDestination, routingTableInterface, and
+// routingTableGateway
+func routingTableMatch(column int, str string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		column := routingTableColumn(column)
+		if strIn(str, column) {
+			return 0, ""
+		}
+		return notInError("Not found in routing table", str, column)
+	}
+}
+
+// RoutingTableDestination checks if an IP address is a destination in the
+// kernel's IP routing table, as accessed by `route -n`.
+func RoutingTableDestination(ipstr string) Thunk {
+	return routingTableMatch(0, ipstr)
+}
+
+// RoutingTableInterface checks if a given name is an interface in the
+// kernel's IP routing table, as accessed by `route -n`.
+func RoutingTableInterface(name string) Thunk {
+	return routingTableMatch(7, name)
+}
+
+// routeTableDestination checks if an IP address is a gateway's IP in the
+// kernel's IP routing table, as accessed by `route -n`.
+func RoutingTableGateway(ipstr string) Thunk {
+	return routingTableMatch(1, ipstr)
 }
