@@ -102,7 +102,7 @@ func PPA(name string) Thunk {
 				return 0, ""
 			}
 		}
-		return notInError("PPA not found:", name, ppas)
+		return notInError("PPA not found", name, ppas)
 	}
 }
 
@@ -167,7 +167,7 @@ func existsRepoWithProperty(prop string, val string) (int, string) {
 	if strIn(val, properties) {
 		return 0, ""
 	}
-	msg := "Yum repo with given " + prop + " not found:"
+	msg := "Yum repo with given " + prop + " not found"
 	return notInError(msg, val, properties)
 }
 

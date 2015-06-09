@@ -18,6 +18,10 @@ import (
 	"strings"
 )
 
+var maxVerbosity int = 3
+var minVerbosity int = 0
+var verbosity int // global program verbosity
+
 // Check is a struct for a unified interface for health checks
 // It passes its check-specific fields to that check's Thunk constructor
 type Check struct {
@@ -207,17 +211,34 @@ func getChecklist(path string) (chklst Checklist) {
 // main reads the command line flag -f, runs the Check specified in the JSON,
 // and exits with the appropriate message and exit code.
 func main() {
-	fn := flag.String("f", "", "Use the health check JSON located at this path")
-	verbose := flag.Bool("v", false, "Increase output verbosity")
+	// Set up and parse flags
+	verbosityMsg := "Output verbosity level (valid values are "
+	verbosityMsg += "[" + fmt.Sprint(minVerbosity) + "-" + fmt.Sprint(maxVerbosity) + "])"
+	verbosityMsg += "\n 0: (Default) Display only errors, with no other output."
+	verbosityMsg += "\n 1: Display errors and some information."
+	verbosityMsg += "\n 2: Display everything that's happening."
+	pathMsg := "Use the health check JSON located at this path"
+	path := flag.String("f", "", pathMsg)
+	verbosityFlag := flag.Int("v", 0, verbosityMsg)
 	flag.Parse()
-	chklst := getChecklist(*fn)
-	if *verbose {
+	verbosity = *verbosityFlag
+	// check for invalid options
+	if verbosity > maxVerbosity || verbosity < minVerbosity {
+		log.Fatal("Invalid option for verbosity: " + fmt.Sprint(verbosity))
+	} else if verbosity > -5 { // TODO change this to geq max
+		fmt.Println("Running with verbosity level " + fmt.Sprint(verbosity))
+	} else if *path == "" {
+		log.Fatal("No path specified. Use -f option.")
+	}
+
+	chklst := getChecklist(*path)
+	if verbosity > minVerbosity {
 		fmt.Println("Creating checklist...")
 	}
 	// run checks, populate error codes and messages
 	// TODO make this concurrent
 	for _, chk := range chklst.Checklist {
-		if *verbose {
+		if verbosity > 2 {
 			name := ": " + chk.Name
 			if chk.Name == "" {
 				name = ""

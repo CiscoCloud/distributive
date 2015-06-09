@@ -116,15 +116,23 @@ func fileToLines(path string) [][]byte {
 
 // notInError is a general error where the requested variable was not found in
 // a given list of variables. This is pure DRY.
-// TODO make the output of this function depend on a verbosity level, as made
-// a global state variable when command line flags are parsed
-func notInError(msg string, name string, available []string) (exitCode int, exitMessage string) {
-	msg += "\n\tSpecified: " + name
-	msg += "\n\tActual: "
-	if len(available) == 1 {
-		msg += fmt.Sprint(available[0])
+// TODO rename this function everywhere
+func notInError(msg string, name string, actual []string) (exitCode int, exitMessage string) {
+	// with low verbosity, we don't need to specify the check in too much detail
+	if verbosity <= minVerbosity {
+		return 1, msg
+	}
+	msg += ":\n\tSpecified: " + name
+	// this is the number of list items to be output at verbosities strictly
+	// in between maximum and minimum verbosity.
+	lengthThreshold := 10 * (verbosity + 1)
+	if verbosity >= maxVerbosity || len(actual) < lengthThreshold {
+		msg += "\n\tActual: " + fmt.Sprint(actual)
+	} else if len(actual) == 1 {
+		msg += "\n\tActual: " + fmt.Sprint(actual[0])
 	} else {
-		msg += fmt.Sprint(available)
+		msg += "\n\tActual (truncated - increase verbosity to see more): "
+		msg += fmt.Sprint(actual[1:lengthThreshold])
 	}
 	return 1, msg
 }

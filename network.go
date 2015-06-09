@@ -56,7 +56,7 @@ func Port(port int) Thunk {
 		for _, port := range open {
 			strPorts = append(strPorts, fmt.Sprint(port))
 		}
-		return notInError("Port not open:", fmt.Sprint(port), strPorts)
+		return notInError("Port not open", fmt.Sprint(port), strPorts)
 	}
 }
 
@@ -86,7 +86,7 @@ func Interface(name string) Thunk {
 				return 0, ""
 			}
 		}
-		return notInError("Interface does not exist:", name, interfaces)
+		return notInError("Interface does not exist", name, interfaces)
 	}
 }
 
@@ -107,7 +107,7 @@ func Up(name string) Thunk {
 		if strIn(name, upInterfaces) {
 			return 0, ""
 		}
-		return notInError("Interface is not up:", name, upInterfaces)
+		return notInError("Interface is not up", name, upInterfaces)
 	}
 }
 
@@ -157,7 +157,7 @@ func getIPThunk(name string, address string, version int) Thunk {
 		if strIn(address, ips) {
 			return 0, ""
 		}
-		return notInError("Interface does not have IP:", address, ips)
+		return notInError("Interface does not have IP", address, ips)
 	}
 }
 
@@ -190,7 +190,7 @@ func Gateway(address string) Thunk {
 		if address == gatewayIP {
 			return 0, ""
 		}
-		msg := "Gateway does not have address:"
+		msg := "Gateway does not have address"
 		return notInError(msg, address, []string{gatewayIP})
 	}
 }
@@ -218,7 +218,7 @@ func GatewayInterface(name string) Thunk {
 		if name == iface {
 			return 0, ""
 		}
-		msg := "Default gateway does not operate on interface:"
+		msg := "Default gateway does not operate on interface"
 		return notInError(msg, name, []string{iface})
 	}
 }

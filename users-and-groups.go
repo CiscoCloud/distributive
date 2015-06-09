@@ -46,7 +46,7 @@ func groupNotFound(name string) (int, string) {
 	for _, group := range getGroups() {
 		existing = append(existing, group.Name)
 	}
-	return notInError("Group not found:", name, existing)
+	return notInError("Group not found", name, existing)
 }
 
 // GroupExists determines whether a certain UNIX user group exists
@@ -94,7 +94,7 @@ func GroupId(name string, id int) Thunk {
 				if g.Id == id {
 					return 0, ""
 				}
-				msg := "Group does not have expected ID:"
+				msg := "Group does not have expected ID"
 				return notInError(msg, fmt.Sprint(id), []string{fmt.Sprint(g.Id)})
 			}
 		}

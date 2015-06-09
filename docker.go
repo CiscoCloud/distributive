@@ -19,7 +19,7 @@ func DockerImage(name string) Thunk {
 		if strIn(name, images) {
 			return 0, ""
 		}
-		return notInError("Docker image was not found: ", name, images)
+		return notInError("Docker image was not found", name, images)
 	}
 }
 
@@ -59,6 +59,6 @@ func DockerRunning(name string) Thunk {
 		if strIn(name, running) {
 			return 0, ""
 		}
-		return notInError("Docker container not runnning: ", name, running)
+		return notInError("Docker container not runnning", name, running)
 	}
 }
