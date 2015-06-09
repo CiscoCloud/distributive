@@ -3,18 +3,24 @@
 
 - [Overview](#overview)
 - [Installation and Usage](#installation-and-usage)
+    - [Installation](#installation)
+    - [Usage](#usage)
+    - [Supported Frameworks](#supported-frameworks)
 - [Checks](#checks)
     - [General Fields](#general-fields)
     - [Filesystem](#filesystem)
     - [Packages](#packages)
     - [Network](#network)
     - [Users and Groups](#users-and-groups)
-    - [System/Misc](#system/misc)
+    - [Miscellaneous](#miscellaneous)
 - [Dependencies](#dependencies)
 - [Comparison to Other Software](#comparison-to-other-software)
     - [Serverspec](#serverspec)
     - [Nagios](#nagios)
-- [Supported Frameworks](#supported-frameworks)
+- [Contributing and Getting Help](#contributing-and-getting-help)
+    - [Contributing](#contributing)
+    - [Getting Help](#getting-help)
+- [License](#license)
 
 <!-- markdown-toc end -->
 
@@ -73,6 +79,16 @@ $ /path/to/distributive -v=2 -f ./samples/filesystem.json
 $ distributive -f /usr/share/distributive/samples/network.json -v=3
 ```
 
+Supported Frameworks
+--------------------
+
+Distributive attempts to be as framework-agnostic as possible. It is known to
+work well with both Sensu and Consul, which have similar architecture with
+regards to their health checks.
+
+[1]: https://www.consul.io/docs/agent/checks.html "Consul"
+[2]: https://sensuapp.org/docs/0.18/checks "Sensu"
+
 Checks
 =======
 
@@ -128,7 +144,7 @@ username or by their UID. Except `"userInGroup"`, which requires a username.
  * `"userHasName"` : Does this user have this name?
  * `"userHasHomeDir"` : Is this the path of this user's home directory?
 
-System/Misc
+Miscellaneous
 -----------
 
  * `"command"` : Run a shell command.
@@ -181,12 +197,33 @@ Distributive is simple, lightweight, and easy to configure, and doesn't provide
 its own scheduling, dashboard, etc. It is designed to be used within frameworks
 such as Sensu and Consul.
 
-Supported Frameworks
-====================
+Contributing and Getting Help
+=============================
 
-Distributive attempts to be as framework-agnostic as possible. It is known to
-work well with both Sensu and Consul, which have similar architecture with
-regards to their health checks.
+Contributing
+------------
 
-[1]: https://www.consul.io/docs/agent/checks.html "Consul"
-[2]: https://sensuapp.org/docs/0.18/checks "Sensu"
+Thank you for your interest in contributing! We work hard to ensure that
+contribution to our project is easy. All of our code is commented extensively.
+We attempt to provide complete and clear documentation and samples. If you
+have any questions about how the program is architectured or what some code does,
+please don't hesitate to ask. We use Github to develop Distributive out in the
+open, so issues and pull requests are more than welcome.
+
+Getting Help
+------------
+
+Feature requests, documentation requests, help installing and using, pull
+requests, and other comments or questions are all always welcome. We strive to
+provide expedient and detailed support for anyone using our software. Please
+submit any requests via our
+[Github Issues Page](https://github.com/CiscoCloud/distributive/issues),
+where someone will see it and get to work promptly.
+
+License
+=======
+Copyright © 2015 Cisco Systems, Inc.
+
+Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the "License").
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
