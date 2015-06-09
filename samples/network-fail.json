@@ -1,0 +1,37 @@
+{
+    "Name": "Network checks, designed to fail",
+    "Checklist" : [
+        {
+            "Check" : "interface",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "up",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "ip6",
+            "Parameters" : ["eth0", "failme"]
+        },
+        {
+            "Check" : "gateway",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "host",
+            "Parameters" : ["failme.fail"]
+        },
+        {
+            "Check" : "routingTableDestination",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "routingTableInterface",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "routingTableGateway",
+            "Parameters" : ["failme"]
+        }
+    ]
+}

@@ -1,13 +1,13 @@
 {
-    "Name": "Docker checks (requires root permissions)",
+    "Name": "Docker checks (designed to fail to provide an example)",
     "Checklist" : [
         {
             "Check" : "dockerImage",
-            "Parameters" : ["ubuntu"]
+            "Parameters" : ["failme"]
         },
         {
             "Check" : "dockerRunning",
-            "Parameters" : ["siddharthist/router"]
+            "Parameters" : ["failme"]
         }
     ]
 }

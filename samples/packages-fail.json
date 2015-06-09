@@ -3,19 +3,19 @@
     "Checklist" : [
         {
             "Check" : "installed",
-            "Parameters" : ["urxvt"]
+            "Parameters" : ["failme"]
         },
         {
             "Check" : "PPA",
-            "Parameters" : ["http://ppa.launchpad.net/ubuntu-langpack/ppa/ubuntu"]
+            "Parameters" : ["failme"]
         },
         {
             "Check" : "yumRepoURL",
-            "Parameters" : ["http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
+            "Parameters" : ["failme"]
         },
         {
             "Check" : "yumRepo",
-            "Parameters" : ["core"]
+            "Parameters" : ["failme"]
         }
     ]
 }

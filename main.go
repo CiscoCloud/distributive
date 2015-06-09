@@ -239,20 +239,23 @@ func main() {
 	// check for invalid options
 	if verbosity > maxVerbosity || verbosity < minVerbosity {
 		log.Fatal("Invalid option for verbosity: " + fmt.Sprint(verbosity))
-	} else if verbosity > -5 { // TODO change this to geq max
+	} else if verbosity >= maxVerbosity {
 		fmt.Println("Running with verbosity level " + fmt.Sprint(verbosity))
 	} else if *path == "" {
 		log.Fatal("No path specified. Use -f option.")
 	}
 
 	chklst := getChecklist(*path)
-	if verbosity > minVerbosity {
+	if verbosity > minVerbosity+1 {
 		fmt.Println("Creating checklist...")
 	}
 	// run checks, populate error codes and messages
 	// TODO make this concurrent
+	if verbosity > minVerbosity+1 {
+		fmt.Println("Running checks...")
+	}
 	for _, chk := range chklst.Checklist {
-		if verbosity > 2 {
+		if verbosity > minVerbosity+1 {
 			name := ": " + chk.Name
 			if chk.Name == "" {
 				name = ""
@@ -260,6 +263,11 @@ func main() {
 			fmt.Println("Running check" + name + " of type: " + chk.Check)
 		}
 		code, message := chk.Fun()
+		if verbosity >= maxVerbosity && (message == "" || code == 0) {
+			message = "Check exited with no errors: "
+			message += "\n\tName: " + chk.Name
+			message += "\n\tType: " + chk.Check
+		}
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, message)
 	}

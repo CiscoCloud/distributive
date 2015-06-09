@@ -1,0 +1,37 @@
+{
+    "Name": "Group checks",
+    "Checklist" : [
+        {
+            "Check" : "groupExists",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "userInGroup",
+            "Parameters" : ["root", "failme"]
+        },
+        {
+            "Check" : "groupExists",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "groupId",
+            "Parameters" : ["failme", "0"]
+        },
+        {
+            "Check" : "userExists",
+            "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "userHasUID",
+            "Parameters" : ["failme", "0"]
+        },
+        {
+            "Check" : "userHasGID",
+            "Parameters" : ["failme", "1000"]
+        },
+        {
+            "Check" : "UserHasHomeDir",
+            "Parameters" : ["failme", "/root"]
+        }
+    ]
+}

@@ -11,6 +11,7 @@ import (
 
 // Installed detects whether the OS is using dpkg, rpm, or pacman, queries
 // a package accoringly, and returns an error if it is not installed.
+// BUG: this returns true for Pacman + failme.
 func Installed(pkg string) Thunk {
 	// getManager returns the program to use for the query
 	getManager := func(managers []string) string {

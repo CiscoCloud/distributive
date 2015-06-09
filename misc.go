@@ -87,7 +87,7 @@ func Temp(max int) Thunk {
 			return 0, ""
 		}
 		msg := "Core temp exceeds defined maximum"
-		return notInError(msg, fmt.Sprint(temp), []string{fmt.Sprint(max)})
+		return notInError(msg, fmt.Sprint(max), []string{fmt.Sprint(temp)})
 	}
 }
 

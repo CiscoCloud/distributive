@@ -12,12 +12,6 @@
             "Parameters": ["dnsmasq"]
         },
         {
-            "Name": "sleep-error",
-            "Notes": "Example of a check that will report an error",
-            "Check" : "command",
-            "Parameters" : ["failme"]
-        },
-        {
             "Check" : "installed",
             "Parameters" : ["urxvt"]
         },
@@ -26,16 +20,8 @@
             "Parameters" : ["ext4"]
         },
         {
-            "Check" : "module",
-            "Parameters" : ["failme"]
-        },
-        {
             "Check" : "kernelParameter",
             "Parameters" : ["kernel.ctrl-alt-del"]
-        },
-        {
-            "Check" : "kernelParameter",
-            "Parameters" : ["failme"]
         },
         {
             "Check" : "PPA",

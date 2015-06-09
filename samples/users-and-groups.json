@@ -14,16 +14,8 @@
             "Parameters" : ["bin"]
         },
         {
-            "Check" : "userInGroup",
-            "Parameters" : ["daemon", "failme"]
-        },
-        {
             "Check" : "groupId",
             "Parameters" : ["root", "0"]
-        },
-        {
-            "Check" : "groupId",
-            "Parameters" : ["failme", "0"]
         },
         {
             "Check" : "userExists",
@@ -35,7 +27,7 @@
         },
         {
             "Check" : "userHasGID",
-            "Parameters" : ["lb", "1000"]
+            "Parameters" : ["lb", "100"]
         },
         {
             "Check" : "UserHasHomeDir",

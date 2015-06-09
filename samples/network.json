@@ -1,5 +1,5 @@
 {
-    "Name": "Network interfaces",
+    "Name": "Network checks",
     "Checklist" : [
         {
             "Check" : "interface",
@@ -14,16 +14,8 @@
             "Parameters" : ["lo"]
         },
         {
-            "Check" : "interface",
-            "Parameters" : ["failme"]
-        },
-        {
             "Check" : "up",
             "Parameters": ["wlp1s0"]
-        },
-        {
-            "Check" : "up",
-            "Parameters" : ["failme"]
         },
         {
             "Check" : "ip4",
@@ -34,16 +26,8 @@
             "Parameters" : ["wlp1s0", "fe80::59bf:babe:f7bb:a327"]
         },
         {
-            "Check" : "ip6",
-            "Parameters" : ["eth0", "failme"]
-        },
-        {
             "Check" : "gateway",
-            "Parameters" : ["10.60.0.1"]
-        },
-        {
-            "Check" : "gateway",
-            "Parameters" : ["failme"]
+            "Parameters" : ["192.168.0.1"]
         },
         {
             "Check" : "gatewayInterface",
@@ -58,16 +42,8 @@
             "Parameters" : ["google.com"]
         },
         {
-            "Check" : "host",
-            "Parameters" : ["failme.fail"]
-        },
-        {
             "Check" : "TCP",
             "Parameters" : ["google.com:80"]
-        },
-        {
-            "Check" : "TCP",
-            "Parameters" : ["localhost:80"]
         },
         {
             "Check" : "UDP",

@@ -1,0 +1,21 @@
+{
+    "Name": "Filesystem checks, designed to fail",
+    "Checklist" : [
+        {
+            "Check" : "file",
+            "Parameters" : ["/etc/"]
+        },
+        {
+            "Check" : "directory",
+            "Parameters" : ["/bin/bash"]
+        },
+        {
+            "Check" : "symlink",
+            "Parameters" : ["/var/"]
+        },
+        {
+            "Check" : "checksum",
+            "Parameters" : ["SHA1", "failme", "/dev/null"]
+        }
+    ]
+}
