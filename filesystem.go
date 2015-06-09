@@ -6,8 +6,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
-	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 )
@@ -99,14 +97,7 @@ func Checksum(algorithm string, checkAgainst string, path string) Thunk {
 
 	}
 	getFileChecksum := func(algorithm string, path string) (checksum string) {
-		data, err := ioutil.ReadFile(path)
-		if err != nil {
-			msg := "Could not read file:"
-			msg += "\n\tPath: " + path
-			msg += "\n\tError: " + err.Error()
-			log.Fatal(msg)
-		}
-		return getChecksum(algorithm, data)
+		return getChecksum(algorithm, fileToBytes(path))
 	}
 	return func() (exitCode int, exitMessage string) {
 		chksum := getFileChecksum(algorithm, path)

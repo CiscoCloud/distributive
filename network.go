@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os/exec"
@@ -12,11 +11,8 @@ import (
 
 // getHexPorts gets all open ports as hex strings from /proc/net/tcp
 func getHexPorts() (ports []string) {
-	out, err := ioutil.ReadFile("/proc/net/tcp")
-	if err != nil {
-		log.Fatal("Could not read /proc/net/tcp:\n\t" + err.Error())
-	}
-	localAddresses := getColumnNoHeader(1, stringToSlice(string(out)))
+	data := fileToString("/proc/net/tcp")
+	localAddresses := getColumnNoHeader(1, stringToSlice(data))
 	portRe := regexp.MustCompile(":([0-9A-F]{4})")
 	for _, address := range localAddresses {
 		port := portRe.FindString(address)

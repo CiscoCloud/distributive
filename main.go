@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -193,14 +192,8 @@ func getThunk(chk Check) Thunk {
 // getChecklist loads a JSON file located at path, and Unmarshals it into a
 // Checklist struct, leaving unspecified fields as their zero types.
 func getChecklist(path string) (chklst Checklist) {
-	fileJSON, err := ioutil.ReadFile(path)
-	if err != nil {
-		if path == "" {
-			log.Fatal("No path specified (use -f option to specify a path)")
-		}
-		log.Fatal("Couldn't read JSON at specified location: " + path)
-	}
-	err = json.Unmarshal(fileJSON, &chklst)
+	fileJSON := fileToBytes(path)
+	err := json.Unmarshal(fileJSON, &chklst)
 	if err != nil {
 		log.Fatal("Could not parse JSON at " + path + ":\n\t" + err.Error())
 	}

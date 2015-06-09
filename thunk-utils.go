@@ -88,11 +88,14 @@ func couldntReadError(path string, err error) {
 		msg := "Couldn't read file:"
 		msg += "\n\tPath: " + path
 		msg += "\n\tError: " + err.Error()
+		if path == "" {
+			msg += "\n\t No path specified. Try using the -f flag."
+		}
+		log.Fatal(msg)
 	}
 }
 
 // fileToBytes reads a file and handles the error
-// TODO run through all checks, use this where appropriate
 func fileToBytes(path string) []byte {
 	data, err := ioutil.ReadFile(path)
 	couldntReadError(path, err)
@@ -120,8 +123,9 @@ func notInError(msg string, name string, available []string) (exitCode int, exit
 	msg += "\n\tActual: "
 	if len(available) == 1 {
 		msg += fmt.Sprint(available[0])
+	} else {
+		msg += fmt.Sprint(available)
 	}
-	msg += fmt.Sprint(available)
 	return 1, msg
 }
 

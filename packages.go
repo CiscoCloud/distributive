@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os/exec"
@@ -66,13 +65,7 @@ func PPA(name string) Thunk {
 	// getAptSources returns all the urls of all apt sources (including source
 	// code repositories
 	getAptSources := func(path string) (urls []string) {
-		// TODO create abstraction of this that handles the error, utilize it
-		// everywhere
-		data, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Fatal("Could not read file " + path + "\n\t" + err.Error())
-		}
-		split := stringToSlice(string(data))
+		split := stringToSlice(fileToString(path))
 		// filter out comments
 		commentRegex := regexp.MustCompile("^\\s*#.*")
 		for _, line := range split {
