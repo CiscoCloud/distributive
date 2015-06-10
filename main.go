@@ -5,9 +5,6 @@
 // each node, instead of one central server, and allows for more types of checks.
 package main
 
-// TODO rework public and private methods. Likely, nothing needs to be public
-// from the thunk side of things
-
 import (
 	"encoding/json"
 	"flag"
@@ -44,21 +41,25 @@ type Checklist struct {
 // makeReport returns a string used for a checklist.Report attribute, printed
 // after all the checks have been run
 func makeReport(chklst Checklist) (report string) {
+	// countInt counts the occurences of int in this []int
+	countInt := func(i int, slice []int) (counter int) {
+		for _, in := range slice {
+			if in == i {
+				counter++
+			}
+		}
+		return counter
+	}
+	// get fail messages
 	failMessages := []string{}
-	passed := 0
-	failed := 0
 	for i, code := range chklst.Codes {
 		if code != 0 {
-			failed++
 			failMessages = append(failMessages, "\n"+chklst.Messages[i])
-		} else {
-			passed++
 		}
 	}
-	// No output on all sucess - the Unix way!
-	if failed == 0 {
-		return ""
-	}
+	// output global stats
+	passed := countInt(0, chklst.Codes)
+	failed := countInt(1, chklst.Codes)
 	report += "Passed: " + fmt.Sprint(passed) + "\n"
 	report += "Failed: " + fmt.Sprint(failed) + "\n"
 	for _, msg := range failMessages {
@@ -215,70 +216,107 @@ func getChecklist(path string) (chklst Checklist) {
 	if err != nil {
 		log.Fatal("Could not parse JSON at " + path + ":\n\t" + err.Error())
 	}
-	// TODO make this concurrent
-	for i, _ := range chklst.Checklist {
-		chklst.Checklist[i].Fun = getThunk(chklst.Checklist[i])
+	// Go concurrent pipe - one stage to the next
+	// send all checks in checklist to the channel
+	out := make(chan Check)
+	go func() {
+		for _, chk := range chklst.Checklist {
+			out <- chk
+		}
+		close(out)
+	}()
+	// get Thunks for each check
+	out2 := make(chan Check)
+	go func() {
+		for chk := range out {
+			chk.Fun = getThunk(chk)
+			out2 <- chk
+		}
+		close(out2)
+	}()
+	// collect data, reassign check list
+	var newChecklist []Check
+	for chk := range out2 {
+		newChecklist = append(newChecklist, chk)
 	}
+	chklst.Checklist = newChecklist
 	return
 }
 
-// main reads the command line flag -f, runs the Check specified in the JSON,
-// and exits with the appropriate message and exit code.
-func main() {
-	// Set up and parse flags
+// getVerbosity returns the verbosity specifed by the -v flag, and checks to
+// see that it is in a valid range
+func getFlags() string {
 	verbosityMsg := "Output verbosity level (valid values are "
 	verbosityMsg += "[" + fmt.Sprint(minVerbosity) + "-" + fmt.Sprint(maxVerbosity) + "])"
 	verbosityMsg += "\n\t 0: Display only errors, with no other output."
 	verbosityMsg += "\n\t 1: Display errors and some information."
 	verbosityMsg += "\n\t 2: Display everything that's happening."
 	pathMsg := "Use the health check JSON located at this path"
-	path := flag.String("f", "", pathMsg)
+
 	verbosityFlag := flag.Int("v", 1, verbosityMsg)
+	path := flag.String("f", "", pathMsg)
 	flag.Parse()
+
 	verbosity = *verbosityFlag
+	// check for invalid options
+	if *path == "" {
+		log.Fatal("No path specified. Use -f option.")
+	}
 	// check for invalid options
 	if verbosity > maxVerbosity || verbosity < minVerbosity {
 		log.Fatal("Invalid option for verbosity: " + fmt.Sprint(verbosity))
 	} else if verbosity >= maxVerbosity {
 		fmt.Println("Running with verbosity level " + fmt.Sprint(verbosity))
-	} else if *path == "" {
-		log.Fatal("No path specified. Use -f option.")
 	}
+	return *path
+}
 
-	chklst := getChecklist(*path)
-	if verbosity > minVerbosity+1 {
-		fmt.Println("Creating checklist...")
+// verbosityPrint only prints its message if verbosity is above the given value
+func verbosityPrint(str string, minVerb int) {
+	if verbosity >= minVerb {
+		fmt.Println(str)
 	}
-	// run checks, populate error codes and messages
-	// TODO make this concurrent
-	if verbosity > minVerbosity+1 {
-		fmt.Println("Running checks...")
-	}
+}
+
+func runChecks(chklst Checklist) Checklist {
 	for _, chk := range chklst.Checklist {
-		if verbosity > minVerbosity+1 {
-			name := ": " + chk.Name
-			if chk.Name == "" {
-				name = ""
-			}
-			fmt.Println("Running check" + name + " of type: " + chk.Check)
-		}
-		code, message := chk.Fun()
-		if verbosity >= maxVerbosity && (message == "" || code == 0) {
-			message = "Check exited with no errors: "
+		code, msg := chk.Fun()
+		chklst.Codes = append(chklst.Codes, code)
+		chklst.Messages = append(chklst.Messages, msg)
+		if verbosity >= maxVerbosity && code == 0 {
+			message := "Check exited with no errors: "
 			message += "\n\tName: " + chk.Name
 			message += "\n\tType: " + chk.Check
+			fmt.Println(message)
 		}
-		chklst.Codes = append(chklst.Codes, code)
-		chklst.Messages = append(chklst.Messages, message)
 	}
+	return chklst
+}
+
+// main reads the command line flag -f, runs the Check specified in the JSON,
+// and exits with the appropriate message and exit code.
+func main() {
+	// Set up and parse flags
+	path := getFlags()
+
+	verbosityPrint("Creating checklist...", minVerbosity+1)
+	chklst := getChecklist(path)
+	// run checks, populate error codes and messages
+	verbosityPrint("Running checks...", minVerbosity+1)
+	chklst = runChecks(chklst)
 	// make a printable report
-	chklst.Report = makeReport(chklst) // run tests, get messages
-	fmt.Println(chklst.Report)
-	// exit with the proper code
+	chklst.Report = makeReport(chklst)
+	// see if any checks failed
+	anyFailed := false
 	for _, code := range chklst.Codes {
 		if code != 0 {
-			os.Exit(1)
+			anyFailed = true
 		}
 	}
+	if anyFailed {
+		verbosityPrint(chklst.Report, minVerbosity)
+		os.Exit(1)
+	}
+	verbosityPrint(chklst.Report, maxVerbosity)
 	os.Exit(0)
 }

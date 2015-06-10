@@ -105,6 +105,6 @@ func Checksum(algorithm string, checkAgainst string, path string) Thunk {
 			return 0, ""
 		}
 		msg := "Checksums do not match for file: " + path
-		return notInError(msg, checkAgainst, []string{chksum})
+		return genericError(msg, checkAgainst, []string{chksum})
 	}
 }

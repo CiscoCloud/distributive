@@ -103,7 +103,7 @@ func PPA(name string) Thunk {
 				return 0, ""
 			}
 		}
-		return notInError("PPA not found", name, ppas)
+		return genericError("PPA not found", name, ppas)
 	}
 }
 
@@ -169,7 +169,7 @@ func existsRepoWithProperty(prop string, val string) (int, string) {
 		return 0, ""
 	}
 	msg := "Yum repo with given " + prop + " not found"
-	return notInError(msg, val, properties)
+	return genericError(msg, val, properties)
 }
 
 // YumRepo checks to see that a given yum repo is currently active

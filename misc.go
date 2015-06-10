@@ -87,7 +87,7 @@ func Temp(max int) Thunk {
 			return 0, ""
 		}
 		msg := "Core temp exceeds defined maximum"
-		return notInError(msg, fmt.Sprint(max), []string{fmt.Sprint(temp)})
+		return genericError(msg, fmt.Sprint(max), []string{fmt.Sprint(temp)})
 	}
 }
 
@@ -103,7 +103,7 @@ func Module(name string) Thunk {
 		if strIn(name, modules) {
 			return 0, ""
 		}
-		return notInError("Module is not loaded", name, modules)
+		return genericError("Module is not loaded", name, modules)
 	}
 }
 

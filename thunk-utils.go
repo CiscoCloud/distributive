@@ -114,10 +114,9 @@ func fileToLines(path string) [][]byte {
 	return bytes.Split(fileToBytes(path), []byte("\n"))
 }
 
-// notInError is a general error where the requested variable was not found in
+// genericError is a general error where the requested variable was not found in
 // a given list of variables. This is pure DRY.
-// TODO rename this function everywhere
-func notInError(msg string, name string, actual []string) (exitCode int, exitMessage string) {
+func genericError(msg string, name string, actual []string) (exitCode int, exitMessage string) {
 	// with low verbosity, we don't need to specify the check in too much detail
 	if verbosity <= minVerbosity {
 		return 1, msg

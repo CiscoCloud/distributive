@@ -51,12 +51,12 @@ func Port(port int) Thunk {
 				return 0, ""
 			}
 		}
-		// Convert ports to string to send to notInError
+		// Convert ports to string to send to genericError
 		var strPorts []string
 		for _, port := range open {
 			strPorts = append(strPorts, fmt.Sprint(port))
 		}
-		return notInError("Port not open", fmt.Sprint(port), strPorts)
+		return genericError("Port not open", fmt.Sprint(port), strPorts)
 	}
 }
 
@@ -86,7 +86,7 @@ func Interface(name string) Thunk {
 				return 0, ""
 			}
 		}
-		return notInError("Interface does not exist", name, interfaces)
+		return genericError("Interface does not exist", name, interfaces)
 	}
 }
 
@@ -107,7 +107,7 @@ func Up(name string) Thunk {
 		if strIn(name, upInterfaces) {
 			return 0, ""
 		}
-		return notInError("Interface is not up", name, upInterfaces)
+		return genericError("Interface is not up", name, upInterfaces)
 	}
 }
 
@@ -157,7 +157,7 @@ func getIPThunk(name string, address string, version int) Thunk {
 		if strIn(address, ips) {
 			return 0, ""
 		}
-		return notInError("Interface does not have IP", address, ips)
+		return genericError("Interface does not have IP", address, ips)
 	}
 }
 
@@ -189,7 +189,7 @@ func Gateway(address string) Thunk {
 			return 0, ""
 		}
 		msg := "Gateway does not have address"
-		return notInError(msg, address, []string{gatewayIP})
+		return genericError(msg, address, []string{gatewayIP})
 	}
 }
 
@@ -198,14 +198,16 @@ func GatewayInterface(name string) Thunk {
 	// getGatewayInterface returns the interface that the default gateway is
 	// operating on
 	getGatewayInterface := func() (iface string) {
-		cmd := exec.Command("route", "-n")
-		ips := commandColumnNoHeader(1, cmd)[1:] // has additional header row
-		// calling the same command twice doesn't work
-		cmd = exec.Command("route", "-n")
-		names := commandColumnNoHeader(7, cmd)[1:] // has additional header row
+		ips := routingTableColumn(1)
+		names := routingTableColumn(1)
 		for i, ip := range ips {
 			if ip != "0.0.0.0" {
-				// TODO catch indexerror
+				if len(names) < i {
+					msg := "Fewer names in kernel routing table than IPs:"
+					msg += "\n\tNames: " + fmt.Sprint(names)
+					msg += "\n\tIPs: " + fmt.Sprint(ips)
+					log.Fatal()
+				}
 				return names[i] // interface name
 			}
 		}
@@ -217,7 +219,7 @@ func GatewayInterface(name string) Thunk {
 			return 0, ""
 		}
 		msg := "Default gateway does not operate on interface"
-		return notInError(msg, name, []string{iface})
+		return genericError(msg, name, []string{iface})
 	}
 }
 
@@ -312,7 +314,7 @@ func routingTableMatch(column int, str string) Thunk {
 		if strIn(str, column) {
 			return 0, ""
 		}
-		return notInError("Not found in routing table", str, column)
+		return genericError("Not found in routing table", str, column)
 	}
 }
 
