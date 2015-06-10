@@ -12,6 +12,7 @@
     - [Packages](#packages)
     - [Network](#network)
     - [Users and Groups](#users-and-groups)
+    - [Systemctl](#systemctl)
     - [Miscellaneous](#miscellaneous)
 - [Dependencies](#dependencies)
 - [Comparison to Other Software](#comparison-to-other-software)
@@ -29,7 +30,7 @@ Overview
 
 This readme documents the current (development) version of distributive.
 
-Distributive is a tool for running distributed health checks in server clusters.
+Distributive is a tool for running distributed health checks in datacenters.
 It was designed with Consul in mind, but is platform agnostic.  The architecture
 is such that some external server will ask the host to execute this program,
 reading in from some JSON file, and will record this
@@ -143,6 +144,17 @@ username or by their UID. Except `"userInGroup"`, which requires a username.
  * `"userHasUsername"` : Does this user have this username?
  * `"userHasName"` : Does this user have this name?
  * `"userHasHomeDir"` : Is this the path of this user's home directory?
+
+Systemctl
+---------
+
+ * `"systemctlLoaded"` : Is this service loaded?
+ * `"systemctlActive"` : Is this service active?
+ * `"systemctlSockPath"` : Is the sock at this path registered with systemd?
+ * `"systemctlSockUnit"` : Is the sock with this unit registered with systemd?
+ * `"systemctlTimer"` : Is this timer active?
+ * `"systemctlTimerLoaded"` : Is this timer loaded?
+ * `"systemctlUnitFileStatus"` : Does this unit file have this status?
 
 Miscellaneous
 -----------

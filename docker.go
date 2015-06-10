@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os/exec"
-	"regexp"
 	"strings"
 )
 
@@ -30,18 +29,15 @@ func DockerRunning(name string) Thunk {
 		out, err := exec.Command("docker", "ps", "-a").CombinedOutput()
 		outstr := string(out)
 		// `docker images` requires root permissions
-		if strings.Contains(outstr, "permission denied") {
+		if err != nil && strings.Contains(outstr, "permission denied") {
 			log.Fatal("Permission denied when running: docker ps -a")
 		}
 		if err != nil {
 			log.Fatal("Error while running `docker ps -a`" + "\n\t" + err.Error())
 		}
 		// the output of `docker ps -a` has spaces in columns, but each column
-		// is separated by 2 or more spaces (which requires different parsing
-		// than most commands)
-		rowSep := regexp.MustCompile("\n+")
-		colSep := regexp.MustCompile("\\s{2,}")
-		lines := separateString(rowSep, colSep, outstr)
+		// is separated by 2 or more spaces
+		lines := stringToSliceMultispace(outstr)
 		if len(lines) < 1 {
 			return []string{}
 		}

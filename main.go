@@ -101,7 +101,9 @@ func validateParameters(chk Check) {
 		"userhasuid": 2, "userhasgid": 2, "userhasusername": 2, "userhasname": 2,
 		"userhashomedir": 2, "yumrepo": 1, "yumrepourl": 1,
 		"routingtablegateway": 1, "routingtableinterface": 1,
-		"routingtabledestination": 1,
+		"routingtabledestination": 1, "systemctlloaded": 1, "systemctlactive": 1,
+		"systemctlsockpath": 1, "systemctlsockunit": 1, "systemctltimer": 1,
+		"systemctltimerloaded": 1, "systemctlunitfilestatus": 2,
 	}
 	checkParameterLength(chk, numParameters[strings.ToLower(chk.Check)])
 }
@@ -198,6 +200,20 @@ func getThunk(chk Check) Thunk {
 		return YumRepoExists(chk.Parameters[0])
 	case "yumrepourl":
 		return YumRepoURL(chk.Parameters[0])
+	case "systemctlloaded":
+		return systemctlLoaded(chk.Parameters[0])
+	case "systemctlactive":
+		return systemctlActive(chk.Parameters[0])
+	case "systemctlsockpath":
+		return systemctlSockPath(chk.Parameters[0])
+	case "systemctlsockunit":
+		return systemctlSockUnit(chk.Parameters[0])
+	case "systemctltimer":
+		return systemctlTimer(chk.Parameters[0])
+	case "systemctltimerloaded":
+		return systemctlTimerLoaded(chk.Parameters[0])
+	case "systemctlunitfilestatus":
+		return systemctlUnitFileStatus(chk.Parameters[0], chk.Parameters[1])
 	default:
 		msg := "JSON file included one or more unsupported health checks: "
 		msg += "\n\tName: " + chk.Name

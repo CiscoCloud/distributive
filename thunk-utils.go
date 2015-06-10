@@ -33,6 +33,14 @@ func stringToSlice(str string) (output [][]string) {
 	return separateString(rowSep, colSep, str)
 }
 
+// stringToSliceMultispace is for commands that have spaces within their columns
+// but more than one space between columns
+func stringToSliceMultispace(str string) (output [][]string) {
+	rowSep := regexp.MustCompile("\n+")
+	colSep := regexp.MustCompile("\\s{2,}")
+	return separateString(rowSep, colSep, str)
+}
+
 // getColumn isolates the entries of a single column from a 2D slice
 // it is currently only used by PPA for reading /etc/apt/sources.list
 func getColumn(col int, slice [][]string) (column []string) {
@@ -57,6 +65,7 @@ func getColumnNoHeader(col int, slice [][]string) []string {
 // commandColumnNoHeader returns a specified column of the output of a command,
 // without that column's header. Useful for parsing the output of shell commands,
 // which many of the Checks require.
+// TODO long term: get column by header, instead of index
 func commandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	out, err := cmd.CombinedOutput()
 	outstr := string(out)
