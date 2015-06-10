@@ -16,6 +16,10 @@
         {
             "Check" : "yumRepo",
             "Parameters" : ["core"]
+        },
+        {
+            "Check" : "pacmanIgnore",
+            "Parameters" : ["pulseaudio"]
         }
     ]
 }

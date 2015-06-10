@@ -104,6 +104,7 @@ func validateParameters(chk Check) {
 		"routingtabledestination": 1, "systemctlloaded": 1, "systemctlactive": 1,
 		"systemctlsockpath": 1, "systemctlsockunit": 1, "systemctltimer": 1,
 		"systemctltimerloaded": 1, "systemctlunitfilestatus": 2,
+		"pacmanignore": 1,
 	}
 	checkParameterLength(chk, numParameters[strings.ToLower(chk.Check)])
 }
@@ -200,6 +201,8 @@ func getThunk(chk Check) Thunk {
 		return YumRepoExists(chk.Parameters[0])
 	case "yumrepourl":
 		return YumRepoURL(chk.Parameters[0])
+	case "pacmanignore":
+		return pacmanIgnore(chk.Parameters[0])
 	case "systemctlloaded":
 		return systemctlLoaded(chk.Parameters[0])
 	case "systemctlactive":

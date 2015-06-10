@@ -11,7 +11,6 @@ import (
 
 // Installed detects whether the OS is using dpkg, rpm, or pacman, queries
 // a package accoringly, and returns an error if it is not installed.
-// BUG: this returns true for Pacman + failme.
 func Installed(pkg string) Thunk {
 	// getManager returns the program to use for the query
 	getManager := func(managers []string) string {
@@ -30,26 +29,23 @@ func Installed(pkg string) Thunk {
 		log.Fatal("No package manager found. Attempted: " + fmt.Sprint(managers))
 		return "" // never reaches this return
 	}
-	// TODO refactor this and `managers` as a one dict
-	// getQuery returns the command that should be used to query the pkg
-	getQuery := func(program string) (name string, options string) {
-		switch program {
-		case "dpkg":
-			return "dpkg", "-s"
-		case "rpm":
-			return "rpm", "-q"
-		case "pacman":
-			return "pacman", "-Qs"
-		default:
-			log.Fatal("Unsupported package manager: " + program)
-			return "", "" // never reaches this return
-		}
+
+	// package managers and their options
+	managers := map[string]string{
+		"dpkg":   "-s",
+		"rpm":    "-q",
+		"pacman": "-Qs",
+	}
+	keys := make([]string, len(managers))
+	i := 0
+	for key := range managers {
+		keys[i] = key
+		i++
 	}
 
-	managers := []string{"dpkg", "rpm", "pacman"}
-
 	return func() (exitCode int, exitMessage string) {
-		name, options := getQuery(getManager(managers))
+		name := getManager(keys)
+		options := managers[name]
 		out, _ := exec.Command(name, options, pkg).Output()
 		if strings.Contains(string(out), pkg) {
 			return 0, ""
@@ -183,5 +179,27 @@ func YumRepoExists(name string) Thunk {
 func YumRepoURL(urlstr string) Thunk {
 	return func() (exitCode int, exitMessage string) {
 		return existsRepoWithProperty("Url", urlstr)
+	}
+}
+
+// pacmanIgnore checks to see whether a given package is in /etc/pacman.conf's
+// IgnorePkg setting
+func pacmanIgnore(pkg string) Thunk {
+	return func() (exitCode int, exitMessage string) {
+		data := fileToString("/etc/pacman.conf")
+		re := regexp.MustCompile("[^#]IgnorePkg\\s+=\\s+.+")
+		find := re.FindString(data)
+		var packages []string
+		if find != "" {
+			spl := strings.Split(find, " ")
+			if len(spl) > 2 {
+				packages = spl[2:] // first two are "IgnorePkg" and "="
+				if strIn(pkg, packages) {
+					return 0, ""
+				}
+			}
+		}
+		msg := "Couldn't find package in IgnorePkg"
+		return genericError(msg, pkg, packages)
 	}
 }
