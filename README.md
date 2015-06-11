@@ -134,6 +134,10 @@ Network
  * `"gatewayInterface"` : Is the default gateway operating on this interface?
  * `"TCP"` : Can this host be reached via a TCP connection?
  * `"UDP"` : Can this host be reached via a UDP connection?
+ * `"tcpTimeout"` : Can this host be reached via a TCP connection before a set
+ timeout?
+ * `"udpTimeout"` : Can this host be reached via a UDP connection before a set
+ timeout?
 
 Users and Groups
 ----------------

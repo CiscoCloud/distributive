@@ -1,5 +1,5 @@
 {
-    "Name": "Package related checks",
+    "Name": "Package related checks, designed to fail",
     "Checklist" : [
         {
             "Check" : "installed",
@@ -15,7 +15,7 @@
         },
         {
             "Check" : "pacmanIgnore",
-            "Parameters" : ["pulseaudio"]
+            "Parameters" : ["failme"]
         }
     ]
 }

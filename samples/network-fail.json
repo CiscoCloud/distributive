@@ -32,6 +32,14 @@
         {
             "Check" : "routingTableGateway",
             "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "tcpTimeout",
+            "Parameters" : ["google.com:80", "1ns"]
+        },
+        {
+            "Check" : "udpTimeout",
+            "Parameters" : ["google.com:80", "1ns"]
         }
     ]
 }

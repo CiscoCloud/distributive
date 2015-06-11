@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 // getHexPorts gets all open ports as hex strings from /proc/net/tcp
@@ -243,59 +244,85 @@ func Host(host string) Thunk {
 
 // canConnect tests whether a connection can be made to a given host on its
 // given port using protocol ("TCP"|"UDP")
-func canConnect(host string, protocol string) bool {
+func canConnect(host string, protocol string, timeout time.Duration) bool {
 	parseerr := func(err error) {
 		if err != nil {
 			log.Fatal("Could not parse " + protocol + " address: " + host)
 		}
 	}
+	var conn net.Conn
+	var err error
+	var timeoutNetwork string = "tcp"
+	var timeoutAddress string
+	nanoseconds := timeout.Nanoseconds()
 	switch protocol {
 	case "TCP":
 		tcpaddr, err := net.ResolveTCPAddr("tcp", host)
 		parseerr(err)
-		conn, err := net.DialTCP("tcp", nil, tcpaddr)
-		if conn != nil {
-			defer conn.Close()
+		timeoutAddress = tcpaddr.String()
+		if nanoseconds <= 0 {
+			conn, err = net.DialTCP(timeoutNetwork, nil, tcpaddr)
 		}
-		if err == nil {
-			return true
-		}
-		return false
 	case "UDP":
+		timeoutNetwork = "udp"
 		udpaddr, err := net.ResolveUDPAddr("udp", host)
 		parseerr(err)
-		conn, err := net.DialUDP("udp", nil, udpaddr)
-		if conn != nil {
-			defer conn.Close()
+		timeoutAddress = udpaddr.String()
+		if nanoseconds <= 0 {
+			conn, err = net.DialUDP("udp", nil, udpaddr)
 		}
-		if err == nil {
-			return true
-		}
-		return false
 	default:
 		log.Fatal("Unsupported protocol: " + protocol)
+	}
+	// if a duration was specified, use it
+	if nanoseconds > 0 {
+		conn, err = net.DialTimeout(timeoutNetwork, timeoutAddress, timeout)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	if conn != nil {
+		defer conn.Close()
+	}
+	if err == nil {
+		return true
 	}
 	return false
 }
 
 // getConnectionThunk is an abstraction of TCP and UDP
-func getConnectionThunk(host string, protocol string) Thunk {
+func getConnectionThunk(host string, protocol string, timeoutstr string) Thunk {
 	return func() (exitCode int, exitMessage string) {
-		if canConnect(host, protocol) {
+		dur, err := time.ParseDuration(timeoutstr)
+		if err != nil {
+			msg := "Configuration error: Could not parse duration: "
+			log.Fatal(msg + timeoutstr)
+		}
+		if canConnect(host, protocol, dur) {
 			return 0, ""
 		}
 		return 1, "Could not connect over " + protocol + " to host: " + host
 	}
 }
 
-// TCP sees ig a given IP/port can be reached with a TCP connection
+// TCP sees if a given IP/port can be reached with a TCP connection
 func TCP(host string) Thunk {
-	return getConnectionThunk(host, "TCP")
+	return getConnectionThunk(host, "TCP", "0ns")
 }
 
 // UDP is like TCP but with UDP instead.
 func UDP(host string) Thunk {
-	return getConnectionThunk(host, "UDP")
+	return getConnectionThunk(host, "UDP", "0ns")
+}
+
+// tcpTimeout is like TCP, but with a timeout parameter
+func tcpTimeout(host string, timeoutstr string) Thunk {
+	return getConnectionThunk(host, "TCP", timeoutstr)
+}
+
+// udpTimeout is like tcpTimeout but with UDP instead.
+func udpTimeout(host string, timeoutstr string) Thunk {
+	return getConnectionThunk(host, "UDP", timeoutstr)
 }
 
 // returns a column of the routing table as a slice of strings

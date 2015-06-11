@@ -64,6 +64,14 @@
         {
             "Check" : "routingTableGateway",
             "Parameters" : ["192.168.0.1"]
+        },
+        {
+            "Check" : "tcpTimeout",
+            "Parameters" : ["google.com:80", "20s"]
+        },
+        {
+            "Check" : "udpTimeout",
+            "Parameters" : ["google.com:80", "20s"]
         }
     ]
 }

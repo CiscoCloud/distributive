@@ -95,12 +95,12 @@ func validateParameters(chk Check) {
 		"command": 1, "running": 1, "file": 1, "directory": 1, "symlink": 1,
 		"installed": 1, "checksum": 3, "temp": 1, "port": 1,
 		"interface": 1, "up": 1, "ip4": 2, "ip6": 2, "gateway": 1,
-		"gatewayinterface": 1, "host": 1, "tcp": 1, "udp": 1, "module": 1,
-		"kernelparameter": 1, "dockerimage": 1, "dockerrunning": 1,
-		"groupexists": 1, "useringroup": 2, "groupid": 2, "userexists": 1,
-		"userhasuid": 2, "userhasgid": 2, "userhasusername": 2, "userhasname": 2,
-		"userhashomedir": 2, "repoexists": 2, "repoexistsuri": 2,
-		"routingtablegateway": 1, "routingtableinterface": 1,
+		"gatewayinterface": 1, "host": 1, "tcp": 1, "udp": 1, "tcptimeout": 2,
+		"udptimeout": 2, "module": 1, "kernelparameter": 1, "dockerimage": 1,
+		"dockerrunning": 1, "groupexists": 1, "useringroup": 2, "groupid": 2,
+		"userexists": 1, "userhasuid": 2, "userhasgid": 2, "userhasusername": 2,
+		"userhasname": 2, "userhashomedir": 2, "repoexists": 2,
+		"repoexistsuri": 2, "routingtablegateway": 1, "routingtableinterface": 1,
 		"routingtabledestination": 1, "systemctlloaded": 1, "systemctlactive": 1,
 		"systemctlsockpath": 1, "systemctlsockunit": 1, "systemctltimer": 1,
 		"systemctltimerloaded": 1, "systemctlunitfilestatus": 2,
@@ -157,6 +157,10 @@ func getThunk(chk Check) Thunk {
 		return TCP(chk.Parameters[0])
 	case "udp":
 		return UDP(chk.Parameters[0])
+	case "tcptimeout":
+		return tcpTimeout(chk.Parameters[0], chk.Parameters[1])
+	case "udptimeout":
+		return udpTimeout(chk.Parameters[0], chk.Parameters[1])
 	case "routingtabledestination":
 		return RoutingTableDestination(chk.Parameters[0])
 	case "routingtableinterface":
