@@ -7,13 +7,6 @@
     - [Usage](#usage)
     - [Supported Frameworks](#supported-frameworks)
 - [Checks](#checks)
-    - [General Fields](#general-fields)
-    - [Filesystem](#filesystem)
-    - [Packages](#packages)
-    - [Network](#network)
-    - [Users and Groups](#users-and-groups)
-    - [Systemctl](#systemctl)
-    - [Miscellaneous](#miscellaneous)
 - [Dependencies](#dependencies)
 - [Comparison to Other Software](#comparison-to-other-software)
     - [Serverspec](#serverspec)
@@ -67,7 +60,7 @@ Usage
 $ distributive --help
 Usage of ./distributive:
   -f="": Use the health check JSON located at this path
-  -v=0: Output verbosity level (valid values are [0-3])
+  -v=1: Output verbosity level (valid values are [0-3])
      0: (Default) Display only errors, with no other output.
      1: Display errors and some information.
      2: Display everything that's happening.
@@ -77,7 +70,7 @@ Examples:
 
 ```
 $ /path/to/distributive -v=2 -f ./samples/filesystem.json
-$ distributive -f /usr/share/distributive/samples/network.json -v=3
+$ distributive -f /usr/share/distributive/samples/network.json -v=0
 ```
 
 Supported Frameworks
@@ -85,7 +78,9 @@ Supported Frameworks
 
 Distributive attempts to be as framework-agnostic as possible. It is known to
 work well with both Sensu and Consul, which have similar architecture with
-regards to their health checks.
+regards to their health checks. There is documentation for how to use
+Distributive with Consul on this project's
+[Github wiki](https://github.com/CiscoCloud/distributive/wiki/Working-with-Consul).
 
 [1]: https://www.consul.io/docs/agent/checks.html "Consul"
 [2]: https://sensuapp.org/docs/0.18/checks "Sensu"
@@ -93,100 +88,20 @@ regards to their health checks.
 Checks
 =======
 
-General Fields
------------
+Distributive provides dozens of checks ranging from CPU core temperature to
+TCP connection timeouts. For the impatient, examples of every single implemented
+check are available in the `samples/` directory, sorted by category. There
+is extensive documentation for each check available on this project's
+[Github wiki](https://github.com/CiscoCloud/distributive/wiki).
 
- * `"Name"` : Descriptive name for a check/list (string)
- * `"Notes"` : Human-readable description of this check/list (not used by Distributive).
- * `"Check"` : Type of check to be run (string)
- * `"Parameters"` : Parameters to pass to the check (always a list of strings)
-
-Filesystem
-----------
- * `"file"` : Is there a file at this path?
- * `"directory"` : Is there a directory at this path?
- * `"symlink"` : Is there a symlink at this path?
- * `"checksum"`: Using this algorithm and given this sum, is this file valid (three parameters)?
-
-Packages
---------
-Supported package managers for checks `"installed"`, and `"repoExistsURI"` are
-`yum`, `apt`, and `pacman`. Only `pacman` and `yum` are supported for
-`"repoExists"`.
-
- * `"installed"` : Is this program installed on the server?
- * `"repoExists"` : Does the configuration file for this package manager specify
- this repo by this name (two parameters)?
- * `"repoExistsURI"` : Does the configuration file for this package manager
- specify  this repo by this URI (two parameters)?
- * `"pacmanIgnore"` : Is this package listed in `pacman`'s configuration's
- IgnorePkg field?
-
-Network
--------
-
- * `"port"` : Is this port in an open state?
- * `"interface"` : Does this network interface exist?
- * `"up"` : Is this network interface up?
- * `"ip4"` : Does this interface have the specified IP address (two parameters)?
- * `"ip6"` : Does this interface have the specified IP address (two parameters)?
- * `"gateway"` : Does the default gateway have the specified IP address?
- * `"gatewayInterface"` : Is the default gateway operating on this interface?
- * `"TCP"` : Can this host be reached via a TCP connection?
- * `"UDP"` : Can this host be reached via a UDP connection?
- * `"tcpTimeout"` : Can this host be reached via a TCP connection before a set
- timeout?
- * `"udpTimeout"` : Can this host be reached via a UDP connection before a set
- timeout?
-
-Users and Groups
-----------------
-
-For all of the following checks, the user can either be specified by their
-username or by their UID. Except `"userInGroup"`, which requires a username.
-
- * `"groupExists"` : Does a group by this name exist on the host?
- * `"groupId"` : Does a group by this name have this group id?
- * `"userInGroup"` : Is this user a member of this group?
- * `"userExists"` : Does this user exist?
- * `"userHasUID"` : Does this user have this UID?
- * `"userHasGID"` : Does this user have this primary GID?
- * `"userHasUsername"` : Does this user have this username?
- * `"userHasName"` : Does this user have this name?
- * `"userHasHomeDir"` : Is this the path of this user's home directory?
-
-Systemctl
----------
-
- * `"systemctlLoaded"` : Is this service loaded?
- * `"systemctlActive"` : Is this service active?
- * `"systemctlSockPath"` : Is the sock at this path registered with systemd?
- * `"systemctlSockUnit"` : Is the sock with this unit registered with systemd?
- * `"systemctlTimer"` : Is this timer active?
- * `"systemctlTimerLoaded"` : Is this timer loaded?
- * `"systemctlUnitFileStatus"` : Does this unit file have this status?
-
-Miscellaneous
------------
-
- * `"command"` : Run a shell command.
- * `"running"` : Is this service running on the server?
- * `"temp"` : Does the CPU temp exceed this integer (Celcius)?
- * `"module"` : Is this kernel module activated?
- * `"kernelParameter"` : Is this kernel parameter specified?
- * `"dockerImage"` : Does this Docker image exist on the host?
- * `"dockerRunning"` : Is this Docker container running (must include version,
- e.g. user/container:latest)?
 
 Dependencies
 ============
 
 Distributive itself has no dependencies, it is compiled as a standalone Go
-binary. Some checks, however, rely on output from specific packages.
-
- * Package related checks, as outlined above.
- * `"temp"` depends on the package lm_sensors.
- * `"dockerImage"`, `"dockerRunning"` depend on Docker.
+binary. Some checks, however, rely on output from specific packages. These
+dependencies are outlined for each check on this project's
+[Github wiki](https://github.com/CiscoCloud/distributive/wiki/Checks-and-Checklists).
 
 Comparison to Other Software
 ============================
@@ -225,12 +140,8 @@ Contributing and Getting Help
 Contributing
 ------------
 
-Thank you for your interest in contributing! We work hard to ensure that
-contribution to our project is easy. All of our code is commented extensively.
-We attempt to provide complete and clear documentation and samples. If you
-have any questions about how the program is architectured or what some code does,
-please don't hesitate to ask. We use Github to develop Distributive out in the
-open, so issues and pull requests are more than welcome.
+Thank you for your interest in contributing! To get started, please check out
+[this page on our wiki](https://github.com/CiscoCloud/distributive/wiki/How-It-Works-%28and-So-Can-You!%29).
 
 Getting Help
 ------------
