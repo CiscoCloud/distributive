@@ -29,7 +29,8 @@ func isType(name string, checker fileTypeCheck, path string) (exitCode int, mess
 }
 
 // File checks to see if the given path represents a normal file
-func File(path string) Thunk {
+func File(parameters []string) (exitCode int, exitMessage string) {
+	path := parameters[0]
 	// returns true if there is a regular ol' file at path
 	isFile := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
@@ -38,14 +39,12 @@ func File(path string) Thunk {
 		}
 		return false, err
 	}
-
-	return func() (exitCode int, exitMessage string) {
-		return isType("file", isFile, path)
-	}
+	return isType("file", isFile, path)
 }
 
 // Directory checks to see if a directory exists at the specified path
-func Directory(path string) Thunk {
+func Directory(parameters []string) (exitCode int, exitMessage string) {
+	path := parameters[0]
 	isDirectory := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
 		if fileInfo.Mode().IsDir() {
@@ -53,13 +52,12 @@ func Directory(path string) Thunk {
 		}
 		return false, err
 	}
-	return func() (exitCode int, exitMessage string) {
-		return isType("directory", isDirectory, path)
-	}
+	return isType("directory", isDirectory, path)
 }
 
 // Symlink checks to see if a symlink exists at a given path
-func Symlink(path string) Thunk {
+func Symlink(parameters []string) (exitCode int, exitMessage string) {
+	path := parameters[0]
 	// isSymlink checks to see if a symlink exists at this path.
 	isSymlink := func(path string) (bool, error) {
 		_, err := os.Readlink(path)
@@ -68,13 +66,14 @@ func Symlink(path string) Thunk {
 		}
 		return false, err
 	}
-	return func() (exitCode int, exitMessage string) {
-		return isType("symlink", isSymlink, path)
-	}
+	return isType("symlink", isSymlink, path)
 }
 
 // Checksum checks the hash of a given file using the given algorithm
-func Checksum(algorithm string, checkAgainst string, path string) Thunk {
+func Checksum(parameters []string) (exitCode int, exitMessage string) {
+	algorithm := parameters[0]
+	checkAgainst := parameters[1]
+	path := parameters[2]
 	getChecksum := func(algorithm string, data []byte) (checksum string) {
 		algorithm = strings.ToUpper(algorithm)
 		// default
@@ -99,12 +98,10 @@ func Checksum(algorithm string, checkAgainst string, path string) Thunk {
 	getFileChecksum := func(algorithm string, path string) (checksum string) {
 		return getChecksum(algorithm, fileToBytes(path))
 	}
-	return func() (exitCode int, exitMessage string) {
-		chksum := getFileChecksum(algorithm, path)
-		if chksum == checkAgainst {
-			return 0, ""
-		}
-		msg := "Checksums do not match for file: " + path
-		return genericError(msg, checkAgainst, []string{chksum})
+	chksum := getFileChecksum(algorithm, path)
+	if chksum == checkAgainst {
+		return 0, ""
 	}
+	msg := "Checksums do not match for file: " + path
+	return genericError(msg, checkAgainst, []string{chksum})
 }

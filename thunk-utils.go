@@ -7,13 +7,14 @@ import (
 	"log"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
-// Thunk is the type of function that runs without parameters and returns
+// Thunk is the type of function that takes a list of string params and returns
 // an error code and an exit message to be printed to stdout.
 // Generally, if exitCode == 0, exitMessage == "".
-type Thunk func() (exitCode int, exitMessage string)
+type Thunk func(parameters []string) (exitCode int, exitMessage string)
 
 // separateString is an abstraction of stringToSlice that takes two kinds of
 // separators, and splits a string into a 2D slice based on those separators
@@ -142,6 +143,16 @@ func genericError(msg string, name string, actual []string) (exitCode int, exitM
 		msg += fmt.Sprint(actual[1:lengthThreshold])
 	}
 	return 1, msg
+}
+
+// parseMyInt parses an int or logs the error
+func parseMyInt(str string) int {
+	i, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		msg := "Probable configuration error: Could not parse integer: "
+		log.Fatal(msg + fmt.Sprint(str))
+	}
+	return int(i)
 }
 
 /*

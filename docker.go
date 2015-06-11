@@ -8,23 +8,23 @@ import (
 
 // DockerImage checks to see that the specified Docker image (e.g. "user/image",
 // "ubuntu", etc.) is downloaded (pulled) on the host
-func DockerImage(name string) Thunk {
+func DockerImage(parameters []string) (exitCode int, exitMessage string) {
+	name := parameters[0]
 	getDockerImages := func() (images []string) {
 		cmd := exec.Command("docker", "images")
 		return commandColumnNoHeader(0, cmd)
 	}
-	return func() (exitCode int, exitMessage string) {
-		images := getDockerImages()
-		if strIn(name, images) {
-			return 0, ""
-		}
-		return genericError("Docker image was not found", name, images)
+	images := getDockerImages()
+	if strIn(name, images) {
+		return 0, ""
 	}
+	return genericError("Docker image was not found", name, images)
 }
 
 // DockerRunning checks to see if a specified docker container is running
 // (e.g. "user/container")
-func DockerRunning(name string) Thunk {
+func DockerRunning(parameters []string) (exitCode int, exitMessage string) {
+	name := parameters[0]
 	getRunningContainers := func() (images []string) {
 		out, err := exec.Command("docker", "ps", "-a").CombinedOutput()
 		outstr := string(out)
@@ -50,11 +50,9 @@ func DockerRunning(name string) Thunk {
 		}
 		return images
 	}
-	return func() (exitCode int, exitMessage string) {
-		running := getRunningContainers()
-		if strIn(name, running) {
-			return 0, ""
-		}
-		return genericError("Docker container not runnning", name, running)
+	running := getRunningContainers()
+	if strIn(name, running) {
+		return 0, ""
 	}
+	return genericError("Docker container not runnning", name, running)
 }
