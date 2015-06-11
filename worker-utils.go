@@ -11,10 +11,10 @@ import (
 	"strings"
 )
 
-// Thunk is the type of function that takes a list of string params and returns
+// Worker is the type of function that takes a list of string params and returns
 // an error code and an exit message to be printed to stdout.
 // Generally, if exitCode == 0, exitMessage == "".
-type Thunk func(parameters []string) (exitCode int, exitMessage string)
+type Worker func(parameters []string) (exitCode int, exitMessage string)
 
 // separateString is an abstraction of stringToSlice that takes two kinds of
 // separators, and splits a string into a 2D slice based on those separators

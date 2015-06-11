@@ -36,12 +36,12 @@ func command(parameters []string) (exitCode int, exitMessage string) {
 // process name, excluding this process (in case the process name is in the JSON
 // file name)
 func Running(parameters []string) (exitCode int, exitMessage string) {
-	proc := parameters[0]
 	// getRunningCommands returns the entries in the "COMMAND" column of `ps aux`
 	getRunningCommands := func() (commands []string) {
 		cmd := exec.Command("ps", "aux")
 		return commandColumnNoHeader(10, cmd)
 	}
+	proc := parameters[0]
 	// remove this process from consideration
 	commands := getRunningCommands()
 	var filtered []string
@@ -53,14 +53,12 @@ func Running(parameters []string) (exitCode int, exitMessage string) {
 	if strIn(proc, filtered) {
 		return 0, ""
 	}
-	return 1, "Process not running: " + proc
+	return genericError("Process not running", proc, filtered)
 }
 
 // Temp parses the output of lm_sensors and determines if Core 0 (all cores) are
 // over a certain threshold as specified in the JSON.
 func Temp(parameters []string) (exitCode int, exitMessage string) {
-	// parse string parameters from JSON
-	max := parseMyInt(parameters[0])
 	// getCoreTemp returns an integer temperature for a certain core
 	getCoreTemp := func(core int) (temp int) {
 		out, err := exec.Command("sensors").Output()
@@ -81,6 +79,7 @@ func Temp(parameters []string) (exitCode int, exitMessage string) {
 		return int(tempFloat)
 
 	}
+	max := parseMyInt(parameters[0])
 	temp := getCoreTemp(0)
 	if temp < max {
 		return 0, ""
@@ -91,12 +90,12 @@ func Temp(parameters []string) (exitCode int, exitMessage string) {
 
 // Module checks to see if a kernel module is installed
 func Module(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
 	// kernelModules returns a list of all modules that are currently loaded
 	kernelModules := func() (modules []string) {
 		cmd := exec.Command("/sbin/lsmod")
 		return commandColumnNoHeader(0, cmd)
 	}
+	name := parameters[0]
 	modules := kernelModules()
 	if strIn(name, modules) {
 		return 0, ""
@@ -106,7 +105,6 @@ func Module(parameters []string) (exitCode int, exitMessage string) {
 
 // KernelParameter checks to see if a kernel parameter was set
 func KernelParameter(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
 	// parameterValue returns the value of a kernel parameter
 	parameterSet := func(name string) bool {
 		_, err := exec.Command("/sbin/sysctl", "-q", "-n", name).Output()
@@ -118,6 +116,7 @@ func KernelParameter(parameters []string) (exitCode int, exitMessage string) {
 		}
 		return true
 	}
+	name := parameters[0]
 	if parameterSet(name) {
 		return 0, ""
 	}

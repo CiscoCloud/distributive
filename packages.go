@@ -180,17 +180,13 @@ func existsRepoWithProperty(prop string, val string, manager string) (int, strin
 // repoExists checks to see that a given repo is listed in the appropriate
 // configuration file
 func repoExists(parameters []string) (exitCode int, exitMessage string) {
-	manager := parameters[0]
-	name := parameters[1]
-	return existsRepoWithProperty("Name", name, manager)
+	return existsRepoWithProperty("Name", parameters[1], parameters[0])
 }
 
 // repoExistsURI checks to see if the repo with the given URI is listed in the
 // appropriate configuration file
 func repoExistsURI(parameters []string) (exitCode int, exitMessage string) {
-	manager := parameters[0]
-	urlstr := parameters[1]
-	return existsRepoWithProperty("Url", urlstr, manager)
+	return existsRepoWithProperty("Url", parameters[1], parameters[0])
 }
 
 // pacmanIgnore checks to see whether a given package is in /etc/pacman.conf's

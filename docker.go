@@ -9,11 +9,12 @@ import (
 // DockerImage checks to see that the specified Docker image (e.g. "user/image",
 // "ubuntu", etc.) is downloaded (pulled) on the host
 func DockerImage(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
+	// getDockerImages returns a list of all downloaded Docker images
 	getDockerImages := func() (images []string) {
 		cmd := exec.Command("docker", "images")
 		return commandColumnNoHeader(0, cmd)
 	}
+	name := parameters[0]
 	images := getDockerImages()
 	if strIn(name, images) {
 		return 0, ""
@@ -24,7 +25,7 @@ func DockerImage(parameters []string) (exitCode int, exitMessage string) {
 // DockerRunning checks to see if a specified docker container is running
 // (e.g. "user/container")
 func DockerRunning(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
+	// getRunningContainers returns a list of names of running docker containers
 	getRunningContainers := func() (images []string) {
 		out, err := exec.Command("docker", "ps", "-a").CombinedOutput()
 		outstr := string(out)
@@ -50,6 +51,7 @@ func DockerRunning(parameters []string) (exitCode int, exitMessage string) {
 		}
 		return images
 	}
+	name := parameters[0]
 	running := getRunningContainers()
 	if strIn(name, running) {
 		return 0, ""

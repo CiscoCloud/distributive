@@ -14,11 +14,9 @@ import (
 	"strings"
 )
 
-type ThunkConstructor func(parameters []string) Thunk
-
 // constructors are registered, have their parameter length checked, and then
 // are passed all of Parameters
-var thunks map[string]Thunk = make(map[string]Thunk)
+var workers map[string]Worker = make(map[string]Worker)
 
 // a dictionary with the number of parameters that each method takes
 var parameterLength map[string]int = make(map[string]int)
@@ -29,12 +27,12 @@ var minVerbosity int = 0
 var verbosity int
 
 // Check is a struct for a unified interface for health checks
-// It passes its check-specific fields to that check's Thunk constructor
+// It passes its check-specific fields to that check's Worker
 type Check struct {
 	Name, Notes string
 	Check       string // type of check to run
 	Parameters  []string
-	Fun         Thunk
+	Work        Worker
 }
 
 // Checklist is a struct that provides a concise way of thinking about doing
@@ -102,25 +100,20 @@ func validateParameters(chk Check) {
 	checkParameterLength(chk, parameterLength[strings.ToLower(chk.Check)])
 }
 
-// getThunk passes a Check's parameters to the correct Thunk constructor based
-// on the Check's name. It also makes sure that the correct number of parameters
-// were specified.
-func getThunk(chk Check) Thunk {
+// getWorker returns a Worker based on the Check's name. It also makes sure that
+// the correct number of parameters were specified.
+func getWorker(chk Check) Worker {
 	validateParameters(chk)
-	thun := thunks[strings.ToLower(chk.Check)]
+	thun := workers[strings.ToLower(chk.Check)]
 	if thun == nil {
-		log.Fatal("dict entry nil for " + chk.Check)
-	}
-	return thunks[strings.ToLower(chk.Check)] // panics when is nil
-	/*
-		// TODO this never gets here
 		msg := "JSON file included one or more unsupported health checks: "
 		msg += "\n\tName: " + chk.Name
 		msg += "\n\tCheck type: " + chk.Check
 		msg += "\n\tParameters: " + fmt.Sprint(chk.Parameters)
 		log.Fatal(msg)
 		return nil
-	*/
+	}
+	return thun
 }
 
 // getChecklist loads a JSON file located at path, and Unmarshals it into a
@@ -140,11 +133,11 @@ func getChecklist(path string) (chklst Checklist) {
 		}
 		close(out)
 	}()
-	// get Thunks for each check
+	// get Workers for each check
 	out2 := make(chan Check)
 	go func() {
 		for chk := range out {
-			chk.Fun = getThunk(chk)
+			chk.Work = getWorker(chk)
 			out2 <- chk
 		}
 		close(out2)
@@ -195,13 +188,14 @@ func verbosityPrint(str string, minVerb int) {
 
 func runChecks(chklst Checklist) Checklist {
 	for _, chk := range chklst.Checklist {
-		if chk.Fun == nil {
-			msg := "Check's function was nil!" // TODO more professional
+		if chk.Work == nil {
+			msg := "Check had a nil function associated with it!"
+			msg += " Please submit a bug report with this message."
 			msg += "\n\tCheck:" + chk.Check
-			msg += "\n\tCheck map: " + fmt.Sprint(thunks)
+			msg += "\n\tCheck map: " + fmt.Sprint(workers)
 			log.Fatal(msg)
 		}
-		code, msg := chk.Fun(chk.Parameters)
+		code, msg := chk.Work(chk.Parameters)
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, msg)
 		if verbosity >= maxVerbosity && code == 0 {
@@ -220,7 +214,7 @@ func main() {
 	// Set up and parse flags
 	path := getFlags()
 
-	// add thunks to thunks, parameterLength
+	// add workers to workers, parameterLength
 	registerChecks()
 	verbosityPrint("Creating checklist...", minVerbosity+1)
 	chklst := getChecklist(path)

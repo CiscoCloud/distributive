@@ -1,7 +1,7 @@
 package main
 
-func registerCheck(name string, thun Thunk, numParams int) {
-	thunks[name] = thun
+func registerCheck(name string, work Worker, numParams int) {
+	workers[name] = work
 	parameterLength[name] = numParams
 }
 

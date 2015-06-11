@@ -30,7 +30,6 @@ func isType(name string, checker fileTypeCheck, path string) (exitCode int, mess
 
 // File checks to see if the given path represents a normal file
 func File(parameters []string) (exitCode int, exitMessage string) {
-	path := parameters[0]
 	// returns true if there is a regular ol' file at path
 	isFile := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
@@ -39,12 +38,11 @@ func File(parameters []string) (exitCode int, exitMessage string) {
 		}
 		return false, err
 	}
-	return isType("file", isFile, path)
+	return isType("file", isFile, parameters[0])
 }
 
 // Directory checks to see if a directory exists at the specified path
 func Directory(parameters []string) (exitCode int, exitMessage string) {
-	path := parameters[0]
 	isDirectory := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
 		if fileInfo.Mode().IsDir() {
@@ -52,12 +50,11 @@ func Directory(parameters []string) (exitCode int, exitMessage string) {
 		}
 		return false, err
 	}
-	return isType("directory", isDirectory, path)
+	return isType("directory", isDirectory, parameters[0])
 }
 
 // Symlink checks to see if a symlink exists at a given path
 func Symlink(parameters []string) (exitCode int, exitMessage string) {
-	path := parameters[0]
 	// isSymlink checks to see if a symlink exists at this path.
 	isSymlink := func(path string) (bool, error) {
 		_, err := os.Readlink(path)
@@ -66,14 +63,13 @@ func Symlink(parameters []string) (exitCode int, exitMessage string) {
 		}
 		return false, err
 	}
-	return isType("symlink", isSymlink, path)
+	return isType("symlink", isSymlink, parameters[0])
 }
 
 // Checksum checks the hash of a given file using the given algorithm
 func Checksum(parameters []string) (exitCode int, exitMessage string) {
-	algorithm := parameters[0]
-	checkAgainst := parameters[1]
-	path := parameters[2]
+	// getChecksum returns the checksum of some data, using a specified
+	// algorithm
 	getChecksum := func(algorithm string, data []byte) (checksum string) {
 		algorithm = strings.ToUpper(algorithm)
 		// default
@@ -95,9 +91,14 @@ func Checksum(parameters []string) (exitCode int, exitMessage string) {
 		return str
 
 	}
+	// getFileChecksum is self-explanatory
 	getFileChecksum := func(algorithm string, path string) (checksum string) {
 		return getChecksum(algorithm, fileToBytes(path))
 	}
+
+	algorithm := parameters[0]
+	checkAgainst := parameters[1]
+	path := parameters[2]
 	chksum := getFileChecksum(algorithm, path)
 	if chksum == checkAgainst {
 		return 0, ""

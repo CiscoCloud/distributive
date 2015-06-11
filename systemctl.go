@@ -58,14 +58,12 @@ func systemctlService(service string, loaded bool) (exitCode int, exitMessage st
 
 // systemctlLoaded checks to see whether or not a given service is loaded
 func systemctlLoaded(parameters []string) (exitCode int, exitMessage string) {
-	service := parameters[0]
-	return systemctlService(service, true)
+	return systemctlService(parameters[0], true)
 }
 
 // systemctlActive checks to see whether or not a given service is active
 func systemctlActive(parameters []string) (exitCode int, exitMessage string) {
-	service := parameters[0]
-	return systemctlService(service, false)
+	return systemctlService(parameters[0], false)
 }
 
 // systemctlSock is an abstraction of systemctlSockPath and systemctlSockUnit,
@@ -88,15 +86,13 @@ func systemctlSock(value string, path bool) (exitCode int, exitMessage string) {
 // systemctlSock checks to see whether the sock at the given path is registered
 // within systemd using the sock's filesystem path.
 func systemctlSockPath(parameters []string) (exitCode int, exitMessage string) {
-	path := parameters[0]
-	return systemctlSock(path, true)
+	return systemctlSock(parameters[0], true)
 }
 
 // systemctlSock checks to see whether the sock at the given path is registered
 // within systemd using the sock's unit name.
 func systemctlSockUnit(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
-	return systemctlSock(name, false)
+	return systemctlSock(parameters[0], false)
 }
 
 func getTimers(all bool) []string {
@@ -115,7 +111,7 @@ func getTimers(all bool) []string {
 }
 
 // timers(exitCode int, exitMessage string) is pure DRY for systemctlTimer and systemctlTimerLoaded
-func timersThunk(unit string, all bool) (exitCode int, exitMessage string) {
+func timersWorker(unit string, all bool) (exitCode int, exitMessage string) {
 	timers := getTimers(all)
 	if strIn(unit, timers) {
 		return 0, ""
@@ -125,22 +121,18 @@ func timersThunk(unit string, all bool) (exitCode int, exitMessage string) {
 
 // systemctlTimer reports whether a given timer is running (by unit).
 func systemctlTimer(parameters []string) (exitCode int, exitMessage string) {
-	unit := parameters[0]
-	return timersThunk(unit, false)
+	return timersWorker(parameters[0], false)
 }
 
 // systemctlTimerLoaded checks to see if a timer is loaded, even if it might
 // not be active
 func systemctlTimerLoaded(parameters []string) (exitCode int, exitMessage string) {
-	unit := parameters[0]
-	return timersThunk(unit, true)
+	return timersWorker(parameters[0], true)
 }
 
 // systemctlUnitFileStatus checks whether or not the given unit file has the
 // given status: static | enabled | disabled
 func systemctlUnitFileStatus(parameters []string) (exitCode int, exitMessage string) {
-	unit := parameters[0]
-	status := parameters[1]
 	// getUnitFilesWithStatuses returns a pair of string slices that hold
 	// the name of unit files with their current statuses.
 	getUnitFilesWithStatuses := func() (units []string, statuses []string) {
@@ -151,6 +143,8 @@ func systemctlUnitFileStatus(parameters []string) (exitCode int, exitMessage str
 		// last two are empty line and junk statistics we don't care about
 		return units[:len(units)-2], statuses[:len(statuses)-2]
 	}
+	unit := parameters[0]
+	status := parameters[1]
 	units, statuses := getUnitFilesWithStatuses()
 	var actualStatus string
 	for i, un := range units {

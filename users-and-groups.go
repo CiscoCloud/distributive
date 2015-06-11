@@ -51,7 +51,6 @@ func groupNotFound(name string) (int, string) {
 
 // GroupExists determines whether a certain UNIX user group exists
 func GroupExists(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
 	// doesGroupExist preforms all the meat of GroupExists
 	doesGroupExist := func(name string) bool {
 		groups := getGroups()
@@ -62,6 +61,7 @@ func GroupExists(parameters []string) (exitCode int, exitMessage string) {
 		}
 		return false
 	}
+	name := parameters[0]
 	if doesGroupExist(name) {
 		return 0, ""
 	}
@@ -167,39 +167,29 @@ func UserExists(parameters []string) (exitCode int, exitMessage string) {
 // UserHasUID checks if the user of the given username or uid has the given
 // UID.
 func UserHasUID(parameters []string) (exitCode int, exitMessage string) {
-	usernameOrUid := parameters[0]
-	uid := parameters[1]
-	return genericUserField(usernameOrUid, "Uid", uid)
+	return genericUserField(parameters[0], "Uid", parameters[1])
 }
 
 // UserHasUsername checks if the user of the given username or uid has the given
 // GID.
 func UserHasGID(parameters []string) (exitCode int, exitMessage string) {
-	usernameOrUid := parameters[0]
-	gid := parameters[1]
-	return genericUserField(usernameOrUid, "Gid", gid)
+	return genericUserField(parameters[0], "Gid", parameters[1])
 }
 
 // UserHasUsername checks if the user of the given username or uid has the given
 // username.
 func UserHasUsername(parameters []string) (exitCode int, exitMessage string) {
-	usernameOrUid := parameters[0]
-	username := parameters[1]
-	return genericUserField(usernameOrUid, "Username", username)
+	return genericUserField(parameters[0], "Username", parameters[1])
 }
 
 // UserHasName checks if the user of the given username or uid has the given
 // name.
 func UserHasName(parameters []string) (exitCode int, exitMessage string) {
-	usernameOrUid := parameters[0]
-	name := parameters[1]
-	return genericUserField(usernameOrUid, "Name", name)
+	return genericUserField(parameters[0], "Name", parameters[1])
 }
 
 // UserHasHomeDir checks if the user of the given username or uid has the given
 // home directory.
 func UserHasHomeDir(parameters []string) (exitCode int, exitMessage string) {
-	usernameOrUid := parameters[0]
-	homeDir := parameters[1]
-	return genericUserField(usernameOrUid, "HomeDir", homeDir)
+	return genericUserField(parameters[0], "HomeDir", parameters[1])
 }
