@@ -44,21 +44,20 @@ func getOpenPorts() (ports []int) {
 
 // Port parses /proc/net/tcp to determine if a given port is in an open state
 // and returns an error if it is not.
-func Port(port int) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		open := getOpenPorts()
-		for _, p := range open {
-			if p == port {
-				return 0, ""
-			}
+func Port(parameters []string) (exitCode int, exitMessage string) {
+	port := parseMyInt(parameters[0])
+	open := getOpenPorts()
+	for _, p := range open {
+		if p == port {
+			return 0, ""
 		}
-		// Convert ports to string to send to genericError
-		var strPorts []string
-		for _, port := range open {
-			strPorts = append(strPorts, fmt.Sprint(port))
-		}
-		return genericError("Port not open", fmt.Sprint(port), strPorts)
 	}
+	// Convert ports to string to send to genericError
+	var strPorts []string
+	for _, port := range open {
+		strPorts = append(strPorts, fmt.Sprint(port))
+	}
+	return genericError("Port not open", fmt.Sprint(port), strPorts)
 }
 
 // getInterfaces returns a list of network interfaces and handles any associated
@@ -71,8 +70,8 @@ func getInterfaces() []net.Interface {
 	return ifaces
 }
 
-// Interface detects if a network interface exists
-func Interface(name string) Thunk {
+// Interface detects if a network interface exists,
+func Interface(parameters []string) (exitCode int, exitMessage string) {
 	// getInterfaceNames returns the names of all network interfaces
 	getInterfaceNames := func() (interfaces []string) {
 		for _, iface := range getInterfaces() {
@@ -80,19 +79,18 @@ func Interface(name string) Thunk {
 		}
 		return
 	}
-	return func() (exitCode int, exitMessage string) {
-		interfaces := getInterfaceNames()
-		for _, iface := range interfaces {
-			if iface == name {
-				return 0, ""
-			}
+	name := parameters[0]
+	interfaces := getInterfaceNames()
+	for _, iface := range interfaces {
+		if iface == name {
+			return 0, ""
 		}
-		return genericError("Interface does not exist", name, interfaces)
 	}
+	return genericError("Interface does not exist", name, interfaces)
 }
 
 // Up determines if a network interface is up and running or not
-func Up(name string) Thunk {
+func Up(parameters []string) (exitCode int, exitMessage string) {
 	// getUpInterfaces returns all the names of the interfaces that are up
 	getUpInterfaces := func() (interfaceNames []string) {
 		for _, iface := range getInterfaces() {
@@ -103,13 +101,12 @@ func Up(name string) Thunk {
 		return interfaceNames
 
 	}
-	return func() (exitCode int, exitMessage string) {
-		upInterfaces := getUpInterfaces()
-		if strIn(name, upInterfaces) {
-			return 0, ""
-		}
-		return genericError("Interface is not up", name, upInterfaces)
+	name := parameters[0]
+	upInterfaces := getUpInterfaces()
+	if strIn(name, upInterfaces) {
+		return 0, ""
 	}
+	return genericError("Interface is not up", name, upInterfaces)
 }
 
 // getIPs gets all the associated IP addresses of a given interface as a slice
@@ -151,29 +148,27 @@ func getInterfaceIPs(name string, version int) (ifaceAddresses []string) {
 	return ifaceAddresses // will be empty
 }
 
-// getIPThunk is an abstraction of Ip4 and Ip6
-func getIPThunk(name string, address string, version int) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		ips := getInterfaceIPs(name, version)
-		if strIn(address, ips) {
-			return 0, ""
-		}
-		return genericError("Interface does not have IP", address, ips)
+// getIP(exitCode int, exitMessage string) is an abstraction of Ip4 and Ip6
+func getIPWorker(name string, address string, version int) (exitCode int, exitMessage string) {
+	ips := getInterfaceIPs(name, version)
+	if strIn(address, ips) {
+		return 0, ""
 	}
+	return genericError("Interface does not have IP", address, ips)
 }
 
 // Ip4 checks to see if this network interface has this ipv4 address
-func Ip4(name string, address string) Thunk {
-	return getIPThunk(name, address, 4)
+func Ip4(parameters []string) (exitCode int, exitMessage string) {
+	return getIPWorker(parameters[0], parameters[1], 4)
 }
 
 // Ip6 checks to see if this network interface has this ipv6 address
-func Ip6(name string, address string) Thunk {
-	return getIPThunk(name, address, 6)
+func Ip6(parameters []string) (exitCode int, exitMessage string) {
+	return getIPWorker(parameters[0], parameters[1], 6)
 }
 
 // Gateway checks to see that the default gateway has a certain IP
-func Gateway(address string) Thunk {
+func Gateway(parameters []string) (exitCode int, exitMessage string) {
 	// getGatewayAddress filters all gateway IPs for a non-zero value
 	getGatewayAddress := func() (addr string) {
 		ips := routingTableColumn(1)
@@ -184,18 +179,17 @@ func Gateway(address string) Thunk {
 		}
 		return "0.0.0.0"
 	}
-	return func() (exitCode int, exitMessage string) {
-		gatewayIP := getGatewayAddress()
-		if address == gatewayIP {
-			return 0, ""
-		}
-		msg := "Gateway does not have address"
-		return genericError(msg, address, []string{gatewayIP})
+	address := parameters[0]
+	gatewayIP := getGatewayAddress()
+	if address == gatewayIP {
+		return 0, ""
 	}
+	msg := "Gateway does not have address"
+	return genericError(msg, address, []string{gatewayIP})
 }
 
 // GatewayInterface checks that the default gateway is using a specified interface
-func GatewayInterface(name string) Thunk {
+func GatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 	// getGatewayInterface returns the interface that the default gateway is
 	// operating on
 	getGatewayInterface := func() (iface string) {
@@ -214,32 +208,30 @@ func GatewayInterface(name string) Thunk {
 		}
 		return ""
 	}
-	return func() (exitCode int, exitMessage string) {
-		iface := getGatewayInterface()
-		if name == iface {
-			return 0, ""
-		}
-		msg := "Default gateway does not operate on interface"
-		return genericError(msg, name, []string{iface})
+	name := parameters[0]
+	iface := getGatewayInterface()
+	if name == iface {
+		return 0, ""
 	}
+	msg := "Default gateway does not operate on interface"
+	return genericError(msg, name, []string{iface})
 }
 
 // Host checks if a given host can be resolved.
-func Host(host string) Thunk {
+func Host(parameters []string) (exitCode int, exitMessage string) {
 	// resolvable  determines whether a given host can be reached
 	resolvable := func(name string) bool {
-		_, err := net.LookupHost(host)
+		_, err := net.LookupHost(name)
 		if err == nil {
 			return true
 		}
 		return false
 	}
-	return func() (exitCode int, exitMessage string) {
-		if resolvable(host) {
-			return 0, ""
-		}
-		return 1, "Host cannot be resolved: " + host
+	host := parameters[0]
+	if resolvable(host) {
+		return 0, ""
 	}
+	return 1, "Host cannot be resolved: " + host
 }
 
 // canConnect tests whether a connection can be made to a given host on its
@@ -290,39 +282,37 @@ func canConnect(host string, protocol string, timeout time.Duration) bool {
 	return false
 }
 
-// getConnectionThunk is an abstraction of TCP and UDP
-func getConnectionThunk(host string, protocol string, timeoutstr string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		dur, err := time.ParseDuration(timeoutstr)
-		if err != nil {
-			msg := "Configuration error: Could not parse duration: "
-			log.Fatal(msg + timeoutstr)
-		}
-		if canConnect(host, protocol, dur) {
-			return 0, ""
-		}
-		return 1, "Could not connect over " + protocol + " to host: " + host
+// getConnection(exitCode int, exitMessage string) is an abstraction of TCP and UDP
+func getConnectionWorker(host string, protocol string, timeoutstr string) (exitCode int, exitMessage string) {
+	dur, err := time.ParseDuration(timeoutstr)
+	if err != nil {
+		msg := "Configuration error: Could not parse duration: "
+		log.Fatal(msg + timeoutstr)
 	}
+	if canConnect(host, protocol, dur) {
+		return 0, ""
+	}
+	return 1, "Could not connect over " + protocol + " to host: " + host
 }
 
 // TCP sees if a given IP/port can be reached with a TCP connection
-func TCP(host string) Thunk {
-	return getConnectionThunk(host, "TCP", "0ns")
+func TCP(parameters []string) (exitCode int, exitMessage string) {
+	return getConnectionWorker(parameters[0], "TCP", "0ns")
 }
 
 // UDP is like TCP but with UDP instead.
-func UDP(host string) Thunk {
-	return getConnectionThunk(host, "UDP", "0ns")
+func UDP(parameters []string) (exitCode int, exitMessage string) {
+	return getConnectionWorker(parameters[0], "UDP", "0ns")
 }
 
 // tcpTimeout is like TCP, but with a timeout parameter
-func tcpTimeout(host string, timeoutstr string) Thunk {
-	return getConnectionThunk(host, "TCP", timeoutstr)
+func tcpTimeout(parameters []string) (exitCode int, exitMessage string) {
+	return getConnectionWorker(parameters[0], "TCP", parameters[1])
 }
 
 // udpTimeout is like tcpTimeout but with UDP instead.
-func udpTimeout(host string, timeoutstr string) Thunk {
-	return getConnectionThunk(host, "UDP", timeoutstr)
+func udpTimeout(parameters []string) (exitCode int, exitMessage string) {
+	return getConnectionWorker(parameters[0], "UDP", parameters[1])
 }
 
 // returns a column of the routing table as a slice of strings
@@ -331,34 +321,32 @@ func routingTableColumn(column int) []string {
 	return commandColumnNoHeader(column, cmd)[1:]
 }
 
-// routingTableMatchThunk constructs a thunk that returns whether or not the
+// routingTableMatch(exitCode int, exitMessage string) constructs a Worker that returns whether or not the
 // given string was found in the given column of the routing table. It is an
 // astraction of routingTableDestination, routingTableInterface, and
 // routingTableGateway
-func routingTableMatch(column int, str string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		column := routingTableColumn(column)
-		if strIn(str, column) {
-			return 0, ""
-		}
-		return genericError("Not found in routing table", str, column)
+func routingTableMatch(col int, str string) (exitCode int, exitMessage string) {
+	column := routingTableColumn(col)
+	if strIn(str, column) {
+		return 0, ""
 	}
+	return genericError("Not found in routing table", str, column)
 }
 
 // RoutingTableDestination checks if an IP address is a destination in the
 // kernel's IP routing table, as accessed by `route -n`.
-func RoutingTableDestination(ipstr string) Thunk {
-	return routingTableMatch(0, ipstr)
+func RoutingTableDestination(parameters []string) (exitCode int, exitMessage string) {
+	return routingTableMatch(0, parameters[0])
 }
 
 // RoutingTableInterface checks if a given name is an interface in the
 // kernel's IP routing table, as accessed by `route -n`.
-func RoutingTableInterface(name string) Thunk {
-	return routingTableMatch(7, name)
+func RoutingTableInterface(parameters []string) (exitCode int, exitMessage string) {
+	return routingTableMatch(7, parameters[0])
 }
 
 // routeTableDestination checks if an IP address is a gateway's IP in the
 // kernel's IP routing table, as accessed by `route -n`.
-func RoutingTableGateway(ipstr string) Thunk {
-	return routingTableMatch(1, ipstr)
+func RoutingTableGateway(parameters []string) (exitCode int, exitMessage string) {
+	return routingTableMatch(1, parameters[0])
 }

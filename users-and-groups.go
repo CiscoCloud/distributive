@@ -50,7 +50,7 @@ func groupNotFound(name string) (int, string) {
 }
 
 // GroupExists determines whether a certain UNIX user group exists
-func GroupExists(name string) Thunk {
+func GroupExists(parameters []string) (exitCode int, exitMessage string) {
 	// doesGroupExist preforms all the meat of GroupExists
 	doesGroupExist := func(name string) bool {
 		groups := getGroups()
@@ -61,45 +61,44 @@ func GroupExists(name string) Thunk {
 		}
 		return false
 	}
-	return func() (exitCode int, exitMessage string) {
-		if doesGroupExist(name) {
-			return 0, ""
-		}
-		return groupNotFound(name)
+	name := parameters[0]
+	if doesGroupExist(name) {
+		return 0, ""
 	}
+	return groupNotFound(name)
 }
 
 // UserInGroup checks whether or not a given user is in a given group
-func UserInGroup(user string, group string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		groups := getGroups()
-		for _, g := range groups {
-			if g.Name == group {
-				if strIn(user, g.Users) {
-					return 0, ""
-				}
-				return genericError("User not found in group", user, g.Users)
+func UserInGroup(parameters []string) (exitCode int, exitMessage string) {
+	user := parameters[0]
+	group := parameters[0]
+	groups := getGroups()
+	for _, g := range groups {
+		if g.Name == group {
+			if strIn(user, g.Users) {
+				return 0, ""
 			}
+			return genericError("User not found in group", user, g.Users)
 		}
-		return groupNotFound(group)
 	}
+	return groupNotFound(group)
 }
 
 // GroupId checks to see if a group of a certain name has a given integer id
-func GroupId(name string, id int) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		groups := getGroups()
-		for _, g := range groups {
-			if g.Name == name {
-				if g.Id == id {
-					return 0, ""
-				}
-				msg := "Group does not have expected ID"
-				return genericError(msg, fmt.Sprint(id), []string{fmt.Sprint(g.Id)})
+func GroupId(parameters []string) (exitCode int, exitMessage string) {
+	name := parameters[0]
+	id := parseMyInt(parameters[1])
+	groups := getGroups()
+	for _, g := range groups {
+		if g.Name == name {
+			if g.Id == id {
+				return 0, ""
 			}
+			msg := "Group does not have expected ID"
+			return genericError(msg, fmt.Sprint(id), []string{fmt.Sprint(g.Id)})
 		}
-		return groupNotFound(name)
 	}
+	return groupNotFound(name)
 }
 
 // lookupUser: Does the user with either the given username or given user id
@@ -140,61 +139,57 @@ func userHasField(usernameOrUid string, fieldName string, givenValue string) (bo
 	return actualValue == givenValue, nil
 }
 
-// genericUserField constructs Thunks that check if a given field of a User
+// genericUserField constructs (exitCode int, exitMessage string)s that check if a given field of a User
 // object found by lookupUser has a given value
-func genericUserField(usernameOrUid string, fieldName string, fieldValue string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		boolean, err := userHasField(usernameOrUid, fieldName, fieldValue)
-		if err != nil {
-			return 1, "User does not exist: " + usernameOrUid
-		} else if boolean {
-			return 0, ""
-		}
-		msg := "User does not have expected " + fieldName + ": "
-		msg += "\nUser: " + usernameOrUid
-		msg += "\nGiven: " + fieldValue
-		return 1, msg
+func genericUserField(usernameOrUid string, fieldName string, fieldValue string) (exitCode int, exitMessage string) {
+	boolean, err := userHasField(usernameOrUid, fieldName, fieldValue)
+	if err != nil {
+		return 1, "User does not exist: " + usernameOrUid
+	} else if boolean {
+		return 0, ""
 	}
-
+	msg := "User does not have expected " + fieldName + ": "
+	msg += "\nUser: " + usernameOrUid
+	msg += "\nGiven: " + fieldValue
+	return 1, msg
 }
 
 // UserExists checks to see if a given user exists by looking up their username
 // or UID.
-func UserExists(usernameOrUid string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		if _, err := lookupUser(usernameOrUid); err == nil {
-			return 0, ""
-		}
-		return 1, "User does not exist: " + usernameOrUid
+func UserExists(parameters []string) (exitCode int, exitMessage string) {
+	usernameOrUid := parameters[0]
+	if _, err := lookupUser(usernameOrUid); err == nil {
+		return 0, ""
 	}
+	return 1, "User does not exist: " + usernameOrUid
 }
 
 // UserHasUID checks if the user of the given username or uid has the given
 // UID.
-func UserHasUID(usernameOrUid string, uid string) Thunk {
-	return genericUserField(usernameOrUid, "Uid", uid)
+func UserHasUID(parameters []string) (exitCode int, exitMessage string) {
+	return genericUserField(parameters[0], "Uid", parameters[1])
 }
 
 // UserHasUsername checks if the user of the given username or uid has the given
 // GID.
-func UserHasGID(usernameOrUid string, gid string) Thunk {
-	return genericUserField(usernameOrUid, "Gid", gid)
+func UserHasGID(parameters []string) (exitCode int, exitMessage string) {
+	return genericUserField(parameters[0], "Gid", parameters[1])
 }
 
 // UserHasUsername checks if the user of the given username or uid has the given
 // username.
-func UserHasUsername(usernameOrUid string, username string) Thunk {
-	return genericUserField(usernameOrUid, "Username", username)
+func UserHasUsername(parameters []string) (exitCode int, exitMessage string) {
+	return genericUserField(parameters[0], "Username", parameters[1])
 }
 
 // UserHasName checks if the user of the given username or uid has the given
 // name.
-func UserHasName(usernameOrUid string, name string) Thunk {
-	return genericUserField(usernameOrUid, "Name", name)
+func UserHasName(parameters []string) (exitCode int, exitMessage string) {
+	return genericUserField(parameters[0], "Name", parameters[1])
 }
 
 // UserHasHomeDir checks if the user of the given username or uid has the given
 // home directory.
-func UserHasHomeDir(usernameOrUid string, homeDir string) Thunk {
-	return genericUserField(usernameOrUid, "HomeDir", homeDir)
+func UserHasHomeDir(parameters []string) (exitCode int, exitMessage string) {
+	return genericUserField(parameters[0], "HomeDir", parameters[1])
 }

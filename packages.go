@@ -179,55 +179,49 @@ func existsRepoWithProperty(prop string, val string, manager string) (int, strin
 
 // repoExists checks to see that a given repo is listed in the appropriate
 // configuration file
-func repoExists(manager string, name string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		return existsRepoWithProperty("Name", name, manager)
-	}
+func repoExists(parameters []string) (exitCode int, exitMessage string) {
+	return existsRepoWithProperty("Name", parameters[1], parameters[0])
 }
 
 // repoExistsURI checks to see if the repo with the given URI is listed in the
 // appropriate configuration file
-func repoExistsURI(manager string, urlstr string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		return existsRepoWithProperty("Url", urlstr, manager)
-	}
+func repoExistsURI(parameters []string) (exitCode int, exitMessage string) {
+	return existsRepoWithProperty("Url", parameters[1], parameters[0])
 }
 
 // pacmanIgnore checks to see whether a given package is in /etc/pacman.conf's
 // IgnorePkg setting
-func pacmanIgnore(pkg string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		data := fileToString("/etc/pacman.conf")
-		re := regexp.MustCompile("[^#]IgnorePkg\\s+=\\s+.+")
-		find := re.FindString(data)
-		var packages []string
-		if find != "" {
-			spl := strings.Split(find, " ")
-			if len(spl) > 2 {
-				packages = spl[2:] // first two are "IgnorePkg" and "="
-				if strIn(pkg, packages) {
-					return 0, ""
-				}
+func pacmanIgnore(parameters []string) (exitCode int, exitMessage string) {
+	pkg := parameters[0]
+	data := fileToString("/etc/pacman.conf")
+	re := regexp.MustCompile("[^#]IgnorePkg\\s+=\\s+.+")
+	find := re.FindString(data)
+	var packages []string
+	if find != "" {
+		spl := strings.Split(find, " ")
+		if len(spl) > 2 {
+			packages = spl[2:] // first two are "IgnorePkg" and "="
+			if strIn(pkg, packages) {
+				return 0, ""
 			}
 		}
-		msg := "Couldn't find package in IgnorePkg"
-		return genericError(msg, pkg, packages)
 	}
+	msg := "Couldn't find package in IgnorePkg"
+	return genericError(msg, pkg, packages)
 }
 
 // Installed detects whether the OS is using dpkg, rpm, or pacman, queries
 // a package accoringly, and returns an error if it is not installed.
-func Installed(pkg string) Thunk {
-	return func() (exitCode int, exitMessage string) {
-		name := getManager()
-		options := managers[name]
-		out, _ := exec.Command(name, options, pkg).Output()
-		if strings.Contains(string(out), pkg) {
-			return 0, ""
-		}
-		msg := "Package was not found:"
-		msg += "\n\tPackage name: " + pkg
-		msg += "\n\tPackage manager: " + name
-		return 1, msg
+func Installed(parameters []string) (exitCode int, exitMessage string) {
+	pkg := parameters[0]
+	name := getManager()
+	options := managers[name]
+	out, _ := exec.Command(name, options, pkg).Output()
+	if strings.Contains(string(out), pkg) {
+		return 0, ""
 	}
+	msg := "Package was not found:"
+	msg += "\n\tPackage name: " + pkg
+	msg += "\n\tPackage manager: " + name
+	return 1, msg
 }

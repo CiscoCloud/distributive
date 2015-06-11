@@ -7,7 +7,7 @@
         },
         {
             "Check" : "userInGroup",
-            "Parameters" : ["root", "failme"]
+            "Parameters" : ["failme", "failme"]
         },
         {
             "Check" : "groupExists",
