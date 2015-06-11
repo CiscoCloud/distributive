@@ -17,10 +17,6 @@
             "Parameters" : ["failme"]
         },
         {
-            "Check" : "installed",
-            "Parameters" : ["failme"]
-        },
-        {
             "Check" : "module",
             "Parameters" : ["failme"]
         },

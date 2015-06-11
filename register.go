@@ -41,6 +41,7 @@ func registerChecks() {
 	registerCheck("userhasusername", UserHasUsername, 2)
 	registerCheck("userhasname", UserHasName, 2)
 	registerCheck("userhashomedir", UserHasHomeDir, 2)
+	registerCheck("installed", Installed, 1)
 	registerCheck("repoexists", repoExists, 2)
 	registerCheck("repoexistsuri", repoExistsURI, 2)
 	registerCheck("pacmanignore", pacmanIgnore, 1)

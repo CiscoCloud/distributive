@@ -198,11 +198,11 @@ func runChecks(chklst Checklist) Checklist {
 		code, msg := chk.Work(chk.Parameters)
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, msg)
-		if verbosity >= maxVerbosity && code == 0 {
+		if code == 0 {
 			message := "Check exited with no errors: "
 			message += "\n\tName: " + chk.Name
 			message += "\n\tType: " + chk.Check
-			fmt.Println(message)
+			verbosityPrint(message, maxVerbosity)
 		}
 	}
 	return chklst
