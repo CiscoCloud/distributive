@@ -6,16 +6,12 @@
             "Parameters" : ["urxvt"]
         },
         {
-            "Check" : "PPA",
-            "Parameters" : ["http://ppa.launchpad.net/ubuntu-langpack/ppa/ubuntu"]
+            "Check" : "repoExistsUri",
+            "Parameters" : ["yum", "http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
         },
         {
-            "Check" : "yumRepoURL",
-            "Parameters" : ["http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
-        },
-        {
-            "Check" : "yumRepo",
-            "Parameters" : ["core"]
+            "Check" : "repoexists",
+            "Parameters" : ["yum", "core"]
         },
         {
             "Check" : "pacmanIgnore",

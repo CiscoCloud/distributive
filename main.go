@@ -93,13 +93,13 @@ func validateParameters(chk Check) {
 	// a dictionary with the number of parameters that each method takes
 	numParameters := map[string]int{
 		"command": 1, "running": 1, "file": 1, "directory": 1, "symlink": 1,
-		"installed": 1, "ppa": 1, "checksum": 3, "temp": 1, "port": 1,
+		"installed": 1, "checksum": 3, "temp": 1, "port": 1,
 		"interface": 1, "up": 1, "ip4": 2, "ip6": 2, "gateway": 1,
 		"gatewayinterface": 1, "host": 1, "tcp": 1, "udp": 1, "module": 1,
 		"kernelparameter": 1, "dockerimage": 1, "dockerrunning": 1,
 		"groupexists": 1, "useringroup": 2, "groupid": 2, "userexists": 1,
 		"userhasuid": 2, "userhasgid": 2, "userhasusername": 2, "userhasname": 2,
-		"userhashomedir": 2, "yumrepo": 1, "yumrepourl": 1,
+		"userhashomedir": 2, "repoexists": 2, "repoexistsuri": 2,
 		"routingtablegateway": 1, "routingtableinterface": 1,
 		"routingtabledestination": 1, "systemctlloaded": 1, "systemctlactive": 1,
 		"systemctlsockpath": 1, "systemctlsockunit": 1, "systemctltimer": 1,
@@ -195,12 +195,10 @@ func getThunk(chk Check) Thunk {
 		return UserHasHomeDir(chk.Parameters[0], chk.Parameters[1])
 	case "installed":
 		return Installed(chk.Parameters[0])
-	case "ppa":
-		return PPA(chk.Parameters[0])
-	case "yumrepo":
-		return YumRepoExists(chk.Parameters[0])
-	case "yumrepourl":
-		return YumRepoURL(chk.Parameters[0])
+	case "repoexists":
+		return repoExists(chk.Parameters[0], chk.Parameters[1])
+	case "repoexistsuri":
+		return repoExistsURI(chk.Parameters[0], chk.Parameters[1])
 	case "pacmanignore":
 		return pacmanIgnore(chk.Parameters[0])
 	case "systemctlloaded":

@@ -110,11 +110,17 @@ Filesystem
 
 Packages
 --------
+Supported package managers for checks `"installed"`, and `"repoExistsURI"` are
+`yum`, `apt`, and `pacman`. Only `pacman` and `yum` are supported for
+`"repoExists"`.
 
  * `"installed"` : Is this program installed on the server?
- * `"ppa"` : Is the PPA at this URL present?
- * `"yumRepo"` : Is the Yum repo with this (short) name configured?
- * `"yumRepoURL"` : Is the Yum repo with this URL configured?
+ * `"repoExists"` : Does the configuration file for this package manager specify
+ this repo by this name (two parameters)?
+ * `"repoExistsURI"` : Does the configuration file for this package manager
+ specify  this repo by this URI (two parameters)?
+ * `"pacmanIgnore"` : Is this package listed in `pacman`'s configuration's
+ IgnorePkg field?
 
 Network
 -------
@@ -174,8 +180,8 @@ Dependencies
 Distributive itself has no dependencies, it is compiled as a standalone Go
 binary. Some checks, however, rely on output from specific packages.
 
+ * Package related checks, as outlined above.
  * `"temp"` depends on the package lm_sensors.
- * `"installed"` depends on any of the three following package managers: dpkg, rpm, or pacman.
  * `"dockerImage"`, `"dockerRunning"` depend on Docker.
 
 Comparison to Other Software

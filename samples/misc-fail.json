@@ -27,10 +27,6 @@
         {
             "Check" : "kernelParameter",
             "Parameters" : ["failme"]
-        },
-        {
-            "Check" : "PPA",
-            "Parameters" : ["failme"]
         }
     ]
 }

@@ -42,7 +42,6 @@ func stringToSliceMultispace(str string) (output [][]string) {
 }
 
 // getColumn isolates the entries of a single column from a 2D slice
-// it is currently only used by PPA for reading /etc/apt/sources.list
 func getColumn(col int, slice [][]string) (column []string) {
 	for _, line := range slice {
 		if len(line) > col {
