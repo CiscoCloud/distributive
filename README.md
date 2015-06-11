@@ -24,10 +24,13 @@ Overview
 This readme documents the current (development) version of distributive.
 
 Distributive is a tool for running distributed health checks in datacenters.
-It was designed with Consul in mind, but is platform agnostic.  The architecture
-is such that some external server will ask the host to execute this program,
-reading in from some JSON file, and will record this
-program's exit code and standard out.
+It was designed with Consul in mind, but is platform agnostic. It is simple
+to configure (with JSON checklists) and easy to deploy and run. It has no
+dependencies, and can be shipped as a speedy 4MB (yes, megabytes!) binary.
+
+Usually, some external server will ask the host to execute this program, reading
+a checklist from a JSON file, and will record this program's exit code and
+standard out.
 
 The exit code meanings are defined as [Consul] [1] and [Sensu] [2] recognize
 them.
@@ -78,7 +81,7 @@ Supported Frameworks
 
 Distributive attempts to be as framework-agnostic as possible. It is known to
 work well with both Sensu and Consul, which have similar architecture with
-regards to their health checks. There is documentation for how to use
+regards to their health checks. There is documentation on how to use
 Distributive with Consul on this project's
 [Github wiki](https://github.com/CiscoCloud/distributive/wiki/Working-with-Consul).
 
@@ -98,7 +101,7 @@ is extensive documentation for each check available on this project's
 Dependencies
 ============
 
-Distributive itself has no dependencies, it is compiled as a standalone Go
+Distributive itself has no dependencies; it is compiled as a standalone Go
 binary. Some checks, however, rely on output from specific packages. These
 dependencies are outlined for each check on this project's
 [Github wiki](https://github.com/CiscoCloud/distributive/wiki/Checks-and-Checklists).
@@ -108,10 +111,10 @@ Comparison to Other Software
 
 Distributive was created with the idea of pushing responsibiliy to the nodes,
 which grants the program a certain flexibility in what kind of checks it can run.
-It has access to local data that cannot or should not be accessed over a network,
-by another server. It was also designed around the idea of constantly changing
-infrastructure, with servers being added and destroyed constantly, and changing
-IP addresses.
+It has access to local data that cannot or should not be accessed over a network.
+It was also designed around the idea of constantly changing infrastructure, with
+servers being added and destroyed constantly, changing IP addresses, and even
+changing roles.
 
 Serverspec
 ----------

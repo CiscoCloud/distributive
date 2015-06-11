@@ -327,16 +327,12 @@ func main() {
 	chklst = runChecks(chklst)
 	// make a printable report
 	chklst.Report = makeReport(chklst)
-	// see if any checks failed
-	anyFailed := false
+	// see if any checks failed, exit accordingly
 	for _, code := range chklst.Codes {
 		if code != 0 {
-			anyFailed = true
+			verbosityPrint(chklst.Report, minVerbosity)
+			os.Exit(1)
 		}
-	}
-	if anyFailed {
-		verbosityPrint(chklst.Report, minVerbosity)
-		os.Exit(1)
 	}
 	verbosityPrint(chklst.Report, maxVerbosity)
 	os.Exit(0)
