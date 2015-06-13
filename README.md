@@ -76,7 +76,7 @@ Examples:
 ```
 $ /path/to/distributive -v=2 -f ./samples/filesystem.json
 $ distributive -f /etc/distributive/samples/network.json -v=0
-$ ./distributive -u http://pastebin.com/raw.php?i=5c1BAxcX
+$ ./distributive -u "http://pastebin.com/raw.php?i=5c1BAxcX"
 ```
 
 Supported Frameworks

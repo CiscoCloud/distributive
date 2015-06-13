@@ -20,6 +20,14 @@
         {
             "Check" : "checksum",
             "Parameters" : ["SHA1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/dev/null"]
+        },
+        {
+            "Check" : "fileContains",
+            "Parameters" : ["/proc/net/tcp","\\d{8}"]
+        },
+        {
+            "Check" : "permissions",
+            "Parameters" : ["/dev/null", "-rw-rw-rw-"]
         }
     ]
 }

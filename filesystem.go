@@ -6,7 +6,10 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"fmt"
+	"log"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -105,4 +108,37 @@ func checksum(parameters []string) (exitCode int, exitMessage string) {
 	}
 	msg := "Checksums do not match for file: " + path
 	return genericError(msg, checkAgainst, []string{chksum})
+}
+
+// fileContains checks whether a file matches a given regex
+func fileContains(parameters []string) (exitCode int, exitMessage string) {
+	path := parameters[0]
+	regexString := parameters[1]
+	re, err := regexp.Compile(regexString)
+	if err != nil {
+		msg := "Bad configuration - couldn't parse golang regexp:"
+		msg += "\n\tRegex text: " + regexString
+		msg += "\n\tError: " + err.Error()
+		log.Fatal(msg)
+	}
+	if re.Match(fileToBytes(path)) {
+		return 0, ""
+	}
+	return 1, "File does not match regexp:\n\tFile: " + path
+}
+
+// permissions checks to see if a file's octal permissions match the given set
+func permissions(parameters []string) (exitCode int, exitMessage string) {
+	path := parameters[0]
+	givenMode := parameters[1]
+	finfo, err := os.Stat(path)
+	if err != nil {
+		couldntReadError(path, err)
+	}
+	actualMode := fmt.Sprint(finfo.Mode().Perm()) // -rwxrw-r-- format
+	if actualMode == givenMode {
+		return 0, ""
+	}
+	msg := "File modes did not match"
+	return genericError(msg, givenMode, []string{actualMode})
 }

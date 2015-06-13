@@ -13,6 +13,8 @@ func registerChecks() {
 	registerCheck("directory", directory, 1)
 	registerCheck("symlink", symlink, 1)
 	registerCheck("checksum", checksum, 3)
+	registerCheck("permissions", permissions, 2)
+	registerCheck("filecontains", fileContains, 2)
 	registerCheck("temp", temp, 1)
 	registerCheck("port", port, 1)
 	registerCheck("interface", interfaceExists, 1)

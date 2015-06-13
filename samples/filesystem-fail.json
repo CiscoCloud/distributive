@@ -16,6 +16,14 @@
         {
             "Check" : "checksum",
             "Parameters" : ["SHA1", "failme", "/dev/null"]
+        },
+        {
+            "Check" : "fileContains",
+            "Parameters" : ["/dev/null", "blah"]
+        },
+        {
+            "Check" : "permissions",
+            "Parameters" : ["/dev/null", "---------x"]
         }
     ]
 }
