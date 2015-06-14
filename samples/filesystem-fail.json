@@ -24,6 +24,10 @@
         {
             "Check" : "permissions",
             "Parameters" : ["/dev/null", "---------x"]
+        },
+        {
+            "Check": "diskUsage",
+            "Parameters": ["/", "10"]
         }
     ]
 }

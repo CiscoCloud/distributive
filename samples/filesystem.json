@@ -28,6 +28,10 @@
         {
             "Check" : "permissions",
             "Parameters" : ["/dev/null", "-rw-rw-rw-"]
+        },
+        {
+            "Check": "diskUsage",
+            "Parameters": ["/", "90"]
         }
     ]
 }

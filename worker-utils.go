@@ -165,8 +165,9 @@ func genericError(msg string, name string, actual []string) (exitCode int, exitM
 func parseMyInt(str string) int {
 	i, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		msg := "Probable configuration error: Could not parse integer: "
-		log.Fatal(msg + fmt.Sprint(str))
+		msg := "Probable configuration error - could not parse integer: "
+		msg += "\n\tGiven string: " + str
+		log.Fatal(msg)
 	}
 	return int(i)
 }

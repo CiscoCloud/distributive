@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"syscall"
 )
 
 type fileTypeCheck func(path string) (bool, error)
@@ -141,4 +142,29 @@ func permissions(parameters []string) (exitCode int, exitMessage string) {
 	}
 	msg := "File modes did not match"
 	return genericError(msg, givenMode, []string{actualMode})
+}
+
+func diskUsage(parameters []string) (exitCode int, exitMessage string) {
+	// percentFSUsed gets the percent of the filesystem that is occupied
+	percentFSUsed := func(path string) int {
+		// get FS info (*nix systems only!)
+		var stat syscall.Statfs_t
+		syscall.Statfs(path, &stat)
+
+		// blocks * size of block = available size
+		totalBytes := stat.Blocks * uint64(stat.Bsize)
+		availableBytes := stat.Bavail * uint64(stat.Bsize)
+		usedBytes := totalBytes - availableBytes
+		percentUsed := int((float64(usedBytes) / float64(totalBytes)) * 100)
+		return percentUsed
+
+	}
+	maxPercentUsed := parseMyInt(parameters[1])
+	actualPercentUsed := percentFSUsed(parameters[0])
+	if actualPercentUsed < maxPercentUsed {
+		return 0, ""
+	}
+	msg := "More disk space used than expected"
+	slc := []string{fmt.Sprint(actualPercentUsed) + "%"}
+	return genericError(msg, fmt.Sprint(maxPercentUsed)+"%", slc)
 }
