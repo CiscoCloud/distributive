@@ -22,6 +22,10 @@
         {
             "Check" : "kernelParameter",
             "Parameters" : ["kernel.ctrl-alt-del"]
+        },
+        {
+            "Check" : "phpConfig",
+            "Parameters" : ["default_mimetype", "text/html"]
         }
     ]
 }

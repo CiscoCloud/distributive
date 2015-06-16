@@ -8,6 +8,7 @@ func registerCheck(name string, work Worker, numParams int) {
 func registerChecks() {
 	registerCheck("command", command, 1)
 	registerCheck("running", running, 1)
+	registerCheck("phpconfig", phpConfig, 2)
 	registerCheck("file", file, 1)
 	registerCheck("directory", directory, 1)
 	registerCheck("symlink", symlink, 1)

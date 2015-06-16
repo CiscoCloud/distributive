@@ -117,16 +117,23 @@ func getAptRepos(path string) (repos []Repo) {
 }
 
 // getPacmanRepos constructs Repos from the pacman.conf file at path. Gives
-// non-zero Names and Urls TODO: make this more line by line instead of global
-// regex matches
+// non-zero Names and Urls
 func getPacmanRepos(path string) (repos []Repo) {
-	data := fileToString(path)
+	data := fileToLines(path)
 	// match words and dashes in brackets without comments
 	nameRegex := regexp.MustCompile("[^#]\\[(\\w|\\-)+\\]")
 	// match lines that start with Include= or Server= and anything after that
 	urlRegex := regexp.MustCompile("[^#](Include|Server)\\s*=\\s*.*")
-	names := nameRegex.FindAllString(data, -1)
-	urls := urlRegex.FindAllString(data, -1)
+	var names []string
+	var urls []string
+	for _, line := range data {
+		if nameRegex.Match(line) {
+			names = append(names, string(nameRegex.Find(line)))
+		}
+		if urlRegex.Match(line) {
+			urls = append(urls, string(urlRegex.Find(line)))
+		}
+	}
 	for i, name := range names {
 		if len(urls) > i {
 			repos = append(repos, Repo{Name: name, Url: urls[i]})

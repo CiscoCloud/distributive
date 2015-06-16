@@ -23,6 +23,10 @@
         {
             "Check" : "kernelParameter",
             "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "phpConfig",
+            "Parameters" : ["default_mimetype", "failme"]
         }
     ]
 }

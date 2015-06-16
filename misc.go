@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-// php -r 'echo get_cfg_var("default_mimetype");
-
 // command runs a shell command, and collapses its error code to 0 or 1.
 // It outputs stderr and stdout if the command has error code != 0.
 func command(parameters []string) (exitCode int, exitMessage string) {
@@ -26,7 +24,6 @@ func command(parameters []string) (exitCode int, exitMessage string) {
 	// Create output message
 	exitMessage += "Command exited with non-zero exit code:"
 	exitMessage += "\n\tCommand: " + toExec
-	exitMessage += "\n\tExit code: " + fmt.Sprint(exitCode)
 	exitMessage += "\n\tExit code: " + fmt.Sprint(exitCode)
 	exitMessage += "\n\tOutput: " + fmt.Sprint(out)
 	return 1, exitMessage
@@ -121,4 +118,39 @@ func kernelParameter(parameters []string) (exitCode int, exitMessage string) {
 		return 0, ""
 	}
 	return 1, "Kernel parameter not set: " + name
+}
+
+// phpConfig checks the value of a PHP configuration variable
+func phpConfig(parameters []string) (exitCode int, exitMessage string) {
+	// getPHPVariable returns the value of a PHP configuration value as a string
+	// or just "" if it doesn't exist
+	getPHPVariable := func(name string) (val string) {
+		quote := func(str string) string {
+			return "\"" + str + "\""
+		}
+		// php -r 'echo get_cfg_var("default_mimetype");
+		echo := fmt.Sprintf("echo get_cfg_var(%s);", quote(name))
+		cmd := exec.Command("php", "-r", echo)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			msg := "Couldn't execute command:"
+			msg += "\n\tPath: " + cmd.Path
+			msg += "\n\tCommand: php -r " + echo
+			msg += "\n\tOutput: " + string(out)
+			msg += "\n\tError: " + err.Error()
+			log.Fatal(msg)
+		}
+		return string(out)
+	}
+	name := parameters[0]
+	value := parameters[1]
+	actualValue := getPHPVariable(name)
+	if actualValue == value {
+		return 0, ""
+	} else if actualValue == "" {
+		msg := "PHP configuration variable not set"
+		return genericError(msg, value, []string{actualValue})
+	}
+	msg := "PHP variable did not match expected value"
+	return genericError(msg, value, []string{actualValue})
 }
