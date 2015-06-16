@@ -54,7 +54,7 @@ To install the development version (potentially unstable):
 We also provide premade RPM packages on
 [Bintray](https://bintray.com/ciscocloud/rpm/Distributive/view#files). The
 binary will be installed to `/bin/distributive` and the samples to
-`/usr/share/distributive/samples/`.
+`/etc/distributive/samples/`.
 
 Usage
 -----
@@ -62,9 +62,10 @@ Usage
 ```
 $ distributive --help
 Usage of ./distributive:
-  -f="": Use the health check JSON located at this path
-  -v=1: Output verbosity level (valid values are [0-3])
-     0: (Default) Display only errors, with no other output.
+  -f="": Use the health check located at this path
+  -u="": Use the health check located at this URL
+  -v=1: Output verbosity level (valid values are [0-2])
+     0: Display only errors, with no other output.
      1: Display errors and some information.
      2: Display everything that's happening.
 ```
@@ -73,7 +74,8 @@ Examples:
 
 ```
 $ /path/to/distributive -v=2 -f ./samples/filesystem.json
-$ distributive -f /usr/share/distributive/samples/network.json -v=0
+$ distributive -f /etc/distributive/samples/network.json -v=0
+$ ./distributive -u http://pastebin.com/raw.php?i=5c1BAxcX
 ```
 
 Supported Frameworks

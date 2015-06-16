@@ -29,7 +29,7 @@ func isType(name string, checker fileTypeCheck, path string) (exitCode int, mess
 }
 
 // File checks to see if the given path represents a normal file
-func File(parameters []string) (exitCode int, exitMessage string) {
+func file(parameters []string) (exitCode int, exitMessage string) {
 	// returns true if there is a regular ol' file at path
 	isFile := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
@@ -42,7 +42,7 @@ func File(parameters []string) (exitCode int, exitMessage string) {
 }
 
 // Directory checks to see if a directory exists at the specified path
-func Directory(parameters []string) (exitCode int, exitMessage string) {
+func directory(parameters []string) (exitCode int, exitMessage string) {
 	isDirectory := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
 		if fileInfo.Mode().IsDir() {
@@ -54,7 +54,7 @@ func Directory(parameters []string) (exitCode int, exitMessage string) {
 }
 
 // Symlink checks to see if a symlink exists at a given path
-func Symlink(parameters []string) (exitCode int, exitMessage string) {
+func symlink(parameters []string) (exitCode int, exitMessage string) {
 	// isSymlink checks to see if a symlink exists at this path.
 	isSymlink := func(path string) (bool, error) {
 		_, err := os.Readlink(path)

@@ -8,9 +8,9 @@ func registerCheck(name string, work Worker, numParams int) {
 func registerChecks() {
 	registerCheck("command", command, 1)
 	registerCheck("running", Running, 1)
-	registerCheck("file", File, 1)
-	registerCheck("directory", Directory, 1)
-	registerCheck("symlink", Symlink, 1)
+	registerCheck("file", file, 1)
+	registerCheck("directory", directory, 1)
+	registerCheck("symlink", symlink, 1)
 	registerCheck("checksum", Checksum, 3)
 	registerCheck("temp", Temp, 1)
 	registerCheck("port", Port, 1)

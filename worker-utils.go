@@ -91,10 +91,16 @@ func strIn(str string, slice []string) bool {
 	return false
 }
 
-// couldntReadError logs.Fatal an error related to reading a file
-func couldntReadError(path string, err error) {
+// pathError is an abstraction of couldntReadError and couldntWriteError
+func pathError(path string, err error, read bool) {
+	// is it a read or write error?
+	readOrWrite := "write"
+	if read {
+		readOrWrite = "read"
+	}
+
 	if err != nil {
-		msg := "Couldn't read file:"
+		msg := "Couldn't " + readOrWrite + " file:"
 		msg += "\n\tPath: " + path
 		msg += "\n\tError: " + err.Error()
 		if path == "" {
@@ -102,6 +108,16 @@ func couldntReadError(path string, err error) {
 		}
 		log.Fatal(msg)
 	}
+}
+
+// couldntWriteError logs.Fatal an error relating to writing a file
+func couldntWriteError(path string, err error) {
+	pathError(path, err, false)
+}
+
+// couldntReadError logs.Fatal an error related to reading a file
+func couldntReadError(path string, err error) {
+	pathError(path, err, true)
 }
 
 // fileToBytes reads a file and handles the error

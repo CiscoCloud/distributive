@@ -6,11 +6,16 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -25,6 +30,9 @@ var parameterLength map[string]int = make(map[string]int)
 var maxVerbosity int = 2
 var minVerbosity int = 0
 var verbosity int
+
+// where remote checks are downloaded to
+var remoteCheckDir = "/var/run/distributive/"
 
 // Check is a struct for a unified interface for health checks
 // It passes its check-specific fields to that check's Worker
@@ -116,13 +124,74 @@ func getWorker(chk Check) Worker {
 	return thun
 }
 
+// loadRemoteChecklist either downloads a checklist from a remote URL and puts
+// it in /etc/distributive/url.json
+func loadRemoteChecklist(urlstr string) (chklst Checklist) {
+	// urlToFile gets the response from urlstr and writes it to path
+	urlToFile := func(urlstr string, path string) error {
+		// get response from URL
+		resp, err := http.Get(urlstr)
+		if err != nil {
+			couldntReadError(path, err)
+		}
+		defer resp.Body.Close()
+
+		// read response
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			msg := "Bad response, couldn't read body:"
+			msg += "\n\tURL: " + urlstr
+			msg += "\n\tError: " + err.Error()
+			log.Fatal(msg)
+		} else if body == nil || bytes.Equal(body, []byte{}) {
+			msg := "Body of response was empty:"
+			msg += "\n\tURL: " + urlstr
+			log.Fatal(msg)
+		}
+
+		// write to file
+		err = ioutil.WriteFile(path, body, 0755)
+		if err != nil {
+			couldntWriteError(path, err)
+		}
+		return nil
+	}
+	// ensure temp files dir exists
+	verbosityPrint("Creating/checking remote checklist dir", maxVerbosity)
+	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
+		msg := "Could not create temporary file directory:"
+		msg += "\n\tDirectory: " + remoteCheckDir
+		msg += "\n\tError: " + err.Error()
+		log.Fatal(msg)
+	}
+
+	// write out the response to a file
+	// filter these chars: /?%*:|<^>. \
+	pathRegex := regexp.MustCompile("[\\/\\?%\\*:\\|\"<\\^>\\.\\ ]")
+	filename := pathRegex.ReplaceAllString(urlstr, "") + ".json"
+	fullpath := remoteCheckDir + filename
+	// only create it if it doesn't exist
+	if _, err := os.Stat(fullpath); err != nil {
+		verbosityPrint("Fetching remote checklist", maxVerbosity)
+		urlToFile(urlstr, fullpath)
+	} else {
+		verbosityPrint("Using local copy of remote checklist", maxVerbosity)
+	}
+	// return a real checklist
+	return getChecklist(fullpath)
+}
+
 // getChecklist loads a JSON file located at path, and Unmarshals it into a
 // Checklist struct, leaving unspecified fields as their zero types.
 func getChecklist(path string) (chklst Checklist) {
 	fileJSON := fileToBytes(path)
 	err := json.Unmarshal(fileJSON, &chklst)
 	if err != nil {
-		log.Fatal("Could not parse JSON at " + path + ":\n\t" + err.Error())
+		msg := "Could not parse JSON file: "
+		msg += "\n\tPath: " + path
+		msg += "\n\tError: " + err.Error()
+		msg += "\n\tContent: " + string(fileJSON)
+		log.Fatal(msg)
 	}
 	// Go concurrent pipe - one stage to the next
 	// send all checks in checklist to the channel
@@ -153,22 +222,25 @@ func getChecklist(path string) (chklst Checklist) {
 
 // getVerbosity returns the verbosity specifed by the -v flag, and checks to
 // see that it is in a valid range
-func getFlags() string {
+func getFlags() (p string, u string) {
 	verbosityMsg := "Output verbosity level (valid values are "
 	verbosityMsg += "[" + fmt.Sprint(minVerbosity) + "-" + fmt.Sprint(maxVerbosity) + "])"
 	verbosityMsg += "\n\t 0: Display only errors, with no other output."
 	verbosityMsg += "\n\t 1: Display errors and some information."
 	verbosityMsg += "\n\t 2: Display everything that's happening."
-	pathMsg := "Use the health check JSON located at this path"
+	pathMsg := "Use the health check located at this "
 
 	verbosityFlag := flag.Int("v", 1, verbosityMsg)
-	path := flag.String("f", "", pathMsg)
+	path := flag.String("f", "", pathMsg+"path")
+	urlstr := flag.String("u", "", pathMsg+"URL")
 	flag.Parse()
 
 	verbosity = *verbosityFlag
 	// check for invalid options
-	if *path == "" {
-		log.Fatal("No path specified. Use -f option.")
+	if *path == "" && *urlstr == "" {
+		log.Fatal("No path or URL specified. Use -f or -u option.")
+	} else if _, err := url.Parse(*urlstr); err != nil {
+		log.Fatal("Could not parse URL:\n\t" + err.Error())
 	}
 	// check for invalid options
 	if verbosity > maxVerbosity || verbosity < minVerbosity {
@@ -176,7 +248,7 @@ func getFlags() string {
 	} else if verbosity >= maxVerbosity {
 		fmt.Println("Running with verbosity level " + fmt.Sprint(verbosity))
 	}
-	return *path
+	return *path, *urlstr
 }
 
 // verbosityPrint only prints its message if verbosity is above the given value
@@ -212,12 +284,17 @@ func runChecks(chklst Checklist) Checklist {
 // and exits with the appropriate message and exit code.
 func main() {
 	// Set up and parse flags
-	path := getFlags()
+	path, urlstr := getFlags()
 
 	// add workers to workers, parameterLength
 	registerChecks()
 	verbosityPrint("Creating checklist...", minVerbosity+1)
-	chklst := getChecklist(path)
+	var chklst Checklist
+	if path != "" {
+		chklst = getChecklist(path)
+	} else if urlstr != "" {
+		chklst = loadRemoteChecklist(urlstr)
+	}
 	// run checks, populate error codes and messages
 	verbosityPrint("Running checks...", minVerbosity+1)
 	chklst = runChecks(chklst)
