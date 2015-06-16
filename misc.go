@@ -32,10 +32,10 @@ func command(parameters []string) (exitCode int, exitMessage string) {
 	return 1, exitMessage
 }
 
-// Running checks if a process is running using `ps aux`, and searching for the
+// running checks if a process is running using `ps aux`, and searching for the
 // process name, excluding this process (in case the process name is in the JSON
 // file name)
-func Running(parameters []string) (exitCode int, exitMessage string) {
+func running(parameters []string) (exitCode int, exitMessage string) {
 	// getRunningCommands returns the entries in the "COMMAND" column of `ps aux`
 	getRunningCommands := func() (commands []string) {
 		cmd := exec.Command("ps", "aux")
@@ -56,9 +56,9 @@ func Running(parameters []string) (exitCode int, exitMessage string) {
 	return genericError("Process not running", proc, filtered)
 }
 
-// Temp parses the output of lm_sensors and determines if Core 0 (all cores) are
+// temp parses the output of lm_sensors and determines if Core 0 (all cores) are
 // over a certain threshold as specified in the JSON.
-func Temp(parameters []string) (exitCode int, exitMessage string) {
+func temp(parameters []string) (exitCode int, exitMessage string) {
 	// getCoreTemp returns an integer temperature for a certain core
 	getCoreTemp := func(core int) (temp int) {
 		out, err := exec.Command("sensors").Output()
@@ -88,8 +88,8 @@ func Temp(parameters []string) (exitCode int, exitMessage string) {
 	return genericError(msg, fmt.Sprint(max), []string{fmt.Sprint(temp)})
 }
 
-// Module checks to see if a kernel module is installed
-func Module(parameters []string) (exitCode int, exitMessage string) {
+// module checks to see if a kernel module is installed
+func module(parameters []string) (exitCode int, exitMessage string) {
 	// kernelModules returns a list of all modules that are currently loaded
 	kernelModules := func() (modules []string) {
 		cmd := exec.Command("/sbin/lsmod")
@@ -103,8 +103,8 @@ func Module(parameters []string) (exitCode int, exitMessage string) {
 	return genericError("Module is not loaded", name, modules)
 }
 
-// KernelParameter checks to see if a kernel parameter was set
-func KernelParameter(parameters []string) (exitCode int, exitMessage string) {
+// kernelParameter checks to see if a kernel parameter was set
+func kernelParameter(parameters []string) (exitCode int, exitMessage string) {
 	// parameterValue returns the value of a kernel parameter
 	parameterSet := func(name string) bool {
 		_, err := exec.Command("/sbin/sysctl", "-q", "-n", name).Output()

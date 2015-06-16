@@ -42,9 +42,9 @@ func getOpenPorts() (ports []int) {
 	return ports
 }
 
-// Port parses /proc/net/tcp to determine if a given port is in an open state
+// port parses /proc/net/tcp to determine if a given port is in an open state
 // and returns an error if it is not.
-func Port(parameters []string) (exitCode int, exitMessage string) {
+func port(parameters []string) (exitCode int, exitMessage string) {
 	port := parseMyInt(parameters[0])
 	open := getOpenPorts()
 	for _, p := range open {
@@ -52,7 +52,7 @@ func Port(parameters []string) (exitCode int, exitMessage string) {
 			return 0, ""
 		}
 	}
-	// Convert ports to string to send to genericError
+	// convert ports to string to send to genericError
 	var strPorts []string
 	for _, port := range open {
 		strPorts = append(strPorts, fmt.Sprint(port))
@@ -70,8 +70,8 @@ func getInterfaces() []net.Interface {
 	return ifaces
 }
 
-// Interface detects if a network interface exists,
-func Interface(parameters []string) (exitCode int, exitMessage string) {
+// interfaceExists detects if a network interface exists,
+func interfaceExists(parameters []string) (exitCode int, exitMessage string) {
 	// getInterfaceNames returns the names of all network interfaces
 	getInterfaceNames := func() (interfaces []string) {
 		for _, iface := range getInterfaces() {
@@ -89,8 +89,8 @@ func Interface(parameters []string) (exitCode int, exitMessage string) {
 	return genericError("Interface does not exist", name, interfaces)
 }
 
-// Up determines if a network interface is up and running or not
-func Up(parameters []string) (exitCode int, exitMessage string) {
+// up determines if a network interface is up and running or not
+func up(parameters []string) (exitCode int, exitMessage string) {
 	// getUpInterfaces returns all the names of the interfaces that are up
 	getUpInterfaces := func() (interfaceNames []string) {
 		for _, iface := range getInterfaces() {
@@ -109,8 +109,8 @@ func Up(parameters []string) (exitCode int, exitMessage string) {
 	return genericError("Interface is not up", name, upInterfaces)
 }
 
-// getIPs gets all the associated IP addresses of a given interface as a slice
-// of strings, with a given IP protocol version (4|6)
+// getInterface IPs gets all the associated IP addresses of a given interface
+// as a slice of strings, with a given IP protocol version (4|6)
 func getInterfaceIPs(name string, version int) (ifaceAddresses []string) {
 	// ensure valid IP version
 	if version != 4 && version != 6 {
@@ -148,7 +148,7 @@ func getInterfaceIPs(name string, version int) (ifaceAddresses []string) {
 	return ifaceAddresses // will be empty
 }
 
-// getIP(exitCode int, exitMessage string) is an abstraction of Ip4 and Ip6
+// getIPWorker(exitCode int, exitMessage string) is an abstraction of Ip4 and Ip6
 func getIPWorker(name string, address string, version int) (exitCode int, exitMessage string) {
 	ips := getInterfaceIPs(name, version)
 	if strIn(address, ips) {
@@ -157,18 +157,18 @@ func getIPWorker(name string, address string, version int) (exitCode int, exitMe
 	return genericError("Interface does not have IP", address, ips)
 }
 
-// Ip4 checks to see if this network interface has this ipv4 address
-func Ip4(parameters []string) (exitCode int, exitMessage string) {
+// ip4 checks to see if this network interface has this ipv4 address
+func ip4(parameters []string) (exitCode int, exitMessage string) {
 	return getIPWorker(parameters[0], parameters[1], 4)
 }
 
-// Ip6 checks to see if this network interface has this ipv6 address
-func Ip6(parameters []string) (exitCode int, exitMessage string) {
+// ip6 checks to see if this network interface has this ipv6 address
+func ip6(parameters []string) (exitCode int, exitMessage string) {
 	return getIPWorker(parameters[0], parameters[1], 6)
 }
 
-// Gateway checks to see that the default gateway has a certain IP
-func Gateway(parameters []string) (exitCode int, exitMessage string) {
+// gateway checks to see that the default gateway has a certain IP
+func gateway(parameters []string) (exitCode int, exitMessage string) {
 	// getGatewayAddress filters all gateway IPs for a non-zero value
 	getGatewayAddress := func() (addr string) {
 		ips := routingTableColumn(1)
@@ -188,8 +188,8 @@ func Gateway(parameters []string) (exitCode int, exitMessage string) {
 	return genericError(msg, address, []string{gatewayIP})
 }
 
-// GatewayInterface checks that the default gateway is using a specified interface
-func GatewayInterface(parameters []string) (exitCode int, exitMessage string) {
+// gatewayInterface checks that the default gateway is using a specified interface
+func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 	// getGatewayInterface returns the interface that the default gateway is
 	// operating on
 	getGatewayInterface := func() (iface string) {
@@ -217,8 +217,8 @@ func GatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 	return genericError(msg, name, []string{iface})
 }
 
-// Host checks if a given host can be resolved.
-func Host(parameters []string) (exitCode int, exitMessage string) {
+// host checks if a given host can be resolved.
+func host(parameters []string) (exitCode int, exitMessage string) {
 	// resolvable  determines whether a given host can be reached
 	resolvable := func(name string) bool {
 		_, err := net.LookupHost(name)
@@ -295,13 +295,13 @@ func getConnectionWorker(host string, protocol string, timeoutstr string) (exitC
 	return 1, "Could not connect over " + protocol + " to host: " + host
 }
 
-// TCP sees if a given IP/port can be reached with a TCP connection
-func TCP(parameters []string) (exitCode int, exitMessage string) {
+// tcp sees if a given IP/port can be reached with a TCP connection
+func tcp(parameters []string) (exitCode int, exitMessage string) {
 	return getConnectionWorker(parameters[0], "TCP", "0ns")
 }
 
-// UDP is like TCP but with UDP instead.
-func UDP(parameters []string) (exitCode int, exitMessage string) {
+// udp is like TCP but with UDP instead.
+func udp(parameters []string) (exitCode int, exitMessage string) {
 	return getConnectionWorker(parameters[0], "UDP", "0ns")
 }
 
@@ -333,20 +333,20 @@ func routingTableMatch(col int, str string) (exitCode int, exitMessage string) {
 	return genericError("Not found in routing table", str, column)
 }
 
-// RoutingTableDestination checks if an IP address is a destination in the
+// routingTableDestination checks if an IP address is a destination in the
 // kernel's IP routing table, as accessed by `route -n`.
-func RoutingTableDestination(parameters []string) (exitCode int, exitMessage string) {
+func routingTableDestination(parameters []string) (exitCode int, exitMessage string) {
 	return routingTableMatch(0, parameters[0])
 }
 
-// RoutingTableInterface checks if a given name is an interface in the
+// routingTableInterface checks if a given name is an interface in the
 // kernel's IP routing table, as accessed by `route -n`.
-func RoutingTableInterface(parameters []string) (exitCode int, exitMessage string) {
+func routingTableInterface(parameters []string) (exitCode int, exitMessage string) {
 	return routingTableMatch(7, parameters[0])
 }
 
-// routeTableDestination checks if an IP address is a gateway's IP in the
+// routeTableGateway checks if an IP address is a gateway's IP in the
 // kernel's IP routing table, as accessed by `route -n`.
-func RoutingTableGateway(parameters []string) (exitCode int, exitMessage string) {
+func routingTableGateway(parameters []string) (exitCode int, exitMessage string) {
 	return routingTableMatch(1, parameters[0])
 }

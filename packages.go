@@ -210,9 +210,9 @@ func pacmanIgnore(parameters []string) (exitCode int, exitMessage string) {
 	return genericError(msg, pkg, packages)
 }
 
-// Installed detects whether the OS is using dpkg, rpm, or pacman, queries
+// installed detects whether the OS is using dpkg, rpm, or pacman, queries
 // a package accoringly, and returns an error if it is not installed.
-func Installed(parameters []string) (exitCode int, exitMessage string) {
+func installed(parameters []string) (exitCode int, exitMessage string) {
 	pkg := parameters[0]
 	name := getManager()
 	options := managers[name]

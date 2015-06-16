@@ -28,7 +28,7 @@ func isType(name string, checker fileTypeCheck, path string) (exitCode int, mess
 	return 1, "Is not a " + name + ": " + path
 }
 
-// File checks to see if the given path represents a normal file
+// file checks to see if the given path represents a normal file
 func file(parameters []string) (exitCode int, exitMessage string) {
 	// returns true if there is a regular ol' file at path
 	isFile := func(path string) (bool, error) {
@@ -41,7 +41,7 @@ func file(parameters []string) (exitCode int, exitMessage string) {
 	return isType("file", isFile, parameters[0])
 }
 
-// Directory checks to see if a directory exists at the specified path
+// directory checks to see if a directory exists at the specified path
 func directory(parameters []string) (exitCode int, exitMessage string) {
 	isDirectory := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
@@ -53,7 +53,7 @@ func directory(parameters []string) (exitCode int, exitMessage string) {
 	return isType("directory", isDirectory, parameters[0])
 }
 
-// Symlink checks to see if a symlink exists at a given path
+// symlink checks to see if a symlink exists at a given path
 func symlink(parameters []string) (exitCode int, exitMessage string) {
 	// isSymlink checks to see if a symlink exists at this path.
 	isSymlink := func(path string) (bool, error) {
@@ -66,8 +66,8 @@ func symlink(parameters []string) (exitCode int, exitMessage string) {
 	return isType("symlink", isSymlink, parameters[0])
 }
 
-// Checksum checks the hash of a given file using the given algorithm
-func Checksum(parameters []string) (exitCode int, exitMessage string) {
+// checksum checks the hash of a given file using the given algorithm
+func checksum(parameters []string) (exitCode int, exitMessage string) {
 	// getChecksum returns the checksum of some data, using a specified
 	// algorithm
 	getChecksum := func(algorithm string, data []byte) (checksum string) {

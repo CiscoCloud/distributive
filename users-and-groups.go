@@ -38,8 +38,8 @@ func getGroups() (groups []Group) {
 	return groups
 }
 
-// groupNotFound creates generic error messages and exit codes for GroupExits,
-// UserInGroup, and GroupId
+// groupNotFound creates generic error messages and exit codes for groupExits,
+// userInGroup, and groupId
 func groupNotFound(name string) (int, string) {
 	// get a nicely formatted list of groups that do exist
 	var existing []string
@@ -49,8 +49,8 @@ func groupNotFound(name string) (int, string) {
 	return genericError("Group not found", name, existing)
 }
 
-// GroupExists determines whether a certain UNIX user group exists
-func GroupExists(parameters []string) (exitCode int, exitMessage string) {
+// groupExists determines whether a certain UNIX user group exists
+func groupExists(parameters []string) (exitCode int, exitMessage string) {
 	// doesGroupExist preforms all the meat of GroupExists
 	doesGroupExist := func(name string) bool {
 		groups := getGroups()
@@ -68,8 +68,8 @@ func GroupExists(parameters []string) (exitCode int, exitMessage string) {
 	return groupNotFound(name)
 }
 
-// UserInGroup checks whether or not a given user is in a given group
-func UserInGroup(parameters []string) (exitCode int, exitMessage string) {
+// userInGroup checks whether or not a given user is in a given group
+func userInGroup(parameters []string) (exitCode int, exitMessage string) {
 	user := parameters[0]
 	group := parameters[0]
 	groups := getGroups()
@@ -84,8 +84,8 @@ func UserInGroup(parameters []string) (exitCode int, exitMessage string) {
 	return groupNotFound(group)
 }
 
-// GroupId checks to see if a group of a certain name has a given integer id
-func GroupId(parameters []string) (exitCode int, exitMessage string) {
+// groupId checks to see if a group of a certain name has a given integer id
+func groupId(parameters []string) (exitCode int, exitMessage string) {
 	name := parameters[0]
 	id := parseMyInt(parameters[1])
 	groups := getGroups()
@@ -116,8 +116,8 @@ func lookupUser(usernameOrUid string) (*user.User, error) {
 }
 
 // userHasField checks to see if the user of a given username or uid's struct
-// field "fieldName" matches the given value. An abstraction of HasUID, HasGID,
-// HasName, HasHomeDir, and UserExists
+// field "fieldName" matches the given value. An abstraction of hasUID, hasGID,
+// hasName, hasHomeDir, and userExists
 func userHasField(usernameOrUid string, fieldName string, givenValue string) (bool, error) {
 	// get user to look at their info
 	user, err := lookupUser(usernameOrUid)
@@ -154,9 +154,9 @@ func genericUserField(usernameOrUid string, fieldName string, fieldValue string)
 	return 1, msg
 }
 
-// UserExists checks to see if a given user exists by looking up their username
+// userExists checks to see if a given user exists by looking up their username
 // or UID.
-func UserExists(parameters []string) (exitCode int, exitMessage string) {
+func userExists(parameters []string) (exitCode int, exitMessage string) {
 	usernameOrUid := parameters[0]
 	if _, err := lookupUser(usernameOrUid); err == nil {
 		return 0, ""
@@ -164,32 +164,32 @@ func UserExists(parameters []string) (exitCode int, exitMessage string) {
 	return 1, "User does not exist: " + usernameOrUid
 }
 
-// UserHasUID checks if the user of the given username or uid has the given
+// userHasUID checks if the user of the given username or uid has the given
 // UID.
-func UserHasUID(parameters []string) (exitCode int, exitMessage string) {
+func userHasUID(parameters []string) (exitCode int, exitMessage string) {
 	return genericUserField(parameters[0], "Uid", parameters[1])
 }
 
-// UserHasUsername checks if the user of the given username or uid has the given
+// userHasUsername checks if the user of the given username or uid has the given
 // GID.
-func UserHasGID(parameters []string) (exitCode int, exitMessage string) {
+func userHasGID(parameters []string) (exitCode int, exitMessage string) {
 	return genericUserField(parameters[0], "Gid", parameters[1])
 }
 
-// UserHasUsername checks if the user of the given username or uid has the given
+// userHasUsername checks if the user of the given username or uid has the given
 // username.
-func UserHasUsername(parameters []string) (exitCode int, exitMessage string) {
+func userHasUsername(parameters []string) (exitCode int, exitMessage string) {
 	return genericUserField(parameters[0], "Username", parameters[1])
 }
 
-// UserHasName checks if the user of the given username or uid has the given
+// userHasName checks if the user of the given username or uid has the given
 // name.
-func UserHasName(parameters []string) (exitCode int, exitMessage string) {
+func userHasName(parameters []string) (exitCode int, exitMessage string) {
 	return genericUserField(parameters[0], "Name", parameters[1])
 }
 
-// UserHasHomeDir checks if the user of the given username or uid has the given
+// userHasHomeDir checks if the user of the given username or uid has the given
 // home directory.
-func UserHasHomeDir(parameters []string) (exitCode int, exitMessage string) {
+func userHasHomeDir(parameters []string) (exitCode int, exitMessage string) {
 	return genericUserField(parameters[0], "HomeDir", parameters[1])
 }
