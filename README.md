@@ -30,7 +30,8 @@ dependencies, and can be shipped as a speedy 4MB (yes, megabytes!) binary.
 
 Usually, some external server will ask the host to execute this program, reading
 a checklist from a JSON file, and will record this program's exit code and
-standard out.
+standard out. Distributive's output includes information about which checks
+in a checklist failed, and how so.
 
 The exit code meanings are defined as [Consul] [1] and [Sensu] [2] recognize
 them.
@@ -116,7 +117,7 @@ which grants the program a certain flexibility in what kind of checks it can run
 It has access to local data that cannot or should not be accessed over a network.
 It was also designed around the idea of constantly changing infrastructure, with
 servers being added and destroyed constantly, changing IP addresses, and even
-changing roles.
+changing roles. Integration with Consul [provides greater flexibility](https://www.consul.io/intro/vs/nagios-sensu.html).
 
 Serverspec
 ----------
@@ -131,13 +132,12 @@ as possible on external tools/commands, using mostly just the Go standard librar
 Nagios
 ------
 
-Nagios is an end-to-end monitoring, security, and notification framework. It is
-designed around the central control server approach to monitoring. Nagios provides
-many other services not included in Distributive, but may not be suitable for
-some projects due to its size, complexity, and centralized architecture.
-Distributive is simple, lightweight, and easy to configure, and doesn't provide
-its own scheduling, dashboard, etc. It is designed to be used within frameworks
-such as Sensu and Consul.
+Nagios is an end-to-end monitoring, security, and notification framework. It
+provides many services not included in Distributive, and solves a very different
+problem.  Distributive is simple, lightweight, and easy to configure, and
+doesn't provide its own scheduling, dashboard, etc. It is designed to be used
+within frameworks such as Sensu and Consul. Luckily, Distributive can easily
+be used with Consul to provide data to Nagios, for a sweet combination.
 
 Contributing and Getting Help
 =============================
