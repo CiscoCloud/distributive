@@ -133,12 +133,7 @@ func phpConfig(parameters []string) (exitCode int, exitMessage string) {
 		cmd := exec.Command("php", "-r", echo)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			msg := "Couldn't execute command:"
-			msg += "\n\tPath: " + cmd.Path
-			msg += "\n\tCommand: php -r " + echo
-			msg += "\n\tOutput: " + string(out)
-			msg += "\n\tError: " + err.Error()
-			log.Fatal(msg)
+			execError(cmd, string(out), err)
 		}
 		return string(out)
 	}
@@ -153,4 +148,90 @@ func phpConfig(parameters []string) (exitCode int, exitMessage string) {
 	}
 	msg := "PHP variable did not match expected value"
 	return genericError(msg, value, []string{actualValue})
+}
+
+// getKBSwapOrMemory returns output from `free`, it is an abstraction of
+// getSwap and getMemory.  inputs: status: free | used | total
+// swapOrMem: memory | swap, units: b | kb | mb | gb | tb
+func getSwapOrMemory(status string, swapOrMem string, units string) int {
+	statusToColumn := map[string]int{
+		"total": 1,
+		"used":  2,
+		"free":  3,
+	}
+	unitsToFlag := map[string]string{
+		"b":  "--bytes",
+		"kb": "--kilo",
+		"mb": "--mega",
+		"gb": "--giga",
+		"tb": "--terra",
+	}
+	typeToRow := map[string]int{
+		"memory": 0,
+		"swap":   1,
+	}
+	// check to see that our keys are really in our dict
+	if _, ok := statusToColumn[status]; !ok {
+		msg := "Invalid status passed to getSwapOrMemory"
+		_, e := genericError(msg, status, []string{"total", "used", "free"})
+		log.Fatal(e)
+	} else if _, ok := unitsToFlag[units]; !ok {
+		msg := "Invalid units passed to getSwapOrMemory"
+		_, e := genericError(msg, status, []string{"b", "kb", "mb", "gb", "tb"})
+		log.Fatal(e)
+	} else if _, ok := typeToRow[swapOrMem]; !ok {
+		msg := "Invalid swapOrMem passed to getSwapOrMemory"
+		_, e := genericError(msg, status, []string{"memory", "swap"})
+		log.Fatal(e)
+	}
+	// execute free and return the appropriate output
+	cmd := exec.Command("free", unitsToFlag[units])
+	entireColumn := commandColumnNoHeader(statusToColumn[status], cmd)
+	// TODO parse and catch here, for better error reporting
+	return parseMyInt(entireColumn[typeToRow[swapOrMem]])
+}
+
+// getSwap returns KiB of swap with a certain status: free | used | total
+// and with a certain given unit: b | kb | mb | gb | tb
+func getSwap(status string, units string) int {
+	return getSwapOrMemory(status, "swap", units)
+}
+
+// getMemory returns KiB of swap with a certain status: free | used | total
+// and with a certain given unit: b | kb | mb | gb | tb
+func getMemory(status string, units string) int {
+	return getSwapOrMemory(status, "memory", units)
+}
+
+// getUsedPercent returns the % of physical memory or swap currently in use
+func getUsedPercent(swapOrMem string) float32 {
+	used := getSwapOrMemory("used", swapOrMem, "b")
+	total := getSwapOrMemory("total", swapOrMem, "b")
+	return (float32(used) / float32(total)) * 100
+}
+
+// memoryUsage checks to see whether or not the system has a memory usage
+// percentage below a certain threshold
+func memoryUsage(parameters []string) (exitCode int, exitMessage string) {
+	maxPercentUsed := parseMyInt(parameters[0])
+	actualPercentUsed := getUsedPercent("memory")
+	if actualPercentUsed < float32(maxPercentUsed) {
+		return 0, ""
+	}
+	msg := "Memory usage above defined maximum"
+	slc := []string{fmt.Sprint(actualPercentUsed)}
+	return genericError(msg, fmt.Sprint(maxPercentUsed), slc)
+}
+
+// memoryUsage checks to see whether or not the system has a memory usage
+// percentage below a certain threshold
+func swapUsage(parameters []string) (exitCode int, exitMessage string) {
+	maxPercentUsed := parseMyInt(parameters[0])
+	actualPercentUsed := getUsedPercent("swap")
+	if actualPercentUsed < float32(maxPercentUsed) {
+		return 0, ""
+	}
+	msg := "Swap usage above defined maximum"
+	slc := []string{fmt.Sprint(actualPercentUsed)}
+	return genericError(msg, fmt.Sprint(maxPercentUsed), slc)
 }

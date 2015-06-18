@@ -27,6 +27,14 @@
         {
             "Check" : "phpConfig",
             "Parameters" : ["default_mimetype", "failme"]
+        },
+        {
+            "Check" : "memoryUsage",
+            "Parameters" : ["5"]
+        },
+        {
+            "Check" : "swapUsage",
+            "Parameters" : ["0"]
         }
     ]
 }

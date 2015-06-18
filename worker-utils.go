@@ -16,6 +16,8 @@ import (
 // Generally, if exitCode == 0, exitMessage == "".
 type Worker func(parameters []string) (exitCode int, exitMessage string)
 
+//// STRING UTILITIES
+
 // separateString is an abstraction of stringToSlice that takes two kinds of
 // separators, and splits a string into a 2D slice based on those separators
 func separateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (output [][]string) {
@@ -72,11 +74,7 @@ func commandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	if strings.Contains(outstr, "permission denied") {
 		log.Fatal("Permission denied when running: " + cmd.Path)
 	} else if err != nil {
-		msg := "Error while executing command:"
-		msg += "\n\tCommand: " + cmd.Path
-		msg += "\n\tArguments: " + fmt.Sprint(cmd.Args)
-		msg += "\n\tError: " + err.Error()
-		log.Fatal(msg)
+		execError(cmd, outstr, err)
 	}
 	return getColumnNoHeader(col, stringToSlice(string(out)))
 }
@@ -101,6 +99,8 @@ func strContainedIn(str string, slice []string) bool {
 	}
 	return false
 }
+
+//// ERROR UTILITIES
 
 // pathError is an abstraction of couldntReadError and couldntWriteError
 func pathError(path string, err error, read bool) {
@@ -131,25 +131,6 @@ func couldntReadError(path string, err error) {
 	pathError(path, err, true)
 }
 
-// fileToBytes reads a file and handles the error
-func fileToBytes(path string) []byte {
-	data, err := ioutil.ReadFile(path)
-	couldntReadError(path, err)
-	return data
-}
-
-// fileToString reads in a file at a path, handles errors, and returns that file
-// as a string
-func fileToString(path string) string {
-	return string(fileToBytes(path))
-}
-
-// fileToLines reads in a file at a path, handles errors, splits it into lines,
-// and returns those lines as byte slices
-func fileToLines(path string) [][]byte {
-	return bytes.Split(fileToBytes(path), []byte("\n"))
-}
-
 // genericError is a general error where the requested variable was not found in
 // a given list of variables. This is pure DRY.
 func genericError(msg string, name string, actual []string) (exitCode int, exitMessage string) {
@@ -170,6 +151,37 @@ func genericError(msg string, name string, actual []string) (exitCode int, exitM
 		msg += fmt.Sprint(actual[1:lengthThreshold])
 	}
 	return 1, msg
+}
+
+func execError(cmd *exec.Cmd, out string, err error) {
+	if err != nil {
+		msg := "Failed to execute command:"
+		msg += "\n\tCommand: " + fmt.Sprint(cmd.Args)
+		msg += "\n\tPath: " + cmd.Path
+		msg += "\n\tOutput: " + out
+		msg += "\n\tError: " + err.Error()
+	}
+}
+
+// IO UTILITIES
+
+// fileToBytes reads a file and handles the error
+func fileToBytes(path string) []byte {
+	data, err := ioutil.ReadFile(path)
+	couldntReadError(path, err)
+	return data
+}
+
+// fileToString reads in a file at a path, handles errors, and returns that file
+// as a string
+func fileToString(path string) string {
+	return string(fileToBytes(path))
+}
+
+// fileToLines reads in a file at a path, handles errors, splits it into lines,
+// and returns those lines as byte slices
+func fileToLines(path string) [][]byte {
+	return bytes.Split(fileToBytes(path), []byte("\n"))
 }
 
 // parseMyInt parses an int or logs the error

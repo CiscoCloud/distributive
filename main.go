@@ -222,7 +222,7 @@ func getChecklist(path string) (chklst Checklist) {
 
 // getVerbosity returns the verbosity specifed by the -v flag, and checks to
 // see that it is in a valid range
-func getFlags() (p string, u string, v bool) {
+func getFlags() (p string, u string) {
 	// validateVerbosity ensures that verbosity is between a min and max
 	validateVerbosity := func(min int, actual int, max int) {
 		if verbosity > maxVerbosity || verbosity < minVerbosity {
@@ -238,7 +238,7 @@ func getFlags() (p string, u string, v bool) {
 	verbosityMsg += "\n\t 1: Display errors and some information."
 	verbosityMsg += "\n\t 2: Display everything that's happening."
 	pathMsg := "Use the health check located at this "
-	versionMsg := "Get the version of distributive this binary was build from"
+	versionMsg := "Get the version of distributive this binary was built from"
 
 	verbosityFlag := flag.Int("v", 1, verbosityMsg)
 	path := flag.String("f", "", pathMsg+"path")
@@ -246,6 +246,11 @@ func getFlags() (p string, u string, v bool) {
 	version := flag.Bool("version", false, versionMsg)
 	flag.Parse()
 
+	// if they just wanted to display the version, we're good
+	if *version {
+		fmt.Println("Distributive version 0.1")
+		os.Exit(0)
+	}
 	verbosity = *verbosityFlag
 	// check for invalid options
 	if *path == "" && *urlstr == "" {
@@ -255,7 +260,7 @@ func getFlags() (p string, u string, v bool) {
 	}
 	validateVerbosity(minVerbosity, verbosity, maxVerbosity)
 	// check for invalid options
-	return *path, *urlstr, *version
+	return *path, *urlstr
 }
 
 // verbosityPrint only prints its message if verbosity is above the given value
@@ -291,13 +296,7 @@ func runChecks(chklst Checklist) Checklist {
 // and exits with the appropriate message and exit code.
 func main() {
 	// Set up and parse flags
-	path, urlstr, version := getFlags()
-
-	// if they just wanted to display the version, we're good
-	if version {
-		fmt.Println("Distributive version 0.1")
-		os.Exit(0)
-	}
+	path, urlstr := getFlags()
 
 	// add workers to workers, parameterLength
 	registerChecks()

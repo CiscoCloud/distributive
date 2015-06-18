@@ -7,9 +7,9 @@
             "Parameters": ["80"]
         },
         {
-            "Name": "dnsmasq check",
+            "Name": "/sbin/init check",
             "Check" : "running",
-            "Parameters": ["dnsmasq"]
+            "Parameters": ["/sbin/init"]
         },
         {
             "Check" : "installed",
@@ -26,6 +26,14 @@
         {
             "Check" : "phpConfig",
             "Parameters" : ["default_mimetype", "text/html"]
+        },
+        {
+            "Check" : "memoryUsage",
+            "Parameters" : ["90"]
+        },
+        {
+            "Check" : "swapUsage",
+            "Parameters" : ["90"]
         }
     ]
 }

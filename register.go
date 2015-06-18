@@ -16,6 +16,8 @@ func registerChecks() {
 	registerCheck("permissions", permissions, 2)
 	registerCheck("filecontains", fileContains, 2)
 	registerCheck("diskusage", diskUsage, 2)
+	registerCheck("memoryusage", memoryUsage, 1)
+	registerCheck("swapusage", swapUsage, 1)
 	registerCheck("temp", temp, 1)
 	registerCheck("port", port, 1)
 	registerCheck("interface", interfaceExists, 1)
