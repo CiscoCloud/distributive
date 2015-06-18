@@ -30,6 +30,7 @@ func separateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (o
 
 // stringToSlice takes in a string and returns a 2D slice of its output,
 // separated on whitespace and newlines
+// TODO use strings.Fields in conjunction with/instead of this.
 func stringToSlice(str string) (output [][]string) {
 	rowSep := regexp.MustCompile("\n+")
 	colSep := regexp.MustCompile("\\s+")

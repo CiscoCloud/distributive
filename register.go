@@ -18,6 +18,7 @@ func registerChecks() {
 	registerCheck("diskusage", diskUsage, 2)
 	registerCheck("memoryusage", memoryUsage, 1)
 	registerCheck("swapusage", swapUsage, 1)
+	registerCheck("cpuusage", cpuUsage, 1)
 	registerCheck("temp", temp, 1)
 	registerCheck("port", port, 1)
 	registerCheck("interface", interfaceExists, 1)

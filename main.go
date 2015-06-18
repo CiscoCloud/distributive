@@ -112,8 +112,8 @@ func validateParameters(chk Check) {
 // the correct number of parameters were specified.
 func getWorker(chk Check) Worker {
 	validateParameters(chk)
-	thun := workers[strings.ToLower(chk.Check)]
-	if thun == nil {
+	work := workers[strings.ToLower(chk.Check)]
+	if work == nil {
 		msg := "JSON file included one or more unsupported health checks: "
 		msg += "\n\tName: " + chk.Name
 		msg += "\n\tCheck type: " + chk.Check
@@ -121,7 +121,7 @@ func getWorker(chk Check) Worker {
 		log.Fatal(msg)
 		return nil
 	}
-	return thun
+	return work
 }
 
 // loadRemoteChecklist either downloads a checklist from a remote URL and puts

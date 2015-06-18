@@ -35,6 +35,10 @@
         {
             "Check" : "swapUsage",
             "Parameters" : ["0"]
+        },
+        {
+            "Check" : "cpuUsage",
+            "Parameters" : ["1"]
         }
     ]
 }

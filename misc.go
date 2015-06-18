@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // command runs a shell command, and collapses its error code to 0 or 1.
@@ -232,6 +234,51 @@ func swapUsage(parameters []string) (exitCode int, exitMessage string) {
 		return 0, ""
 	}
 	msg := "Swap usage above defined maximum"
+	slc := []string{fmt.Sprint(actualPercentUsed)}
+	return genericError(msg, fmt.Sprint(maxPercentUsed), slc)
+}
+
+// getCPUSample helps cpuUsage do its thing. Taken from a stackoverflow:
+// http://stackoverflow.com/questions/11356330/getting-cpu-usage-with-golang
+func getCPUSample() (idle, total uint64) {
+	contents, err := ioutil.ReadFile("/proc/stat")
+	if err != nil {
+		return
+	}
+	lines := strings.Split(string(contents), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if fields[0] == "cpu" {
+			numFields := len(fields)
+			for i := 1; i < numFields; i++ {
+				val, err := strconv.ParseUint(fields[i], 10, 64)
+				if err != nil {
+					fmt.Println("Error: ", i, fields[i], err)
+				}
+				total += val // tally up all the numbers to get total ticks
+				if i == 4 {  // idle is the 5th field in the cpu line
+					idle = val
+				}
+			}
+			return
+		}
+	}
+	return
+}
+
+// cpuUsage checks to see whether or not CPU usage is below a certain %.
+func cpuUsage(parameters []string) (exitCode int, exitMessage string) {
+	idle0, total0 := getCPUSample()
+	time.Sleep(3 * time.Second)
+	idle1, total1 := getCPUSample()
+	idleTicks := float32(idle1 - idle0)
+	totalTicks := float32(total1 - total0)
+	actualPercentUsed := 100 * (totalTicks - idleTicks) / totalTicks
+	maxPercentUsed := parseMyInt(parameters[0])
+	if actualPercentUsed < float32(maxPercentUsed) {
+		return 0, ""
+	}
+	msg := "CPU usage above defined maximum"
 	slc := []string{fmt.Sprint(actualPercentUsed)}
 	return genericError(msg, fmt.Sprint(maxPercentUsed), slc)
 }
