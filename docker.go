@@ -42,8 +42,8 @@ func dockerRunning(parameters []string) (exitCode int, exitMessage string) {
 		if len(lines) < 1 {
 			return []string{}
 		}
-		names := getColumnNoHeader(1, lines)
-		statuses := getColumnNoHeader(4, lines)
+		names := getColumnNoHeader(1, lines)    // all docker container names
+		statuses := getColumnNoHeader(4, lines) // all docker container statuses
 		for i, status := range statuses {
 			if strings.Contains(status, "Up") && len(names) > i {
 				images = append(images, names[i])
@@ -53,7 +53,7 @@ func dockerRunning(parameters []string) (exitCode int, exitMessage string) {
 	}
 	name := parameters[0]
 	running := getRunningContainers()
-	if strIn(name, running) {
+	if strContainedIn(name, running) {
 		return 0, ""
 	}
 	return genericError("Docker container not runnning", name, running)

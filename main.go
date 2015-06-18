@@ -222,17 +222,28 @@ func getChecklist(path string) (chklst Checklist) {
 
 // getVerbosity returns the verbosity specifed by the -v flag, and checks to
 // see that it is in a valid range
-func getFlags() (p string, u string) {
+func getFlags() (p string, u string, v bool) {
+	// validateVerbosity ensures that verbosity is between a min and max
+	validateVerbosity := func(min int, actual int, max int) {
+		if verbosity > maxVerbosity || verbosity < minVerbosity {
+			log.Fatal("Invalid option for verbosity: " + fmt.Sprint(verbosity))
+		} else if verbosity >= maxVerbosity {
+			fmt.Println("Running with verbosity level " + fmt.Sprint(verbosity))
+		}
+	}
+
 	verbosityMsg := "Output verbosity level (valid values are "
 	verbosityMsg += "[" + fmt.Sprint(minVerbosity) + "-" + fmt.Sprint(maxVerbosity) + "])"
 	verbosityMsg += "\n\t 0: Display only errors, with no other output."
 	verbosityMsg += "\n\t 1: Display errors and some information."
 	verbosityMsg += "\n\t 2: Display everything that's happening."
 	pathMsg := "Use the health check located at this "
+	versionMsg := "Get the version of distributive this binary was build from"
 
 	verbosityFlag := flag.Int("v", 1, verbosityMsg)
 	path := flag.String("f", "", pathMsg+"path")
 	urlstr := flag.String("u", "", pathMsg+"URL")
+	version := flag.Bool("version", false, versionMsg)
 	flag.Parse()
 
 	verbosity = *verbosityFlag
@@ -242,13 +253,9 @@ func getFlags() (p string, u string) {
 	} else if _, err := url.Parse(*urlstr); err != nil {
 		log.Fatal("Could not parse URL:\n\t" + err.Error())
 	}
+	validateVerbosity(minVerbosity, verbosity, maxVerbosity)
 	// check for invalid options
-	if verbosity > maxVerbosity || verbosity < minVerbosity {
-		log.Fatal("Invalid option for verbosity: " + fmt.Sprint(verbosity))
-	} else if verbosity >= maxVerbosity {
-		fmt.Println("Running with verbosity level " + fmt.Sprint(verbosity))
-	}
-	return *path, *urlstr
+	return *path, *urlstr, *version
 }
 
 // verbosityPrint only prints its message if verbosity is above the given value
@@ -284,7 +291,13 @@ func runChecks(chklst Checklist) Checklist {
 // and exits with the appropriate message and exit code.
 func main() {
 	// Set up and parse flags
-	path, urlstr := getFlags()
+	path, urlstr, version := getFlags()
+
+	// if they just wanted to display the version, we're good
+	if version {
+		fmt.Println("Distributive version 0.1")
+		os.Exit(0)
+	}
 
 	// add workers to workers, parameterLength
 	registerChecks()

@@ -8,6 +8,10 @@
         {
             "Check" : "dockerRunning",
             "Parameters" : ["siddharthist/router"]
+        },
+        {
+            "Check" : "dockerRunning",
+            "Parameters" : ["siddharthist/router:latest"]
         }
     ]
 }

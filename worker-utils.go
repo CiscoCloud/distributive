@@ -91,6 +91,17 @@ func strIn(str string, slice []string) bool {
 	return false
 }
 
+// strContainedIn works like strIn, but checks for substring containing rather
+// than whole string equality.
+func strContainedIn(str string, slice []string) bool {
+	for _, sliceString := range slice {
+		if strings.Contains(sliceString, str) {
+			return true
+		}
+	}
+	return false
+}
+
 // pathError is an abstraction of couldntReadError and couldntWriteError
 func pathError(path string, err error, read bool) {
 	// is it a read or write error?
