@@ -38,6 +38,14 @@
         {
             "Check" : "cpuUsage",
             "Parameters" : ["95"]
+        },
+        {
+            "Check" : "command",
+            "Parameters" : ["sleep .00001"]
+        },
+        {
+            "Check" : "commandOutputMatches",
+            "Parameters" : ["echo works", "\\w[aeiou]+(y)*r[kl]s"]
         }
     ]
 }

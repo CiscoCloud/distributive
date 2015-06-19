@@ -39,6 +39,14 @@
         {
             "Check" : "cpuUsage",
             "Parameters" : ["1"]
+        },
+        {
+            "Check" : "command",
+            "Parameters" : ["sleep fail"]
+        },
+        {
+            "Check" : "commandOutputMatches",
+            "Parameters" : ["echo doesntwork", "\\d+oesnt\\work"]
         }
     ]
 }

@@ -29,6 +29,23 @@ func command(parameters []string) (exitCode int, exitMessage string) {
 	return 1, exitMessage
 }
 
+// commandOutputMatches checks to see if a command's combined output matches a
+// given regexp
+func commandOutputMatches(parameters []string) (exitCode int, exitMessage string) {
+	toExec := parameters[0]
+	re := parseUserRegex(parameters[1])
+	cmd := exec.Command("bash", "-c", toExec)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		execError(cmd, string(out), err)
+	}
+	if re.Match(out) {
+		return 0, ""
+	}
+	msg := "Command output did not match regexp"
+	return genericError(msg, re.String(), []string{string(out)})
+}
+
 // running checks if a process is running using `ps aux`, and searching for the
 // process name, excluding this process (in case the process name is in the JSON
 // file name)
