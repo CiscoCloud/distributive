@@ -1,0 +1,9 @@
+{
+    "Name": "test",
+    "Checklist" : [
+        {
+            "Check" : "command",
+            "Parameters" : ["test=$(echo ruok | nc localhost 2181); if [ -z $test ]; then echo 1;else echo 0; fi"]
+        }
+    ]
+}

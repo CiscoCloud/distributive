@@ -15,13 +15,11 @@ import (
 // It outputs stderr and stdout if the command has error code != 0.
 func command(parameters []string) (exitCode int, exitMessage string) {
 	toExec := parameters[0]
-	params := strings.Split(toExec, " ")
-	out, err := exec.Command(params[0], params[1:]...).CombinedOutput()
-	if strings.Contains(err.Error(), "not found in $PATH") {
-		return 1, "Executable not found: " + params[0]
-	}
+	out, err := exec.Command("bash", "-c", toExec).CombinedOutput()
 	if err == nil {
 		return 0, ""
+	} else if strings.Contains(err.Error(), "not found in $PATH") {
+		return 1, "Executable not found: " + toExec
 	}
 	// Create output message
 	exitMessage += "Command exited with non-zero exit code:"

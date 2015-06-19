@@ -51,6 +51,7 @@ type Checklist struct {
 	Codes       []int
 	Messages    []string
 	Report      string
+	Origin      string // where did it come from?
 }
 
 // makeReport returns a string used for a checklist.Report attribute, printed
@@ -73,8 +74,10 @@ func makeReport(chklst Checklist) (report string) {
 		}
 	}
 	// output global stats
+	total := len(chklst.Codes)
 	passed := countInt(0, chklst.Codes)
 	failed := countInt(1, chklst.Codes)
+	report += "Total: " + fmt.Sprint(total) + "\n"
 	report += "Passed: " + fmt.Sprint(passed) + "\n"
 	report += "Failed: " + fmt.Sprint(failed) + "\n"
 	for _, msg := range failMessages {
@@ -217,18 +220,41 @@ func getChecklist(path string) (chklst Checklist) {
 		newChecklist = append(newChecklist, chk)
 	}
 	chklst.Checklist = newChecklist
+	chklst.Origin = path
 	return
+}
+
+// getChecklistsInDir uses getChecklist to construct a checklist struct for
+// every .json file in a directory
+func getChecklistsInDir(path string) (chklsts []Checklist) {
+	finfos, err := ioutil.ReadDir(path) // list of os.FileInfo
+	if err != nil {
+		couldntReadError(path, err)
+	}
+	for _, finfo := range finfos {
+		name := finfo.Name()
+		if strings.HasSuffix(name, ".json") {
+			// TODO path.Join these suckers
+			chklsts = append(chklsts, getChecklist(path+"/"+name))
+		}
+	}
+	return chklsts
 }
 
 // getVerbosity returns the verbosity specifed by the -v flag, and checks to
 // see that it is in a valid range
-func getFlags() (p string, u string) {
+func getFlags() (p string, u string, d string) {
 	// validateVerbosity ensures that verbosity is between a min and max
 	validateVerbosity := func(min int, actual int, max int) {
 		if verbosity > maxVerbosity || verbosity < minVerbosity {
 			log.Fatal("Invalid option for verbosity: " + fmt.Sprint(verbosity))
-		} else if verbosity >= maxVerbosity {
-			fmt.Println("Running with verbosity level " + fmt.Sprint(verbosity))
+		}
+		msg := "Running with verbosity level " + fmt.Sprint(verbosity)
+		verbosityPrint(msg, maxVerbosity)
+	}
+	validatePath := func(path string) {
+		if _, err := os.Stat(path); err != nil {
+			couldntReadError(path, err)
 		}
 	}
 
@@ -239,10 +265,12 @@ func getFlags() (p string, u string) {
 	verbosityMsg += "\n\t 2: Display everything that's happening."
 	pathMsg := "Use the health check located at this "
 	versionMsg := "Get the version of distributive this binary was built from"
+	dirpathMsg := "Run all the checks in the specified directory"
 
 	verbosityFlag := flag.Int("v", 1, verbosityMsg)
 	path := flag.String("f", "", pathMsg+"path")
 	urlstr := flag.String("u", "", pathMsg+"URL")
+	dirpath := flag.String("a", "/etc/distributive.d/", dirpathMsg)
 	version := flag.Bool("version", false, versionMsg)
 	flag.Parse()
 
@@ -253,14 +281,20 @@ func getFlags() (p string, u string) {
 	}
 	verbosity = *verbosityFlag
 	// check for invalid options
-	if *path == "" && *urlstr == "" {
+	if *path == "" && *urlstr == "" && *dirpath == "" {
 		log.Fatal("No path or URL specified. Use -f or -u option.")
 	} else if _, err := url.Parse(*urlstr); err != nil {
 		log.Fatal("Could not parse URL:\n\t" + err.Error())
 	}
 	validateVerbosity(minVerbosity, verbosity, maxVerbosity)
+	if *dirpath != "" {
+		validatePath(*dirpath)
+	}
+	if *path != "" {
+		validatePath(*path)
+	}
 	// check for invalid options
-	return *path, *urlstr
+	return *path, *urlstr, *dirpath
 }
 
 // verbosityPrint only prints its message if verbosity is above the given value
@@ -296,29 +330,46 @@ func runChecks(chklst Checklist) Checklist {
 // and exits with the appropriate message and exit code.
 func main() {
 	// Set up and parse flags
-	path, urlstr := getFlags()
+	path, urlstr, dirpath := getFlags()
 
 	// add workers to workers, parameterLength
 	registerChecks()
-	verbosityPrint("Creating checklist...", minVerbosity+1)
-	var chklst Checklist
+	verbosityPrint("Creating checklist(s)...", minVerbosity+1)
+	// load checklists according to flags
+	var chklsts []Checklist
 	if path != "" {
-		chklst = getChecklist(path)
+		chklsts = append(chklsts, getChecklist(path))
 	} else if urlstr != "" {
-		chklst = loadRemoteChecklist(urlstr)
+		chklsts = append(chklsts, loadRemoteChecklist(urlstr))
+	} else if dirpath != "" {
+		chklsts = append(chklsts, getChecklistsInDir(dirpath)...)
+	} else {
+		log.Fatal("Neither path nor URL nor directory specified.")
 	}
-	// run checks, populate error codes and messages
-	verbosityPrint("Running checks...", minVerbosity+1)
-	chklst = runChecks(chklst)
-	// make a printable report
-	chklst.Report = makeReport(chklst)
+	// run all checklists
+	for i, _ := range chklsts {
+		// run checks, populate error codes and messages
+		msg := "Running checklist: " + chklsts[i].Name
+		verbosityPrint(msg, minVerbosity+1)
+		chklsts[i] = runChecks(chklsts[i])
+		// make a printable report
+		report := makeReport(chklsts[i])
+		chklsts[i].Report = report
+	}
 	// see if any checks failed, exit accordingly
-	for _, code := range chklst.Codes {
-		if code != 0 {
-			verbosityPrint(chklst.Report, minVerbosity)
-			os.Exit(1)
+	exitStatus := 0
+	for _, chklst := range chklsts {
+		verbLevel := maxVerbosity
+		for _, code := range chklst.Codes {
+			if code != 0 {
+				verbLevel = minVerbosity
+				exitStatus = 1
+			}
 		}
+		verbosityPrint("", verbLevel) // get an extra newline
+		msg := "Printing output from checklist: " + chklst.Name
+		verbosityPrint(msg, verbLevel)
+		verbosityPrint(chklst.Report, verbLevel)
 	}
-	verbosityPrint(chklst.Report, maxVerbosity)
-	os.Exit(0)
+	os.Exit(exitStatus)
 }

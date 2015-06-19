@@ -41,6 +41,9 @@ func systemctlService(service string, loaded bool) (exitCode int, exitMessage st
 	// can't execute the same command twice
 	cmd = exec.Command("systemctl", "--no-pager", "list-units")
 	statuses := commandColumnNoHeader(column+1, cmd) // weird offset
+	if len(statuses) == 0 || len(names) == 0 {
+		log.Fatal("Couldn't find any systemd services")
+	}
 	// parse through columns
 	var actualState string
 	for i, srv := range names {
@@ -53,7 +56,8 @@ func systemctlService(service string, loaded bool) (exitCode int, exitMessage st
 			return genericError(msg, state, []string{actualState})
 		}
 	}
-	return 1, "You shouldn't be seeing this message. File a bug report please."
+	msg := "Service not found in systemctl output"
+	return genericError(msg, service, names)
 }
 
 // systemctlLoaded checks to see whether or not a given service is loaded
