@@ -36,7 +36,7 @@ func registerChecks() {
 	registerCheck("routingtabledestination", routingTableDestination, 1)
 	registerCheck("routingtableinterface", routingTableInterface, 1)
 	registerCheck("routingtablegateway", routingTableGateway, 1)
-	registerCheck("responsematch", responseMatch, 2)
+	registerCheck("responsematches", responseMatches, 2)
 	registerCheck("module", module, 1)
 	registerCheck("kernelparameter", kernelParameter, 1)
 	registerCheck("dockerimage", dockerImage, 1)

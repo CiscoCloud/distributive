@@ -74,7 +74,7 @@
             "Parameters" : ["google.com:80", "20s"]
         },
         {
-            "Check": "responseMatch",
+            "Check": "responseMatches",
             "Parameters": ["http://google.com:80", "g(o{2})gle"]
         }
     ]

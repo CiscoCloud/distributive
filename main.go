@@ -91,7 +91,7 @@ func validateParameters(chk Check) {
 	// parameters, and exits otherwise. Can't do much with a broken check!
 	checkParameterLength := func(chk Check, expected int) {
 		given := len(chk.Parameters)
-		if given == 0 {
+		if given == 0 || expected == 0 {
 			msg := "Invalid check:"
 			msg += "\n\tCheck type: " + chk.Check
 			log.Fatal(msg)

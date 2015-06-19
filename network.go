@@ -378,10 +378,10 @@ func urlToBytes(urlstr string) []byte {
 	return body
 }
 
-// responseMatch asks: does the response from this URL match this regexp?
+// responseMatches asks: does the response from this URL match this regexp?
 // TODO fix verbosity. We need a more generic error method! One that anyone
 // can use!
-func responseMatch(parameters []string) (exitCode int, exitMessage string) {
+func responseMatches(parameters []string) (exitCode int, exitMessage string) {
 	urlstr := parameters[0]
 	re := parseUserRegex(parameters[1])
 	body := urlToBytes(urlstr)

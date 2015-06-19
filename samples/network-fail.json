@@ -42,7 +42,7 @@
             "Parameters" : ["google.com:80", "1ns"]
         },
         {
-            "Check": "responseMatch",
+            "Check": "responseMatches",
             "Parameters": ["http://google.com:80", "yahoo"]
         }
     ]
