@@ -7,9 +7,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
-	"regexp"
 	"strings"
 	"syscall"
 )
@@ -114,15 +112,8 @@ func checksum(parameters []string) (exitCode int, exitMessage string) {
 // fileContains checks whether a file matches a given regex
 func fileContains(parameters []string) (exitCode int, exitMessage string) {
 	path := parameters[0]
-	regexString := parameters[1]
-	re, err := regexp.Compile(regexString)
-	if err != nil {
-		msg := "Bad configuration - couldn't parse golang regexp:"
-		msg += "\n\tRegex text: " + regexString
-		msg += "\n\tError: " + err.Error()
-		log.Fatal(msg)
-	}
-	if re.Match(fileToBytes(path)) {
+	regex := parseUserRegex(parameters[1])
+	if regex.Match(fileToBytes(path)) {
 		return 0, ""
 	}
 	return 1, "File does not match regexp:\n\tFile: " + path

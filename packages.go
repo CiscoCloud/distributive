@@ -46,49 +46,46 @@ func getManager() string {
 }
 
 type Repo struct {
-	Name, Fullname, Url string
+	Id, Name, Url, Status string
 }
 
 // repoToString converts a Repo struct into a representable, printable string
 func repoToString(r Repo) (str string) {
 	str += "Name: " + r.Name
-	str += " Full name: " + r.Fullname
+	str += " Id: " + r.Id
 	str += " URL: " + r.Url
+	str += " Status: " + r.Status
 	return str
 }
 
 // getYumRepos constructs Repos from the yum.conf file at path. Gives non-zero
 // Names, Fullnames, and Urls.
-func getYumRepos(path string) (repos []Repo) {
-	var fullNames []string
-	var urls []string
-	commentRegex := regexp.MustCompile("^\\s*#.*")
-	for _, line := range fileToLines(path) {
-		// filter comments and convert to string
-		strLine := string(line)
-		if !(commentRegex.Match(line)) {
-			// first, attempt to replace the prefix
-			replaceName := strings.TrimPrefix(strLine, "name=")
-			replaceURL := strings.TrimPrefix(strLine, "baseurl=")
-			// if they are different, we know a prefix was replaced
-			if replaceName != strLine {
-				fullNames = append(fullNames, replaceName)
-			} else if replaceURL != strLine {
-				urls = append(urls, replaceURL)
-			}
-		}
+func getYumRepos() (repos []Repo) {
+	// get output of `yum repolist`
+	cmd := exec.Command("yum", "repolist")
+	out, err := cmd.Output()
+	outstr := string(out)
+	if err != nil {
+		execError(cmd, outstr, err)
 	}
-	// Get shortest list to zip with, so we don't get an index error
-	shortList := fullNames
-	if len(fullNames) > len(urls) {
-		shortList = urls
+	// parse output
+	slc := stringToSliceMultispace(outstr)
+	ids := getColumnNoHeader(0, slc)
+	ids = ids[:len(ids)-2] // has extra line at end
+	names := getColumnNoHeader(1, slc)
+	statuses := getColumnNoHeader(2, slc)
+	if len(ids) != len(names) || len(names) != len(statuses) {
+		fmt.Println(ids)
+		fmt.Println(names)
+		fmt.Println(statuses)
+		fmt.Println(len(ids))
+		fmt.Println(len(names))
+		fmt.Println(len(statuses))
+		log.Fatal("Could not fetch metadata for every repo")
 	}
 	// Construct Repos
-	whitespaceRegex := regexp.MustCompile("\\s+")
-	for i, _ := range shortList {
-		nameSplit := whitespaceRegex.Split(fullNames[i], -1)
-		shortName := nameSplit[len(nameSplit)-1]
-		repo := Repo{Name: shortName, Fullname: fullNames[i], Url: urls[i]}
+	for i, _ := range ids {
+		repo := Repo{Name: names[i], Id: ids[i], Status: statuses[i]}
 		repos = append(repos, repo)
 	}
 	return repos
@@ -96,21 +93,25 @@ func getYumRepos(path string) (repos []Repo) {
 
 // getAptRepos constructs Repos from the sources.list file at path. Gives
 // non-zero Urls
-func getAptRepos(path string) (repos []Repo) {
+func getAptRepos() (repos []Repo) {
 	// getAptSources returns all the urls of all apt sources (including source
 	// code repositories
-	getAptSources := func(path string) (urls []string) {
-		split := stringToSlice(fileToString(path))
-		// filter out comments
-		commentRegex := regexp.MustCompile("^\\s*#.*")
-		for _, line := range split {
-			if len(line) > 1 && !(commentRegex.MatchString(line[0])) {
-				urls = append(urls, line[1])
+	getAptSources := func() (urls []string) {
+		otherLists := getFilesWithExtension("/etc/apt/sources.list.d", ".list")
+		sourceLists := append([]string{"/etc/apt/sources.list"}, otherLists...)
+		for _, f := range sourceLists {
+			split := stringToSlice(fileToString(f))
+			// filter out comments
+			commentRegex := regexp.MustCompile("^\\s*#.*")
+			for _, line := range split {
+				if len(line) > 1 && !(commentRegex.MatchString(line[0])) {
+					urls = append(urls, line[1])
+				}
 			}
 		}
 		return urls
 	}
-	for _, src := range getAptSources(path) {
+	for _, src := range getAptSources() {
 		repos = append(repos, Repo{Url: src})
 	}
 	return repos
@@ -146,9 +147,9 @@ func getPacmanRepos(path string) (repos []Repo) {
 func getRepos(manager string) (repos []Repo) {
 	switch manager {
 	case "yum":
-		return getYumRepos("/etc/yum.conf")
+		return getYumRepos()
 	case "apt":
-		return getAptRepos("/etc/apt/sources.list")
+		return getAptRepos()
 	case "pacman":
 		return getPacmanRepos("/etc/pacman.conf")
 	default:
@@ -162,8 +163,8 @@ func getRepos(manager string) (repos []Repo) {
 // existsRepoWithProperty is an abstraction of YumRepoExists and YumRepoURL.
 // It takes a struct field name to check, and an expected value. If the expected
 // value is found in the field of a repo, it returns 0, "" else an error message.
-// Valid choices for prop: "Url" | "Name" | "Fullname"
-func existsRepoWithProperty(prop string, val string, manager string) (int, string) {
+// Valid choices for prop: "Url" | "Name" | "Name"
+func existsRepoWithProperty(prop string, val *regexp.Regexp, manager string) (int, string) {
 	var properties []string
 	for _, repo := range getRepos(manager) {
 		switch prop {
@@ -171,29 +172,33 @@ func existsRepoWithProperty(prop string, val string, manager string) (int, strin
 			properties = append(properties, repo.Url)
 		case "Name":
 			properties = append(properties, repo.Name)
-		case "Fullname":
-			properties = append(properties, repo.Fullname)
+		case "Status":
+			properties = append(properties, repo.Status)
+		case "Id":
+			properties = append(properties, repo.Id)
 		default:
 			log.Fatal("Repos don't have the requested property: " + prop)
 		}
 	}
-	if strIn(val, properties) {
+	if reIn(val, properties) {
 		return 0, ""
 	}
 	msg := "Repo with given " + prop + " not found"
-	return genericError(msg, val, properties)
+	return genericError(msg, val.String(), properties)
 }
 
 // repoExists checks to see that a given repo is listed in the appropriate
 // configuration file
 func repoExists(parameters []string) (exitCode int, exitMessage string) {
-	return existsRepoWithProperty("Name", parameters[1], parameters[0])
+	re := parseUserRegex(parameters[1])
+	return existsRepoWithProperty("Name", re, parameters[0])
 }
 
 // repoExistsURI checks to see if the repo with the given URI is listed in the
 // appropriate configuration file
 func repoExistsURI(parameters []string) (exitCode int, exitMessage string) {
-	return existsRepoWithProperty("Url", parameters[1], parameters[0])
+	re := parseUserRegex(parameters[1])
+	return existsRepoWithProperty("Url", re, parameters[0])
 }
 
 // pacmanIgnore checks to see whether a given package is in /etc/pacman.conf's

@@ -226,17 +226,10 @@ func getChecklist(path string) (chklst Checklist) {
 
 // getChecklistsInDir uses getChecklist to construct a checklist struct for
 // every .json file in a directory
-func getChecklistsInDir(path string) (chklsts []Checklist) {
-	finfos, err := ioutil.ReadDir(path) // list of os.FileInfo
-	if err != nil {
-		couldntReadError(path, err)
-	}
-	for _, finfo := range finfos {
-		name := finfo.Name()
-		if strings.HasSuffix(name, ".json") {
-			// TODO path.Join these suckers
-			chklsts = append(chklsts, getChecklist(path+"/"+name))
-		}
+func getChecklistsInDir(dirpath string) (chklsts []Checklist) {
+	paths := getFilesWithExtension(dirpath, ".json")
+	for _, path := range paths {
+		chklsts = append(chklsts, getChecklist(path))
 	}
 	return chklsts
 }
