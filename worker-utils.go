@@ -80,25 +80,37 @@ func commandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	return getColumnNoHeader(col, stringToSlice(string(out)))
 }
 
-// strIn checks to see if a given string is in a slice of strings
-func strIn(str string, slice []string) bool {
+// stringPredicate is a function that filters a list of strings
+type stringPredicate func(str string) bool
+
+// anySatisfies checks to see whether any string in a given slice satisfies the
+// provided stringPredicate
+func anySatisfies(pred stringPredicate, slice []string) bool {
 	for _, sliceString := range slice {
-		if str == sliceString {
+		if pred(sliceString) {
 			return true
 		}
 	}
 	return false
 }
 
+// strIn checks to see if a given string is in a slice of strings
+func strIn(str string, slice []string) bool {
+	pred := func(strx string) bool { return (strx == str) }
+	return anySatisfies(pred, slice)
+}
+
 // strContainedIn works like strIn, but checks for substring containing rather
 // than whole string equality.
 func strContainedIn(str string, slice []string) bool {
-	for _, sliceString := range slice {
-		if strings.Contains(sliceString, str) {
-			return true
-		}
-	}
-	return false
+	pred := func(strx string) bool { return strings.Contains(strx, str) }
+	return anySatisfies(pred, slice)
+}
+
+// reIn is like strIn, but matches regexps instead
+func reIn(re *regexp.Regexp, slice []string) bool {
+	pred := func(strx string) bool { return re.MatchString(strx) }
+	return anySatisfies(pred, slice)
 }
 
 //// ERROR UTILITIES
@@ -166,6 +178,19 @@ func execError(cmd *exec.Cmd, out string, err error) {
 
 // IO UTILITIES
 
+// parseUserRegex either returns a regex from a string, or displays an
+// appropriate error to the user
+func parseUserRegex(regexString string) *regexp.Regexp {
+	re, err := regexp.Compile(regexString)
+	if err != nil {
+		msg := "Bad configuration - couldn't parse golang regexp:"
+		msg += "\n\tRegex text: " + regexString
+		msg += "\n\tError: " + err.Error()
+		log.Fatal(msg)
+	}
+	return re
+}
+
 // fileToBytes reads a file and handles the error
 func fileToBytes(path string) []byte {
 	data, err := ioutil.ReadFile(path)
@@ -196,6 +221,23 @@ func parseMyInt(str string) int {
 	return int(i)
 }
 
+// getFilesWithExtension returns the paths to all the files in the given dir
+// that end with the given file extension (with or without dot)
+func getFilesWithExtension(path string, ext string) (paths []string) {
+	finfos, err := ioutil.ReadDir(path) // list of os.FileInfo
+	if err != nil {
+		couldntReadError(path, err)
+	}
+	for _, finfo := range finfos {
+		name := finfo.Name()
+		if strings.HasSuffix(name, ext) {
+			// TODO path.Join these suckers
+			paths = append(paths, path+"/"+name)
+		}
+	}
+	return paths
+}
+
 /*
 // byteSliceToStrSlice takes a slice of byte slices and returns the equivalent
 // slice of strings
@@ -204,17 +246,5 @@ func byteSliceToStrSlice(byteSlice [][]byte) (strSlice []string) {
 		strSlice = append(strSlice, string(word))
 	}
 	return strSlice
-}
-*/
-/*
-// anyContains checks to see whether any of the strings in the given slice
-// contain the substring str
-func anyContains(str string, slice []string) bool {
-	for _, sliceString := range slice {
-		if strings.Contains(sliceString, str) {
-			return true
-		}
-	}
-	return false
 }
 */
