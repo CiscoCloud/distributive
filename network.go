@@ -1,50 +1,53 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"time"
 )
 
-// getHexPorts gets all open ports as hex strings from /proc/net/tcp
-func getHexPorts() (ports []string) {
-	data := fileToString("/proc/net/tcp")
-	localAddresses := getColumnNoHeader(1, stringToSlice(data))
-	portRe := regexp.MustCompile(":([0-9A-F]{4})")
-	for _, address := range localAddresses {
-		port := portRe.FindString(address)
-		if port != "" {
-			portString := string(port[1:])
-			ports = append(ports, portString)
-		}
-	}
-	return ports
-}
-
-// strHexToDecimal converts from string containing hex number to int
-func strHexToDecimal(hex string) int {
-	portInt, err := strconv.ParseInt(hex, 16, 64)
-	if err != nil {
-		log.Fatal("Couldn't parse hex number " + hex + ":\n\t" + err.Error())
-	}
-	return int(portInt)
-}
-
-// getOpenPorts gets a list of open/listening ports as integers
-func getOpenPorts() (ports []int) {
-	for _, port := range getHexPorts() {
-		ports = append(ports, strHexToDecimal(port))
-	}
-	return ports
-}
-
 // port parses /proc/net/tcp to determine if a given port is in an open state
 // and returns an error if it is not.
 func port(parameters []string) (exitCode int, exitMessage string) {
+	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
+	getHexPorts := func() (ports []string) {
+		data := fileToString("/proc/net/tcp")
+		localAddresses := getColumnNoHeader(1, stringToSlice(data))
+		portRe := regexp.MustCompile(":([0-9A-F]{4})")
+		for _, address := range localAddresses {
+			port := portRe.FindString(address)
+			if port != "" {
+				portString := string(port[1:])
+				ports = append(ports, portString)
+			}
+		}
+		return ports
+	}
+
+	// strHexToDecimal converts from string containing hex number to int
+	strHexToDecimal := func(hex string) int {
+		portInt, err := strconv.ParseInt(hex, 16, 64)
+		if err != nil {
+			log.Fatal("Couldn't parse hex number " + hex + ":\n\t" + err.Error())
+		}
+		return int(portInt)
+	}
+
+	// getOpenPorts gets a list of open/listening ports as integers
+	getOpenPorts := func() (ports []int) {
+		for _, port := range getHexPorts() {
+			ports = append(ports, strHexToDecimal(port))
+		}
+		return ports
+	}
+
 	port := parseMyInt(parameters[0])
 	open := getOpenPorts()
 	for _, p := range open {
@@ -349,4 +352,42 @@ func routingTableInterface(parameters []string) (exitCode int, exitMessage strin
 // kernel's IP routing table, as accessed by `route -n`.
 func routingTableGateway(parameters []string) (exitCode int, exitMessage string) {
 	return routingTableMatch(1, parameters[0])
+}
+
+// urlToBytes gets the response from urlstr and returns it as a byte string
+func urlToBytes(urlstr string) []byte {
+	// get response from URL
+	resp, err := http.Get(urlstr)
+	if err != nil {
+		couldntReadError(urlstr, err)
+	}
+	defer resp.Body.Close()
+
+	// read response
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		msg := "Bad response, couldn't read body:"
+		msg += "\n\tURL: " + urlstr
+		msg += "\n\tError: " + err.Error()
+		log.Fatal(msg)
+	} else if body == nil || bytes.Equal(body, []byte{}) {
+		msg := "Body of response was empty:"
+		msg += "\n\tURL: " + urlstr
+		log.Fatal(msg)
+	}
+	return body
+}
+
+// responseMatch asks: does the response from this URL match this regexp?
+// TODO fix verbosity. We need a more generic error method! One that anyone
+// can use!
+func responseMatch(parameters []string) (exitCode int, exitMessage string) {
+	urlstr := parameters[0]
+	re := parseUserRegex(parameters[1])
+	body := urlToBytes(urlstr)
+	if re.Match(body) {
+		return 0, ""
+	}
+	msg := "Response didn't match regexp:"
+	return genericError(msg, re.String(), []string{string(body)})
 }

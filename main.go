@@ -6,13 +6,11 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -132,28 +130,9 @@ func getWorker(chk Check) Worker {
 func loadRemoteChecklist(urlstr string) (chklst Checklist) {
 	// urlToFile gets the response from urlstr and writes it to path
 	urlToFile := func(urlstr string, path string) error {
-		// get response from URL
-		resp, err := http.Get(urlstr)
-		if err != nil {
-			couldntReadError(path, err)
-		}
-		defer resp.Body.Close()
-
-		// read response
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			msg := "Bad response, couldn't read body:"
-			msg += "\n\tURL: " + urlstr
-			msg += "\n\tError: " + err.Error()
-			log.Fatal(msg)
-		} else if body == nil || bytes.Equal(body, []byte{}) {
-			msg := "Body of response was empty:"
-			msg += "\n\tURL: " + urlstr
-			log.Fatal(msg)
-		}
-
+		body := urlToBytes(urlstr)
 		// write to file
-		err = ioutil.WriteFile(path, body, 0755)
+		err := ioutil.WriteFile(path, body, 0755)
 		if err != nil {
 			couldntWriteError(path, err)
 		}

@@ -72,6 +72,10 @@
         {
             "Check" : "udpTimeout",
             "Parameters" : ["google.com:80", "20s"]
+        },
+        {
+            "Check": "responseMatch",
+            "Parameters": ["http://google.com:80", "g(o{2})gle"]
         }
     ]
 }

@@ -40,6 +40,10 @@
         {
             "Check" : "udpTimeout",
             "Parameters" : ["google.com:80", "1ns"]
+        },
+        {
+            "Check": "responseMatch",
+            "Parameters": ["http://google.com:80", "yahoo"]
         }
     ]
 }
