@@ -25,7 +25,7 @@ func command(parameters []string) (exitCode int, exitMessage string) {
 	exitMessage += "Command exited with non-zero exit code:"
 	exitMessage += "\n\tCommand: " + toExec
 	exitMessage += "\n\tExit code: " + fmt.Sprint(exitCode)
-	exitMessage += "\n\tOutput: " + fmt.Sprint(out)
+	exitMessage += "\n\tOutput: " + string(out)
 	return 1, exitMessage
 }
 

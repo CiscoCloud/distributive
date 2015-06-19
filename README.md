@@ -60,15 +60,20 @@ binary will be installed to `/bin/distributive` and the samples to
 Usage
 -----
 
+The default behavior is to run all checks in /etc/distributive.d/, in addition
+to any specified via the `-f` or `-u` options.
+
 ```
 $ distributive --help
 Usage of ./distributive:
+  -a="/etc/distributive.d/": Run all the checks in the specified directory
   -f="": Use the health check located at this path
   -u="": Use the health check located at this URL
   -v=1: Output verbosity level (valid values are [0-2])
      0: Display only errors, with no other output.
      1: Display errors and some information.
      2: Display everything that's happening.
+  -version=false: Get the version of distributive this binary was built from
 ```
 
 Examples:
