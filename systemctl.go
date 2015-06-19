@@ -24,6 +24,7 @@ func systemctlShouldExist() {
 	}
 }
 
+/*
 // systemctlServices checks on either the loaded or active field of
 // `systemctl list-units`. It is an abstraction of systemctlLoaded and
 // systemctlActive.
@@ -59,15 +60,39 @@ func systemctlService(service string, loaded bool) (exitCode int, exitMessage st
 	msg := "Service not found in systemctl output"
 	return genericError(msg, service, names)
 }
+*/
+
+func systemctlService(service string, activeOrLoaded string) (exitCode int, exitMessage string) {
+	// cmd depends on whether we're checking active or loaded
+	cmd := exec.Command("systemctl", "show", "-p", "ActiveState", service)
+	if activeOrLoaded == "loaded" {
+		cmd = exec.Command("systemctl", "show", "-p", "LoadState", service)
+	}
+
+	out, err := cmd.CombinedOutput()
+	outstr := string(out)
+	if err != nil {
+		execError(cmd, outstr, err)
+	}
+	contained := "ActiveState=active"
+	if activeOrLoaded == "loaded" {
+		contained = "LoadState=loaded"
+	}
+	if strings.Contains(outstr, contained) {
+		return 0, ""
+	}
+	msg := "Service not " + activeOrLoaded
+	return genericError(msg, service, []string{outstr})
+}
 
 // systemctlLoaded checks to see whether or not a given service is loaded
 func systemctlLoaded(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlService(parameters[0], true)
+	return systemctlService(parameters[0], "loaded")
 }
 
 // systemctlActive checks to see whether or not a given service is active
 func systemctlActive(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlService(parameters[0], false)
+	return systemctlService(parameters[0], "active")
 }
 
 // systemctlSock is an abstraction of systemctlSockPath and systemctlSockUnit,

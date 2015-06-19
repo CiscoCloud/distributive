@@ -150,7 +150,7 @@ func phpConfig(parameters []string) (exitCode int, exitMessage string) {
 	return genericError(msg, value, []string{actualValue})
 }
 
-// getKBSwapOrMemory returns output from `free`, it is an abstraction of
+// getSwapOrMemory returns output from `free`, it is an abstraction of
 // getSwap and getMemory.  inputs: status: free | used | total
 // swapOrMem: memory | swap, units: b | kb | mb | gb | tb
 func getSwapOrMemory(status string, swapOrMem string, units string) int {
