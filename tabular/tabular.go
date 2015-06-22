@@ -4,13 +4,26 @@
 package tabular
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
 
+// Table, Column, and Row are just type synonyms that make it easier to reason
+// about some of the below functions
+type Table [][]string
+type Column []string
+type Row []string
+
+func PrintTable(tab Table) {
+	for _, row := range tab {
+		fmt.Println(row)
+	}
+}
+
 // separateString is an abstraction of stringToSlice that takes two kinds of
 // separators, and splits a string into a 2D slice based on those separators
-func SeparateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (output [][]string) {
+func SeparateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (output Table) {
 	lines := rowSep.Split(str, -1)
 	for _, line := range lines {
 		output = append(output, colSep.Split(line, -1))
@@ -20,7 +33,7 @@ func SeparateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (o
 
 // stringToSlice takes in a string and returns a 2D slice of its output,
 // separated on whitespace and newlines
-func StringToSlice(str string) (output [][]string) {
+func StringToSlice(str string) (output Table) {
 	rowSep := regexp.MustCompile("\n+")
 	colSep := regexp.MustCompile("\\s+")
 	return SeparateString(rowSep, colSep, str)
@@ -28,14 +41,14 @@ func StringToSlice(str string) (output [][]string) {
 
 // stringToSliceMultispace is for commands that have spaces within their columns
 // but more than one space between columns
-func StringToSliceMultispace(str string) (output [][]string) {
+func StringToSliceMultispace(str string) (output Table) {
 	rowSep := regexp.MustCompile("\n+")
 	colSep := regexp.MustCompile("\\s{2,}")
 	return SeparateString(rowSep, colSep, str)
 }
 
 // getColumn isolates the entries of a single column from a 2D slice
-func GetColumn(col int, slice [][]string) (column []string) {
+func GetColumn(col int, slice [][]string) (column Column) {
 	for _, line := range slice {
 		if len(line) > col {
 			column = append(column, line[col])
@@ -45,8 +58,8 @@ func GetColumn(col int, slice [][]string) (column []string) {
 }
 
 // getColumnNoHeader safely removes the first element from a column
-func GetColumnNoHeader(col int, slice [][]string) []string {
-	column := GetColumn(col, slice)
+func GetColumnNoHeader(col int, tab Table) Column {
+	column := GetColumn(col, tab)
 	if len(column) < 1 {
 		return column
 	}

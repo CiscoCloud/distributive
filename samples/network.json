@@ -2,6 +2,10 @@
     "Name": "Network checks",
     "Checklist" : [
         {
+            "Check": "port",
+            "Parameters": ["41483"]
+        },
+        {
             "Check" : "interface",
             "Parameters" : ["docker0"]
         },

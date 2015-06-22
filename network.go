@@ -40,7 +40,7 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
 	getHexPorts := func() (ports []string) {
 		data := fileToString("/proc/net/tcp")
-		localAddresses := tabular.GetColumnNoHeader(1, tabular.StringToSlice(data))
+		localAddresses := tabular.GetColumnNoHeader(1, tabular.ProbabalisticSplit(data))
 		portRe := regexp.MustCompile(":([0-9A-F]{4})")
 		for _, address := range localAddresses {
 			port := portRe.FindString(address)
@@ -376,6 +376,8 @@ func routingTableGateway(parameters []string) (exitCode int, exitMessage string)
 }
 
 // urlToBytes gets the response from urlstr and returns it as a byte string
+// TODO: allow insecure requests
+// http://stackoverflow.com/questions/12122159/golang-how-to-do-a-https-request-with-bad-certificate
 func urlToBytes(urlstr string) []byte {
 	// get response from URL
 	resp, err := http.Get(urlstr)

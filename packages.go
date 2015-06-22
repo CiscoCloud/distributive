@@ -78,18 +78,12 @@ func getYumRepos() (repos []Repo) {
 		execError(cmd, outstr, err)
 	}
 	// parse output
-	slc := tabular.StringToSliceMultispace(outstr)
+	slc := tabular.StringToSlice(outstr)
 	ids := tabular.GetColumnNoHeader(0, slc)
 	ids = ids[:len(ids)-2] // has extra line at end
 	names := tabular.GetColumnNoHeader(1, slc)
 	statuses := tabular.GetColumnNoHeader(2, slc)
 	if len(ids) != len(names) || len(names) != len(statuses) {
-		fmt.Println(ids)
-		fmt.Println(names)
-		fmt.Println(statuses)
-		fmt.Println(len(ids))
-		fmt.Println(len(names))
-		fmt.Println(len(statuses))
 		log.Fatal("Could not fetch metadata for every repo")
 	}
 	// Construct Repos
