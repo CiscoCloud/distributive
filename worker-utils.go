@@ -22,7 +22,7 @@ type Worker func(parameters []string) (exitCode int, exitMessage string)
 // commandColumnNoHeader returns a specified column of the output of a command,
 // without that column's header. Useful for parsing the output of shell commands,
 // which many of the Checks require.
-// TODO long term: get column by header, instead of index
+// TODO for some reason, this + route -n doesn't work with probabalistic.
 func commandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	out, err := cmd.CombinedOutput()
 	outstr := string(out)

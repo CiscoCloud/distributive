@@ -39,14 +39,6 @@ func StringToSlice(str string) (output Table) {
 	return SeparateString(rowSep, colSep, str)
 }
 
-// stringToSliceMultispace is for commands that have spaces within their columns
-// but more than one space between columns
-func StringToSliceMultispace(str string) (output Table) {
-	rowSep := regexp.MustCompile("\n+")
-	colSep := regexp.MustCompile("\\s{2,}")
-	return SeparateString(rowSep, colSep, str)
-}
-
 // getColumn isolates the entries of a single column from a 2D slice
 func GetColumn(col int, slice [][]string) (column Column) {
 	for _, line := range slice {
@@ -64,6 +56,28 @@ func GetColumnNoHeader(col int, tab Table) Column {
 		return column
 	}
 	return column[1:]
+}
+
+func GetColumnByHeader(name string, tab Table) (column Column) {
+	// strIndexOf returns the index of a string in its slice
+	strIndexOf := func(str string, slc []string) int {
+		for i, sliceStr := range slc {
+			if strings.EqualFold(sliceStr, str) {
+				return i
+			}
+		}
+		return -1
+	}
+	// if the table's empty, the column will be too
+	if len(tab) < 1 {
+		return column
+	}
+	// ensure that header is present in the headers
+	headerCol := -1
+	if headerCol = strIndexOf(name, tab[0]); headerCol == -1 {
+		return column
+	}
+	return GetColumnNoHeader(headerCol, tab)
 }
 
 // stringPredicate is a function that filters a list of strings

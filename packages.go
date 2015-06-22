@@ -78,9 +78,10 @@ func getYumRepos() (repos []Repo) {
 		execError(cmd, outstr, err)
 	}
 	// parse output
-	slc := tabular.StringToSlice(outstr)
+	slc := tabular.ProbabalisticSplit(outstr)
 	ids := tabular.GetColumnNoHeader(0, slc)
 	ids = ids[:len(ids)-2] // has extra line at end
+	//names := tabular.GetColumnByHeader("repo name", slc)
 	names := tabular.GetColumnNoHeader(1, slc)
 	statuses := tabular.GetColumnNoHeader(2, slc)
 	if len(ids) != len(names) || len(names) != len(statuses) {
@@ -103,7 +104,7 @@ func getAptRepos() (repos []Repo) {
 		otherLists := getFilesWithExtension("/etc/apt/sources.list.d", ".list")
 		sourceLists := append([]string{"/etc/apt/sources.list"}, otherLists...)
 		for _, f := range sourceLists {
-			split := tabular.StringToSlice(fileToString(f))
+			split := tabular.ProbabalisticSplit(fileToString(f))
 			// filter out comments
 			commentRegex := regexp.MustCompile("^\\s*#.*")
 			for _, line := range split {

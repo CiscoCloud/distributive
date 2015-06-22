@@ -1,5 +1,6 @@
 {
-    "Name": "Group checks",
+    "Name": "Failing group checks",
+    "Notes": "designed to fail",
     "Checklist" : [
         {
             "Check" : "groupExists",

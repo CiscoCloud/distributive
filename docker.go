@@ -55,7 +55,7 @@ func getRunningContainers() (images []string) {
 	}
 	// the output of `docker ps -a` has spaces in columns, but each column
 	// is separated by 2 or more spaces
-	lines := tabular.StringToSliceMultispace(outstr)
+	lines := tabular.ProbabalisticSplit(outstr)
 	if len(lines) < 1 {
 		return []string{}
 	}
