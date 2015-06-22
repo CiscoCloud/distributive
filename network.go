@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/CiscoCloud/distributive/tabular"
 	"io/ioutil"
 	"log"
 	"net"
@@ -39,7 +40,7 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
 	getHexPorts := func() (ports []string) {
 		data := fileToString("/proc/net/tcp")
-		localAddresses := getColumnNoHeader(1, stringToSlice(data))
+		localAddresses := tabular.GetColumnNoHeader(1, tabular.StringToSlice(data))
 		portRe := regexp.MustCompile(":([0-9A-F]{4})")
 		for _, address := range localAddresses {
 			port := portRe.FindString(address)
@@ -126,7 +127,7 @@ func up(parameters []string) (exitCode int, exitMessage string) {
 	}
 	name := parameters[0]
 	upInterfaces := getUpInterfaces()
-	if strIn(name, upInterfaces) {
+	if tabular.StrIn(name, upInterfaces) {
 		return 0, ""
 	}
 	return genericError("Interface is not up", name, upInterfaces)
@@ -174,7 +175,7 @@ func getInterfaceIPs(name string, version int) (ifaceAddresses []string) {
 // getIPWorker(exitCode int, exitMessage string) is an abstraction of Ip4 and Ip6
 func getIPWorker(name string, address string, version int) (exitCode int, exitMessage string) {
 	ips := getInterfaceIPs(name, version)
-	if strIn(address, ips) {
+	if tabular.StrIn(address, ips) {
 		return 0, ""
 	}
 	return genericError("Interface does not have IP", address, ips)
@@ -350,7 +351,7 @@ func routingTableColumn(column int) []string {
 // routingTableGateway
 func routingTableMatch(col int, str string) (exitCode int, exitMessage string) {
 	column := routingTableColumn(col)
-	if strIn(str, column) {
+	if tabular.StrIn(str, column) {
 		return 0, ""
 	}
 	return genericError("Not found in routing table", str, column)

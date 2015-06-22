@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/CiscoCloud/distributive/tabular"
 	"log"
 	"os/exec"
 	"regexp"
@@ -77,11 +78,11 @@ func getYumRepos() (repos []Repo) {
 		execError(cmd, outstr, err)
 	}
 	// parse output
-	slc := stringToSliceMultispace(outstr)
-	ids := getColumnNoHeader(0, slc)
+	slc := tabular.StringToSliceMultispace(outstr)
+	ids := tabular.GetColumnNoHeader(0, slc)
 	ids = ids[:len(ids)-2] // has extra line at end
-	names := getColumnNoHeader(1, slc)
-	statuses := getColumnNoHeader(2, slc)
+	names := tabular.GetColumnNoHeader(1, slc)
+	statuses := tabular.GetColumnNoHeader(2, slc)
 	if len(ids) != len(names) || len(names) != len(statuses) {
 		fmt.Println(ids)
 		fmt.Println(names)
@@ -108,7 +109,7 @@ func getAptRepos() (repos []Repo) {
 		otherLists := getFilesWithExtension("/etc/apt/sources.list.d", ".list")
 		sourceLists := append([]string{"/etc/apt/sources.list"}, otherLists...)
 		for _, f := range sourceLists {
-			split := stringToSlice(fileToString(f))
+			split := tabular.StringToSlice(fileToString(f))
 			// filter out comments
 			commentRegex := regexp.MustCompile("^\\s*#.*")
 			for _, line := range split {
@@ -188,7 +189,7 @@ func existsRepoWithProperty(prop string, val *regexp.Regexp, manager string) (in
 			log.Fatal("Repos don't have the requested property: " + prop)
 		}
 	}
-	if reIn(val, properties) {
+	if tabular.ReIn(val, properties) {
 		return 0, ""
 	}
 	msg := "Repo with given " + prop + " not found"
@@ -221,7 +222,7 @@ func pacmanIgnore(parameters []string) (exitCode int, exitMessage string) {
 		spl := strings.Split(find, " ")
 		if len(spl) > 2 {
 			packages = spl[2:] // first two are "IgnorePkg" and "="
-			if strIn(pkg, packages) {
+			if tabular.StrIn(pkg, packages) {
 				return 0, ""
 			}
 		}

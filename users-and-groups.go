@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/CiscoCloud/distributive/tabular"
 	"log"
 	"os/user"
 	"reflect"
@@ -35,7 +36,7 @@ func getGroups() (groups []Group) {
 	data := fileToString("/etc/group")
 	rowSep := regexp.MustCompile("\n")
 	colSep := regexp.MustCompile(":")
-	lines := separateString(rowSep, colSep, data)
+	lines := tabular.SeparateString(rowSep, colSep, data)
 	commaRegexp := regexp.MustCompile(",")
 	for _, line := range lines {
 		if len(line) > 3 { // only lines that have all fields (non-empty)
@@ -88,7 +89,7 @@ func userInGroup(parameters []string) (exitCode int, exitMessage string) {
 	groups := getGroups()
 	for _, g := range groups {
 		if g.Name == group {
-			if strIn(user, g.Users) {
+			if tabular.StrIn(user, g.Users) {
 				return 0, ""
 			}
 			return genericError("User not found in group", user, g.Users)

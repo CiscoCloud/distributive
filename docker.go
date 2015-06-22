@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/CiscoCloud/distributive/tabular"
 	"log"
 	"os/exec"
 	"strings"
@@ -25,7 +26,7 @@ func getDockerImages() (images []string) {
 func dockerImage(parameters []string) (exitCode int, exitMessage string) {
 	name := parameters[0]
 	images := getDockerImages()
-	if strIn(name, images) {
+	if tabular.StrIn(name, images) {
 		return 0, ""
 	}
 	return genericError("Docker image was not found", name, images)
@@ -35,7 +36,7 @@ func dockerImage(parameters []string) (exitCode int, exitMessage string) {
 func dockerImageRegexp(parameters []string) (exitCode int, exitMessage string) {
 	re := parseUserRegex(parameters[0])
 	images := getDockerImages()
-	if reIn(re, images) {
+	if tabular.ReIn(re, images) {
 		return 0, ""
 	}
 	return genericError("Docker image was not found", re.String(), images)
@@ -54,12 +55,12 @@ func getRunningContainers() (images []string) {
 	}
 	// the output of `docker ps -a` has spaces in columns, but each column
 	// is separated by 2 or more spaces
-	lines := stringToSliceMultispace(outstr)
+	lines := tabular.StringToSliceMultispace(outstr)
 	if len(lines) < 1 {
 		return []string{}
 	}
-	names := getColumnNoHeader(1, lines)    // all docker container names
-	statuses := getColumnNoHeader(4, lines) // all docker container statuses
+	names := tabular.GetColumnNoHeader(1, lines)    // all docker container names
+	statuses := tabular.GetColumnNoHeader(4, lines) // all docker container statuses
 	for i, status := range statuses {
 		if strings.Contains(status, "Up") && len(names) > i {
 			images = append(images, names[i])
@@ -73,7 +74,7 @@ func getRunningContainers() (images []string) {
 func dockerRunning(parameters []string) (exitCode int, exitMessage string) {
 	name := parameters[0]
 	running := getRunningContainers()
-	if strContainedIn(name, running) {
+	if tabular.StrContainedIn(name, running) {
 		return 0, ""
 	}
 	return genericError("Docker container not runnning", name, running)
@@ -83,7 +84,7 @@ func dockerRunning(parameters []string) (exitCode int, exitMessage string) {
 func dockerRunningRegexp(parameters []string) (exitCode int, exitMessage string) {
 	re := parseUserRegex(parameters[0])
 	running := getRunningContainers()
-	if reIn(re, running) {
+	if tabular.ReIn(re, running) {
 		return 0, ""
 	}
 	return genericError("Docker container not runnning", re.String(), running)

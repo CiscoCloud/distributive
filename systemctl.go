@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/CiscoCloud/distributive/tabular"
 	"log"
 	"os/exec"
 	"regexp"
@@ -79,7 +80,7 @@ func systemctlSock(value string, path bool) (exitCode int, exitMessage string) {
 	}
 	cmd := exec.Command("systemctl", "list-sockets")
 	values := commandColumnNoHeader(column, cmd)
-	if strIn(value, values) {
+	if tabular.StrIn(value, values) {
 		return 0, ""
 	}
 	return genericError("Socket not found", value, values)
@@ -115,7 +116,7 @@ func getTimers(all bool) []string {
 // timers(exitCode int, exitMessage string) is pure DRY for systemctlTimer and systemctlTimerLoaded
 func timersWorker(unit string, all bool) (exitCode int, exitMessage string) {
 	timers := getTimers(all)
-	if strIn(unit, timers) {
+	if tabular.StrIn(unit, timers) {
 		return 0, ""
 	}
 	return genericError("Timer not found", unit, timers)

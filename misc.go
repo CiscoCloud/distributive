@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/CiscoCloud/distributive/tabular"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -94,7 +95,7 @@ func running(parameters []string) (exitCode int, exitMessage string) {
 			filtered = append(filtered, cmd)
 		}
 	}
-	if strIn(proc, filtered) {
+	if tabular.StrIn(proc, filtered) {
 		return 0, ""
 	}
 	return genericError("Process not running", proc, filtered)
@@ -141,7 +142,7 @@ func module(parameters []string) (exitCode int, exitMessage string) {
 	}
 	name := parameters[0]
 	modules := kernelModules()
-	if strIn(name, modules) {
+	if tabular.StrIn(name, modules) {
 		return 0, ""
 	}
 	return genericError("Module is not loaded", name, modules)

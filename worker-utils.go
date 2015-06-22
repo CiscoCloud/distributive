@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/CiscoCloud/distributive/tabular"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -18,53 +19,6 @@ type Worker func(parameters []string) (exitCode int, exitMessage string)
 
 //// STRING UTILITIES
 
-// separateString is an abstraction of stringToSlice that takes two kinds of
-// separators, and splits a string into a 2D slice based on those separators
-func separateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (output [][]string) {
-	lines := rowSep.Split(str, -1)
-	for _, line := range lines {
-		output = append(output, colSep.Split(line, -1))
-	}
-	return output
-}
-
-// stringToSlice takes in a string and returns a 2D slice of its output,
-// separated on whitespace and newlines
-// TODO use strings.Fields in conjunction with/instead of this.
-func stringToSlice(str string) (output [][]string) {
-	rowSep := regexp.MustCompile("\n+")
-	colSep := regexp.MustCompile("\\s+")
-	return separateString(rowSep, colSep, str)
-}
-
-// stringToSliceMultispace is for commands that have spaces within their columns
-// but more than one space between columns
-func stringToSliceMultispace(str string) (output [][]string) {
-	rowSep := regexp.MustCompile("\n+")
-	colSep := regexp.MustCompile("\\s{2,}")
-	return separateString(rowSep, colSep, str)
-}
-
-// getColumn isolates the entries of a single column from a 2D slice
-func getColumn(col int, slice [][]string) (column []string) {
-	for _, line := range slice {
-		if len(line) > col {
-			column = append(column, line[col])
-		}
-	}
-	return column
-}
-
-// getColumnNoHeader safely removes the first element from a column
-func getColumnNoHeader(col int, slice [][]string) []string {
-
-	column := getColumn(col, slice)
-	if len(column) < 1 {
-		return column
-	}
-	return column[1:]
-}
-
 // commandColumnNoHeader returns a specified column of the output of a command,
 // without that column's header. Useful for parsing the output of shell commands,
 // which many of the Checks require.
@@ -77,40 +31,7 @@ func commandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	} else if err != nil {
 		execError(cmd, outstr, err)
 	}
-	return getColumnNoHeader(col, stringToSlice(string(out)))
-}
-
-// stringPredicate is a function that filters a list of strings
-type stringPredicate func(str string) bool
-
-// anySatisfies checks to see whether any string in a given slice satisfies the
-// provided stringPredicate
-func anySatisfies(pred stringPredicate, slice []string) bool {
-	for _, sliceString := range slice {
-		if pred(sliceString) {
-			return true
-		}
-	}
-	return false
-}
-
-// strIn checks to see if a given string is in a slice of strings
-func strIn(str string, slice []string) bool {
-	pred := func(strx string) bool { return (strx == str) }
-	return anySatisfies(pred, slice)
-}
-
-// strContainedIn works like strIn, but checks for substring containing rather
-// than whole string equality.
-func strContainedIn(str string, slice []string) bool {
-	pred := func(strx string) bool { return strings.Contains(strx, str) }
-	return anySatisfies(pred, slice)
-}
-
-// reIn is like strIn, but matches regexps instead
-func reIn(re *regexp.Regexp, slice []string) bool {
-	pred := func(strx string) bool { return re.MatchString(strx) }
-	return anySatisfies(pred, slice)
+	return tabular.GetColumnNoHeader(col, tabular.StringToSlice(string(out)))
 }
 
 //// ERROR UTILITIES
@@ -155,10 +76,10 @@ func genericError(msg string, name string, actual []string) (exitCode int, exitM
 	// this is the number of list items to be output at verbosities strictly
 	// in between maximum and minimum verbosity.
 	lengthThreshold := 10 * (verbosity + 1)
-	if verbosity >= maxVerbosity || len(actual) < lengthThreshold {
-		msg += "\n\tActual: " + fmt.Sprint(actual)
-	} else if len(actual) == 1 {
+	if len(actual) == 1 {
 		msg += "\n\tActual: " + fmt.Sprint(actual[0])
+	} else if verbosity >= maxVerbosity || len(actual) < lengthThreshold {
+		msg += "\n\tActual: " + fmt.Sprint(actual)
 	} else {
 		msg += "\n\tActual (truncated - increase verbosity to see more): "
 		msg += fmt.Sprint(actual[1:lengthThreshold])
