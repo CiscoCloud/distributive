@@ -1,6 +1,7 @@
 package tabular
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"regexp"
@@ -130,14 +131,16 @@ func ProbabalisticSplit(str string) (output Table) {
 		}
 		return true
 	}
-	// notAllOne ensures that the given list of integers are not all == 1
-	notAllOne := func(ints []int) bool {
-		for _, i := range ints {
-			if i != 1 {
-				return true
+	// matchesMost is used to ensure that our regexp actually is splitting the
+	// lines of a table, instead of just returning them whole.
+	matchesMost := func(re *regexp.Regexp, rows []string) bool {
+		count := 0
+		for _, row := range rows {
+			if re.MatchString(row) {
+				count++
 			}
 		}
-		return false
+		return count > (len(rows) / 2)
 	}
 	// getRowLengths returns row length counts for each table
 	getRowLengths := func(tables []Table) (rowLengths [][]int) {
@@ -154,15 +157,27 @@ func ProbabalisticSplit(str string) (output Table) {
 	// getColumnRegex is the core of the logic. It determines which regex most
 	// accurately splits the data into columns by testing the deviation in the
 	// row lengths using different regexps.
-	// TODO still sucks when the regex doesn't split anything
-	// TODO fix: only use that regexp if you find a match at all
 	getColumnRegex := func(str string, rowSep *regexp.Regexp) *regexp.Regexp {
 		// different column separators to try out
-		colSeps := []*regexp.Regexp{
+		initialColSeps := []*regexp.Regexp{
 			regexp.MustCompile("\\s+"),    // any whitespace
 			regexp.MustCompile("\\s{2,}"), // two+ whitespace (spaces in cols)
 			regexp.MustCompile("\\s{4}"),  // exactly four whitespaces
-			//regexp.MustCompile("\\t+"),    // tabs
+			regexp.MustCompile("\\t+"),    // tabs
+		}
+		// filter regexps that have no matches at all - they will always return
+		// rows of even length (length 1).
+		colSeps := []*regexp.Regexp{}
+		rows := rowSep.Split(str, -1)
+		for _, re := range initialColSeps {
+			if matchesMost(re, rows) {
+				colSeps = append(colSeps, re)
+			}
+		}
+		if len(colSeps) < 1 {
+			msg := "ProbabalisticSplit couldn't divide the table."
+			msg += "\n\tAttempted regexps: " + fmt.Sprint(initialColSeps)
+			log.Fatal(msg)
 		}
 		// separate the data based on the above column regexps
 		var tables []Table
@@ -176,7 +191,7 @@ func ProbabalisticSplit(str string) (output Table) {
 			log.Fatal("Internal error: len(rowLengths) != len(tables)")
 		}
 		for i, lengths := range rowLengths {
-			if allEqual(lengths) && notAllOne(lengths) {
+			if allEqual(lengths) {
 				return colSeps[i]
 			}
 		}
@@ -185,7 +200,7 @@ func ProbabalisticSplit(str string) (output Table) {
 			rowLengths[i] = chauvenet(lengths)
 		}
 		for i, lengths := range rowLengths {
-			if allEqual(lengths) && notAllOne(lengths) {
+			if allEqual(lengths) {
 				return colSeps[i]
 			}
 		}
