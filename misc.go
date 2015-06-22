@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -30,18 +31,32 @@ func registerMisc() {
 // It outputs stderr and stdout if the command has error code != 0.
 func command(parameters []string) (exitCode int, exitMessage string) {
 	toExec := parameters[0]
-	out, err := exec.Command("bash", "-c", toExec).CombinedOutput()
-	if err == nil {
-		return 0, ""
-	} else if strings.Contains(err.Error(), "not found in $PATH") {
+	cmd := exec.Command("bash", "-c", toExec)
+	err := cmd.Start()
+	if err != nil && strings.Contains(err.Error(), "not found in $PATH") {
 		return 1, "Executable not found: " + toExec
+	} else if err != nil {
+		execError(cmd, "", err)
 	}
-	// Create output message
-	exitMessage += "Command exited with non-zero exit code:"
-	exitMessage += "\n\tCommand: " + toExec
-	exitMessage += "\n\tExit code: " + fmt.Sprint(exitCode)
-	exitMessage += "\n\tOutput: " + string(out)
-	return 1, exitMessage
+	if err = cmd.Wait(); err != nil {
+		// this is convoluted, but should work on Windows & Unix
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				exitCode = status.ExitStatus()
+			}
+		}
+		// dummy, in case the above failed. We know it's not zero!
+		if exitCode == 0 {
+			exitCode = 1
+		}
+		out, _ := cmd.CombinedOutput() // don't care if this fails
+		exitMessage += "Command exited with non-zero exit code:"
+		exitMessage += "\n\tCommand: " + toExec
+		exitMessage += "\n\tExit code: " + fmt.Sprint(exitCode)
+		exitMessage += "\n\tOutput: " + string(out)
+		return 1, exitMessage
+	}
+	return 0, ""
 }
 
 // commandOutputMatches checks to see if a command's combined output matches a
