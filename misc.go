@@ -11,6 +11,21 @@ import (
 	"time"
 )
 
+// register these functions as workers
+func registerMisc() {
+	registerCheck("command", command, 1)
+	registerCheck("commandoutputmatches", commandOutputMatches, 2)
+	registerCheck("running", running, 1)
+	registerCheck("phpconfig", phpConfig, 2)
+	registerCheck("diskusage", diskUsage, 2)
+	registerCheck("memoryusage", memoryUsage, 1)
+	registerCheck("swapusage", swapUsage, 1)
+	registerCheck("cpuusage", cpuUsage, 1)
+	registerCheck("temp", temp, 1)
+	registerCheck("module", module, 1)
+	registerCheck("kernelparameter", kernelParameter, 1)
+}
+
 // command runs a shell command, and collapses its error code to 0 or 1.
 // It outputs stderr and stdout if the command has error code != 0.
 func command(parameters []string) (exitCode int, exitMessage string) {

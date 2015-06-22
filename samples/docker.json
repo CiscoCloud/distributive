@@ -1,5 +1,6 @@
 {
-    "Name": "Docker checks (requires root permissions)",
+    "Name": "Docker checks",
+    "Notes": "requires root permissions, designed to fail",
     "Checklist" : [
         {
             "Check" : "dockerImage",

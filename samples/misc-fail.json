@@ -1,5 +1,6 @@
 {
-    "Name": "Miscellanious system checks, designed to fail",
+    "Name": "Failing miscellanious system checks",
+    "Notes": "designed to fail",
     "Checklist" : [
         {
             "Name": "CPU temperature threshold",

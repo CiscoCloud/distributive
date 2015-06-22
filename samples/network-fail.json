@@ -1,5 +1,6 @@
 {
-    "Name": "Network checks, designed to fail",
+    "Name": "Failing network checks",
+    "Notes": "designed to fail",
     "Checklist" : [
         {
             "Check" : "interface",

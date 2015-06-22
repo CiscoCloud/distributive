@@ -1,5 +1,6 @@
 {
-    "Name": "Package related checks, designed to fail",
+    "Name": "Failing package checks",
+    "Notes": "designed to fail",
     "Checklist" : [
         {
             "Check" : "installed",

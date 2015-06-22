@@ -8,6 +8,14 @@ import (
 	"strings"
 )
 
+// register these functions as workers
+func registerPackage() {
+	registerCheck("installed", installed, 1)
+	registerCheck("repoexists", repoExists, 2)
+	registerCheck("repoexistsuri", repoExistsURI, 2)
+	registerCheck("pacmanignore", pacmanIgnore, 1)
+}
+
 // getKeys returns the string keys from a string -> string map
 func getKeys(m map[string]string) []string {
 	keys := make([]string, len(m))

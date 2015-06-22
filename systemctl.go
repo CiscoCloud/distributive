@@ -7,6 +7,17 @@ import (
 	"strings"
 )
 
+// register these functions as workers
+func registerSystemctl() {
+	registerCheck("systemctlloaded", systemctlLoaded, 1)
+	registerCheck("systemctlactive", systemctlActive, 1)
+	registerCheck("systemctlsockpath", systemctlSockPath, 1)
+	registerCheck("systemctlsockunit", systemctlSockUnit, 1)
+	registerCheck("systemctltimer", systemctlTimer, 1)
+	registerCheck("systemctltimerloaded", systemctlTimerLoaded, 1)
+	registerCheck("systemctlunitfilestatus", systemctlUnitFileStatus, 2)
+}
+
 // systemctlExists returns whether or not systemctl is available ona given
 // machine
 func systemctlExists() bool {
@@ -23,44 +34,6 @@ func systemctlShouldExist() {
 		log.Fatal("Couldn't execute systemctl")
 	}
 }
-
-/*
-// systemctlServices checks on either the loaded or active field of
-// `systemctl list-units`. It is an abstraction of systemctlLoaded and
-// systemctlActive.
-func systemctlService(service string, loaded bool) (exitCode int, exitMessage string) {
-	systemctlShouldExist() // error out if the command doesn't work
-	column := 2            // active, not loaded
-	state := "active"
-	if loaded { // loaded, not active
-		column = 1
-		state = "loaded"
-	}
-	// get columns
-	cmd := exec.Command("systemctl", "--no-pager", "list-units")
-	names := commandColumnNoHeader(1, cmd)
-	// can't execute the same command twice
-	cmd = exec.Command("systemctl", "--no-pager", "list-units")
-	statuses := commandColumnNoHeader(column+1, cmd) // weird offset
-	if len(statuses) == 0 || len(names) == 0 {
-		log.Fatal("Couldn't find any systemd services")
-	}
-	// parse through columns
-	var actualState string
-	for i, srv := range names {
-		if service == srv && len(statuses) > i {
-			actualState = statuses[i]
-			if actualState == state {
-				return 0, ""
-			}
-			msg := "Service did not have state"
-			return genericError(msg, state, []string{actualState})
-		}
-	}
-	msg := "Service not found in systemctl output"
-	return genericError(msg, service, names)
-}
-*/
 
 func systemctlService(service string, activeOrLoaded string) (exitCode int, exitMessage string) {
 	// cmd depends on whether we're checking active or loaded

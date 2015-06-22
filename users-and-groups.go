@@ -9,6 +9,19 @@ import (
 	"strconv"
 )
 
+// register these functions as workers
+func registerUsersAndGroups() {
+	registerCheck("groupexists", groupExists, 1)
+	registerCheck("useringroup", userInGroup, 2)
+	registerCheck("groupid", groupId, 2)
+	registerCheck("userexists", userExists, 1)
+	registerCheck("userhasuid", userHasUID, 2)
+	registerCheck("userhasgid", userHasGID, 2)
+	registerCheck("userhasusername", userHasUsername, 2)
+	registerCheck("userhasname", userHasName, 2)
+	registerCheck("userhashomedir", userHasHomeDir, 2)
+}
+
 // Group is a struct that contains all relevant information that can be parsed
 // from an entry in /etc/group
 type Group struct {

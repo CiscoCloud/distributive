@@ -6,6 +6,14 @@ import (
 	"strings"
 )
 
+// register these functions as workers
+func registerDocker() {
+	registerCheck("dockerimage", dockerImage, 1)
+	registerCheck("dockerrunning", dockerRunning, 1)
+	registerCheck("dockerimageregexp", dockerImageRegexp, 1)
+	registerCheck("dockerrunningregexp", dockerRunningRegexp, 1)
+}
+
 // getDockerImages returns a list of all downloaded Docker images
 func getDockerImages() (images []string) {
 	cmd := exec.Command("docker", "images")

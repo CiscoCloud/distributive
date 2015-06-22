@@ -1,5 +1,6 @@
 {
-    "Name": "Filesystem checks, designed to fail",
+    "Name": "Failing filesystem checks",
+    "Notes": "designed to fail",
     "Checklist" : [
         {
             "Check" : "file",

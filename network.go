@@ -13,6 +13,26 @@ import (
 	"time"
 )
 
+// register these functions as workers
+func registerNetwork() {
+	registerCheck("port", port, 1)
+	registerCheck("interface", interfaceExists, 1)
+	registerCheck("up", up, 1)
+	registerCheck("ip4", ip4, 2)
+	registerCheck("ip6", ip6, 2)
+	registerCheck("gateway", gateway, 1)
+	registerCheck("gatewayinterface", gatewayInterface, 1)
+	registerCheck("host", host, 1)
+	registerCheck("tcp", tcp, 1)
+	registerCheck("udp", udp, 1)
+	registerCheck("tcptimeout", tcpTimeout, 2)
+	registerCheck("udptimeout", udpTimeout, 2)
+	registerCheck("routingtabledestination", routingTableDestination, 1)
+	registerCheck("routingtableinterface", routingTableInterface, 1)
+	registerCheck("routingtablegateway", routingTableGateway, 1)
+	registerCheck("responsematches", responseMatches, 2)
+}
+
 // port parses /proc/net/tcp to determine if a given port is in an open state
 // and returns an error if it is not.
 func port(parameters []string) (exitCode int, exitMessage string) {

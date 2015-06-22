@@ -1,5 +1,5 @@
 {
-    "Name": "Package related checks",
+    "Name": "Package checks",
     "Checklist" : [
         {
             "Check" : "installed",

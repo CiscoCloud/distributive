@@ -17,13 +17,6 @@ import (
 	"strings"
 )
 
-// constructors are registered, have their parameter length checked, and then
-// are passed all of Parameters
-var workers map[string]Worker = make(map[string]Worker)
-
-// a dictionary with the number of parameters that each method takes
-var parameterLength map[string]int = make(map[string]int)
-
 // verbosity settings, provided on the command line
 var maxVerbosity int = 2
 var minVerbosity int = 0
@@ -248,7 +241,7 @@ func getFlags() (p string, u string, d string) {
 
 	// if they just wanted to display the version, we're good
 	if *version {
-		fmt.Println("Distributive version 0.1")
+		fmt.Println("Distributive version 0.1.1")
 		os.Exit(0)
 	}
 	verbosity = *verbosityFlag

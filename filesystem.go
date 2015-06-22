@@ -12,6 +12,16 @@ import (
 	"syscall"
 )
 
+// register these functions as workers
+func registerFilesystem() {
+	registerCheck("file", file, 1)
+	registerCheck("directory", directory, 1)
+	registerCheck("symlink", symlink, 1)
+	registerCheck("checksum", checksum, 3)
+	registerCheck("permissions", permissions, 2)
+	registerCheck("filecontains", fileContains, 2)
+}
+
 type fileTypeCheck func(path string) (bool, error)
 
 // isType checks if the resource at path is of the type specified by name by
