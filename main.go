@@ -123,7 +123,7 @@ func getWorker(chk Check) Worker {
 func loadRemoteChecklist(urlstr string) (chklst Checklist) {
 	// urlToFile gets the response from urlstr and writes it to path
 	urlToFile := func(urlstr string, path string) error {
-		body := urlToBytes(urlstr)
+		body := urlToBytes(urlstr, true) // secure connection
 		// write to file
 		err := ioutil.WriteFile(path, body, 0755)
 		if err != nil {

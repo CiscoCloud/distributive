@@ -45,6 +45,10 @@
         {
             "Check": "responseMatches",
             "Parameters": ["http://google.com:80", "yahoo"]
+        },
+        {
+            "Check": "responseMatchesInsecure",
+            "Parameters": ["http://google.com:80", "yahoo"]
         }
     ]
 }

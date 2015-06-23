@@ -80,6 +80,10 @@
         {
             "Check": "responseMatches",
             "Parameters": ["http://google.com:80", "g(o{2})gle"]
+        },
+        {
+            "Check": "responseMatchesInsecure",
+            "Parameters": ["http://google.com:80", "g(o{2})gle"]
         }
     ]
 }

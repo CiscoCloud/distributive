@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"io/ioutil"
@@ -32,6 +33,7 @@ func registerNetwork() {
 	registerCheck("routingtableinterface", routingTableInterface, 1)
 	registerCheck("routingtablegateway", routingTableGateway, 1)
 	registerCheck("responsematches", responseMatches, 2)
+	registerCheck("responsematchesinsecure", responseMatchesInsecure, 2)
 }
 
 // port parses /proc/net/tcp to determine if a given port is in an open state
@@ -378,9 +380,17 @@ func routingTableGateway(parameters []string) (exitCode int, exitMessage string)
 // urlToBytes gets the response from urlstr and returns it as a byte string
 // TODO: allow insecure requests
 // http://stackoverflow.com/questions/12122159/golang-how-to-do-a-https-request-with-bad-certificate
-func urlToBytes(urlstr string) []byte {
+func urlToBytes(urlstr string, secure bool) []byte {
+	// create http client
+	transport := &http.Transport{}
+	if !secure {
+		transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+	client := &http.Client{Transport: transport}
 	// get response from URL
-	resp, err := http.Get(urlstr)
+	resp, err := client.Get(urlstr)
 	if err != nil {
 		couldntReadError(urlstr, err)
 	}
@@ -401,16 +411,26 @@ func urlToBytes(urlstr string) []byte {
 	return body
 }
 
-// responseMatches asks: does the response from this URL match this regexp?
-// TODO fix verbosity. We need a more generic error method! One that anyone
-// can use!
-func responseMatches(parameters []string) (exitCode int, exitMessage string) {
+// responseMatchesGeneral is an abstraction of responseMatches and
+// responseMatchesInsecure that simply varies in the security of the connection
+func responseMatchesGeneral(parameters []string, secure bool) (exitCode int, exitMessage string) {
 	urlstr := parameters[0]
 	re := parseUserRegex(parameters[1])
-	body := urlToBytes(urlstr)
+	body := urlToBytes(urlstr, secure)
 	if re.Match(body) {
 		return 0, ""
 	}
 	msg := "Response didn't match regexp:"
 	return genericError(msg, re.String(), []string{string(body)})
+}
+
+// responseMatches asks: does the response from this URL match this regexp?
+func responseMatches(parameters []string) (exitCode int, exitMessage string) {
+	return responseMatchesGeneral(parameters, true)
+}
+
+// responseMatchesInsecure is just like responseMatches, but it doesn't verify
+// the SSL cert on the other end.
+func responseMatchesInsecure(parameters []string) (exitCode int, exitMessage string) {
+	return responseMatchesGeneral(parameters, false)
 }
