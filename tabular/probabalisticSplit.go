@@ -66,9 +66,15 @@ func normalDistribution(x float64, mu float64, sigma float64) float64 {
 	return coefficient * math.Pow(math.E, exponent)
 }
 
+// compare is a function that compares to floats. It is used for sorting and
+// finding - see extremaIndex
 type compare func(x float64, y float64) bool
 
+// maxFunc is an instance of compare that can be used to find the greater
+// of two values
 var maxFunc compare = func(x float64, y float64) bool { return x > y }
+
+// minFunc is like maxFunc, but wiht the lesser of the two values
 var minFunc compare = func(x float64, y float64) bool { return x < y }
 
 // extremaIndex finds the index of a value in a list that when compared with
@@ -116,7 +122,7 @@ func chauvenet(data []int) (result []int) {
 }
 
 // ProbabalisticSplit splits a string based on the regexp that gives the most
-// consistent line length (potentially discarding one outlier)
+// consistent line length (potentially discarding one outlier line length).
 func ProbabalisticSplit(str string) (output Table) {
 	// allEqual checks to see if all of the given list of integers are the same
 	allEqual := func(ints []int) bool {

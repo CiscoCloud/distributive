@@ -21,6 +21,8 @@
 Overview
 ========
 
+[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/fsouza/go-dockerclient)
+
 This readme documents the current (development) version of distributive.
 
 Distributive is a tool for running distributed health checks in datacenters.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/fsouza/go-dockerclient"
 	"log"
 	"os/exec"
 	"strings"
@@ -19,6 +20,18 @@ func registerDocker() {
 func getDockerImages() (images []string) {
 	cmd := exec.Command("docker", "images")
 	return commandColumnNoHeader(0, cmd)
+}
+
+// getDockerImagesAPI is like getDockerImages, but uses an external library
+// in order to access the Docker API
+func getDockerImagesAPI() (images []string) {
+	endpoint := "unix:///var/run/docker.sock"
+	client, _ := docker.NewClient(endpoint)
+	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+	for _, img := range imgs {
+		images = append(images, img.ID)
+	}
+	return images
 }
 
 // dockerImage checks to see that the specified Docker image (e.g. "user/image",
@@ -43,7 +56,7 @@ func dockerImageRegexp(parameters []string) (exitCode int, exitMessage string) {
 }
 
 // getRunningContainers returns a list of names of running docker containers
-func getRunningContainers() (images []string) {
+func getRunningContainers() (containers []string) {
 	out, err := exec.Command("docker", "ps", "-a").CombinedOutput()
 	outstr := string(out)
 	// `docker images` requires root permissions
@@ -63,10 +76,34 @@ func getRunningContainers() (images []string) {
 	statuses := tabular.GetColumnNoHeader(4, lines) // all docker container statuses
 	for i, status := range statuses {
 		if strings.Contains(status, "Up") && len(names) > i {
-			images = append(images, names[i])
+			containers = append(containers, names[i])
 		}
 	}
-	return images
+	return containers
+}
+
+// getRunningContainersAPI is like getRunningContainers, but uses an external
+// library in order to access the Docker API
+func getRunningContainersAPI() (containers []string) {
+	endpoint := "unix:///var/run/docker.sock"
+	client, err := docker.NewClient(endpoint)
+	if err != nil {
+		msg := "Couldn't create Docker API client"
+		msg += "\n\tError: " + err.Error()
+		log.Fatal(msg)
+	}
+	ctrs, err := client.ListContainers(docker.ListContainersOptions{All: false})
+	if err != nil {
+		msg := "Couldn't list Docker containers"
+		msg += "\n\tError: " + err.Error()
+		log.Fatal(msg)
+	}
+	for _, ctr := range ctrs {
+		if strings.EqualFold(ctr.Status, "Up") {
+			containers = append(containers, ctr.ID)
+		}
+	}
+	return containers
 }
 
 // dockerRunning checks to see if a specified docker container is running
