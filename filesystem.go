@@ -45,10 +45,10 @@ func file(parameters []string) (exitCode int, exitMessage string) {
 	// returns true if there is a regular ol' file at path
 	isFile := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
-		if fileInfo.Mode().IsRegular() {
-			return true, err
+		if fileInfo == nil || !fileInfo.Mode().IsRegular() {
+			return false, err
 		}
-		return false, err
+		return true, err
 	}
 	return isType("file", isFile, parameters[0])
 }
