@@ -18,8 +18,8 @@ import (
 )
 
 // verbosity settings, provided on the command line
-var maxVerbosity int = 2
-var minVerbosity int = 0
+var maxVerbosity = 2
+var minVerbosity = 0
 var verbosity int
 
 // where remote checks are downloaded to
@@ -312,7 +312,7 @@ func main() {
 		log.Fatal("Neither path nor URL nor directory specified.")
 	}
 	// run all checklists
-	for i, _ := range chklsts {
+	for i := range chklsts {
 		// run checks, populate error codes and messages
 		msg := "Running checklist: " + chklsts[i].Name
 		verbosityPrint(msg, minVerbosity+1)

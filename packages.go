@@ -29,12 +29,12 @@ func getKeys(m map[string]string) []string {
 }
 
 // package managers and their options for queries
-var managers map[string]string = map[string]string{
+var managers = map[string]string{
 	"dpkg":   "-s",
 	"rpm":    "-q",
 	"pacman": "-Qs",
 }
-var keys []string = getKeys(managers)
+var keys = getKeys(managers)
 
 // getManager returns package manager as a string
 func getManager() string {
@@ -54,22 +54,26 @@ func getManager() string {
 	return "" // never reaches this return
 }
 
-type Repo struct {
-	Id, Name, Url, Status string
+// repo is a unified interface for pacman, apt, and yum repos
+type repo struct {
+	ID     string
+	Name   string // yum
+	URL    string // apt, pacman
+	Status string
 }
 
-// repoToString converts a Repo struct into a representable, printable string
-func repoToString(r Repo) (str string) {
+// repoToString converts a repo struct into a representable, printable string
+func repoToString(r repo) (str string) {
 	str += "Name: " + r.Name
-	str += " Id: " + r.Id
-	str += " URL: " + r.Url
+	str += " ID: " + r.ID
+	str += " URL: " + r.URL
 	str += " Status: " + r.Status
 	return str
 }
 
 // getYumRepos constructs Repos from the yum.conf file at path. Gives non-zero
-// Names, Fullnames, and Urls.
-func getYumRepos() (repos []Repo) {
+// Names, Fullnames, and URLs.
+func getYumRepos() (repos []repo) {
 	// get output of `yum repolist`
 	cmd := exec.Command("yum", "repolist")
 	out, err := cmd.Output()
@@ -87,17 +91,17 @@ func getYumRepos() (repos []Repo) {
 	if len(ids) != len(names) || len(names) != len(statuses) {
 		log.Fatal("Could not fetch metadata for every repo")
 	}
-	// Construct Repos
-	for i, _ := range ids {
-		repo := Repo{Name: names[i], Id: ids[i], Status: statuses[i]}
+	// Construct repos
+	for i := range ids {
+		repo := repo{Name: names[i], ID: ids[i], Status: statuses[i]}
 		repos = append(repos, repo)
 	}
 	return repos
 }
 
-// getAptRepos constructs Repos from the sources.list file at path. Gives
-// non-zero Urls
-func getAptRepos() (repos []Repo) {
+// getAptrepos constructs repos from the sources.list file at path. Gives
+// non-zero URLs
+func getAptRepos() (repos []repo) {
 	// getAptSources returns all the urls of all apt sources (including source
 	// code repositories
 	getAptSources := func() (urls []string) {
@@ -116,14 +120,14 @@ func getAptRepos() (repos []Repo) {
 		return urls
 	}
 	for _, src := range getAptSources() {
-		repos = append(repos, Repo{Url: src})
+		repos = append(repos, repo{URL: src})
 	}
 	return repos
 }
 
-// getPacmanRepos constructs Repos from the pacman.conf file at path. Gives
-// non-zero Names and Urls
-func getPacmanRepos(path string) (repos []Repo) {
+// getPacmanRepos constructs repos from the pacman.conf file at path. Gives
+// non-zero Names and URLs
+func getPacmanRepos(path string) (repos []repo) {
 	data := fileToLines(path)
 	// match words and dashes in brackets without comments
 	nameRegex := regexp.MustCompile("[^#]\\[(\\w|\\-)+\\]")
@@ -141,14 +145,14 @@ func getPacmanRepos(path string) (repos []Repo) {
 	}
 	for i, name := range names {
 		if len(urls) > i {
-			repos = append(repos, Repo{Name: name, Url: urls[i]})
+			repos = append(repos, repo{Name: name, URL: urls[i]})
 		}
 	}
 	return repos
 }
 
-// getRepos simply returns a list of Repos based on the manager chosen
-func getRepos(manager string) (repos []Repo) {
+// getRepos simply returns a list of repos based on the manager chosen
+func getRepos(manager string) (repos []repo) {
 	switch manager {
 	case "yum":
 		return getYumRepos()
@@ -161,25 +165,25 @@ func getRepos(manager string) (repos []Repo) {
 		_, message := genericError(msg, manager, []string{getManager()})
 		log.Fatal(message)
 	}
-	return []Repo{} // will never reach here b/c of default case
+	return []repo{} // will never reach here b/c of default case
 }
 
 // existsRepoWithProperty is an abstraction of YumRepoExists and YumRepoURL.
 // It takes a struct field name to check, and an expected value. If the expected
 // value is found in the field of a repo, it returns 0, "" else an error message.
-// Valid choices for prop: "Url" | "Name" | "Name"
+// Valid choices for prop: "URL" | "Name" | "Name"
 func existsRepoWithProperty(prop string, val *regexp.Regexp, manager string) (int, string) {
 	var properties []string
 	for _, repo := range getRepos(manager) {
 		switch prop {
-		case "Url":
-			properties = append(properties, repo.Url)
+		case "URL":
+			properties = append(properties, repo.URL)
 		case "Name":
 			properties = append(properties, repo.Name)
 		case "Status":
 			properties = append(properties, repo.Status)
-		case "Id":
-			properties = append(properties, repo.Id)
+		case "ID":
+			properties = append(properties, repo.ID)
 		default:
 			log.Fatal("Repos don't have the requested property: " + prop)
 		}
@@ -202,7 +206,7 @@ func repoExists(parameters []string) (exitCode int, exitMessage string) {
 // appropriate configuration file
 func repoExistsURI(parameters []string) (exitCode int, exitMessage string) {
 	re := parseUserRegex(parameters[1])
-	return existsRepoWithProperty("Url", re, parameters[0])
+	return existsRepoWithProperty("URL", re, parameters[0])
 }
 
 // pacmanIgnore checks to see whether a given package is in /etc/pacman.conf's

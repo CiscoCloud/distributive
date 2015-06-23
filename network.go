@@ -227,7 +227,7 @@ func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 					msg := "Fewer names in kernel routing table than IPs:"
 					msg += "\n\tNames: " + fmt.Sprint(names)
 					msg += "\n\tIPs: " + fmt.Sprint(ips)
-					log.Fatal()
+					log.Fatal(msg)
 				}
 				return names[i] // interface name
 			}
@@ -270,7 +270,7 @@ func canConnect(host string, protocol string, timeout time.Duration) bool {
 	}
 	var conn net.Conn
 	var err error
-	var timeoutNetwork string = "tcp"
+	var timeoutNetwork = "tcp"
 	var timeoutAddress string
 	nanoseconds := timeout.Nanoseconds()
 	switch protocol {
