@@ -21,7 +21,7 @@
 Overview
 ========
 
-[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/fsouza/go-dockerclient)
+[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/CiscoCloud/distributive/tabular)
 
 This readme documents the current (development) version of distributive.
 
