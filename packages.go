@@ -74,6 +74,14 @@ func repoToString(r repo) (str string) {
 // getYumRepos constructs Repos from the yum.conf file at path. Gives non-zero
 // Names, Fullnames, and URLs.
 func getYumRepos() (repos []repo) {
+	// safeAccess allows access w/o fear of a panic into a slice of strings
+	safeAccess := func(slc []string, index int) string {
+		if len(slc) > index {
+			return slc[index]
+		}
+		return ""
+	}
+
 	// get output of `yum repolist`
 	cmd := exec.Command("yum", "repolist")
 	out, err := cmd.Output()
@@ -87,13 +95,20 @@ func getYumRepos() (repos []repo) {
 	ids = ids[:len(ids)-2] // has extra line at end
 	//names := tabular.GetColumnByHeader("repo name", slc)
 	names := tabular.GetColumnNoHeader(1, slc)
+	fmt.Println("NAMES: " + fmt.Sprint(names))
 	statuses := tabular.GetColumnNoHeader(2, slc)
 	if len(ids) != len(names) || len(names) != len(statuses) {
-		log.Fatal("Could not fetch metadata for every repo")
+		fmt.Println("Warning: could not fetch complete metadata for every repo.")
+		fmt.Println("Names: " + fmt.Sprint(len(names)))
+		fmt.Println("IDs: " + fmt.Sprint(len(ids)))
+		fmt.Println("Statuses: " + fmt.Sprint(len(statuses)))
 	}
 	// Construct repos
 	for i := range ids {
-		repo := repo{Name: names[i], ID: ids[i], Status: statuses[i]}
+		name := safeAccess(names, i)
+		id := safeAccess(ids, i)
+		status := safeAccess(statuses, i)
+		repo := repo{Name: name, ID: id, Status: status}
 		repos = append(repos, repo)
 	}
 	return repos

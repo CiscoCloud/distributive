@@ -11,8 +11,12 @@
             "Parameters" : ["apt", "failme"]
         },
         {
-            "Check" : "repoexists",
+            "Check" : "repoExists",
             "Parameters" : ["pacman", "failme"]
+        },
+        {
+            "Check": "repoExists",
+            "Parameters": ["yum", "failme"]
         },
         {
             "Check" : "pacmanIgnore",
