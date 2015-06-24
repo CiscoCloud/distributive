@@ -1,8 +1,9 @@
-package main
+package workers
 
 import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/CiscoCloud/distributive/wrkutils"
 	"log"
 	"os/user"
 	"reflect"
@@ -10,17 +11,17 @@ import (
 	"strconv"
 )
 
-// register these functions as workers
-func registerUsersAndGroups() {
-	registerCheck("groupexists", groupExists, 1)
-	registerCheck("useringroup", userInGroup, 2)
-	registerCheck("groupid", groupID, 2)
-	registerCheck("userexists", userExists, 1)
-	registerCheck("userhasuid", userHasUID, 2)
-	registerCheck("userhasgid", userHasGID, 2)
-	registerCheck("userhasusername", userHasUsername, 2)
-	registerCheck("userhasname", userHasName, 2)
-	registerCheck("userhashomedir", userHasHomeDir, 2)
+// RegisterUsersAndGroups registers these checks so they can be used.
+func RegisterUsersAndGroups() {
+	wrkutils.RegisterCheck("groupexists", groupExists, 1)
+	wrkutils.RegisterCheck("useringroup", userInGroup, 2)
+	wrkutils.RegisterCheck("groupid", groupID, 2)
+	wrkutils.RegisterCheck("userexists", userExists, 1)
+	wrkutils.RegisterCheck("userhasuid", userHasUID, 2)
+	wrkutils.RegisterCheck("userhasgid", userHasGID, 2)
+	wrkutils.RegisterCheck("userhasusername", userHasUsername, 2)
+	wrkutils.RegisterCheck("userhasname", userHasName, 2)
+	wrkutils.RegisterCheck("userhashomedir", userHasHomeDir, 2)
 }
 
 // Group is a struct that contains all relevant information that can be parsed
@@ -33,7 +34,7 @@ type Group struct {
 
 // getGroups returns a list of Group structs, as parsed from /etc/group
 func getGroups() (groups []Group) {
-	data := fileToString("/etc/group")
+	data := wrkutils.FileToString("/etc/group")
 	rowSep := regexp.MustCompile("\n")
 	colSep := regexp.MustCompile(":")
 	lines := tabular.SeparateString(rowSep, colSep, data)
@@ -60,7 +61,7 @@ func groupNotFound(name string) (int, string) {
 	for _, group := range getGroups() {
 		existing = append(existing, group.Name)
 	}
-	return genericError("Group not found", name, existing)
+	return wrkutils.GenericError("Group not found", name, existing)
 }
 
 // groupExists determines whether a certain UNIX user group exists
@@ -92,7 +93,7 @@ func userInGroup(parameters []string) (exitCode int, exitMessage string) {
 			if tabular.StrIn(user, g.Users) {
 				return 0, ""
 			}
-			return genericError("User not found in group", user, g.Users)
+			return wrkutils.GenericError("User not found in group", user, g.Users)
 		}
 	}
 	return groupNotFound(group)
@@ -101,7 +102,7 @@ func userInGroup(parameters []string) (exitCode int, exitMessage string) {
 // groupID checks to see if a group of a certain name has a given integer id
 func groupID(parameters []string) (exitCode int, exitMessage string) {
 	name := parameters[0]
-	id := parseMyInt(parameters[1])
+	id := wrkutils.ParseMyInt(parameters[1])
 	groups := getGroups()
 	for _, g := range groups {
 		if g.Name == name {
@@ -109,7 +110,7 @@ func groupID(parameters []string) (exitCode int, exitMessage string) {
 				return 0, ""
 			}
 			msg := "Group does not have expected ID"
-			return genericError(msg, fmt.Sprint(id), []string{fmt.Sprint(g.ID)})
+			return wrkutils.GenericError(msg, fmt.Sprint(id), []string{fmt.Sprint(g.ID)})
 		}
 	}
 	return groupNotFound(name)

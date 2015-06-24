@@ -1,10 +1,11 @@
-package main
+package workers
 
 import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/CiscoCloud/distributive/wrkutils"
 	"io/ioutil"
 	"log"
 	"net"
@@ -15,25 +16,25 @@ import (
 	"time"
 )
 
-// register these functions as workers
-func registerNetwork() {
-	registerCheck("port", port, 1)
-	registerCheck("interface", interfaceExists, 1)
-	registerCheck("up", up, 1)
-	registerCheck("ip4", ip4, 2)
-	registerCheck("ip6", ip6, 2)
-	registerCheck("gateway", gateway, 1)
-	registerCheck("gatewayinterface", gatewayInterface, 1)
-	registerCheck("host", host, 1)
-	registerCheck("tcp", tcp, 1)
-	registerCheck("udp", udp, 1)
-	registerCheck("tcptimeout", tcpTimeout, 2)
-	registerCheck("udptimeout", udpTimeout, 2)
-	registerCheck("routingtabledestination", routingTableDestination, 1)
-	registerCheck("routingtableinterface", routingTableInterface, 1)
-	registerCheck("routingtablegateway", routingTableGateway, 1)
-	registerCheck("responsematches", responseMatches, 2)
-	registerCheck("responsematchesinsecure", responseMatchesInsecure, 2)
+// RegisterNetwork registers these checks so they can be used.
+func RegisterNetwork() {
+	wrkutils.RegisterCheck("port", port, 1)
+	wrkutils.RegisterCheck("interface", interfaceExists, 1)
+	wrkutils.RegisterCheck("up", up, 1)
+	wrkutils.RegisterCheck("ip4", ip4, 2)
+	wrkutils.RegisterCheck("ip6", ip6, 2)
+	wrkutils.RegisterCheck("gateway", gateway, 1)
+	wrkutils.RegisterCheck("gatewayinterface", gatewayInterface, 1)
+	wrkutils.RegisterCheck("host", host, 1)
+	wrkutils.RegisterCheck("tcp", tcp, 1)
+	wrkutils.RegisterCheck("udp", udp, 1)
+	wrkutils.RegisterCheck("tcptimeout", tcpTimeout, 2)
+	wrkutils.RegisterCheck("udptimeout", udpTimeout, 2)
+	wrkutils.RegisterCheck("routingtabledestination", routingTableDestination, 1)
+	wrkutils.RegisterCheck("routingtableinterface", routingTableInterface, 1)
+	wrkutils.RegisterCheck("routingtablegateway", routingTableGateway, 1)
+	wrkutils.RegisterCheck("responsematches", responseMatches, 2)
+	wrkutils.RegisterCheck("responsematchesinsecure", responseMatchesInsecure, 2)
 }
 
 // port parses /proc/net/tcp to determine if a given port is in an open state
@@ -41,7 +42,7 @@ func registerNetwork() {
 func port(parameters []string) (exitCode int, exitMessage string) {
 	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
 	getHexPorts := func() (ports []string) {
-		data := fileToString("/proc/net/tcp")
+		data := wrkutils.FileToString("/proc/net/tcp")
 		table := tabular.ProbabalisticSplit(data)
 		// TODO by header isn't working
 		//localAddresses := tabular.GetColumnByHeader("local_address", table)
@@ -74,19 +75,19 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 		return ports
 	}
 
-	port := parseMyInt(parameters[0])
+	port := wrkutils.ParseMyInt(parameters[0])
 	open := getOpenPorts()
 	for _, p := range open {
 		if p == port {
 			return 0, ""
 		}
 	}
-	// convert ports to string to send to genericError
+	// convert ports to string to send to wrkutils.GenericError
 	var strPorts []string
 	for _, port := range open {
 		strPorts = append(strPorts, fmt.Sprint(port))
 	}
-	return genericError("Port not open", fmt.Sprint(port), strPorts)
+	return wrkutils.GenericError("Port not open", fmt.Sprint(port), strPorts)
 }
 
 // getInterfaces returns a list of network interfaces and handles any associated
@@ -115,7 +116,7 @@ func interfaceExists(parameters []string) (exitCode int, exitMessage string) {
 			return 0, ""
 		}
 	}
-	return genericError("Interface does not exist", name, interfaces)
+	return wrkutils.GenericError("Interface does not exist", name, interfaces)
 }
 
 // up determines if a network interface is up and running or not
@@ -135,7 +136,7 @@ func up(parameters []string) (exitCode int, exitMessage string) {
 	if tabular.StrIn(name, upInterfaces) {
 		return 0, ""
 	}
-	return genericError("Interface is not up", name, upInterfaces)
+	return wrkutils.GenericError("Interface is not up", name, upInterfaces)
 }
 
 // getInterface IPs gets all the associated IP addresses of a given interface
@@ -183,7 +184,7 @@ func getIPWorker(name string, address string, version int) (exitCode int, exitMe
 	if tabular.StrIn(address, ips) {
 		return 0, ""
 	}
-	return genericError("Interface does not have IP", address, ips)
+	return wrkutils.GenericError("Interface does not have IP", address, ips)
 }
 
 // ip4 checks to see if this network interface has this ipv4 address
@@ -214,7 +215,7 @@ func gateway(parameters []string) (exitCode int, exitMessage string) {
 		return 0, ""
 	}
 	msg := "Gateway does not have address"
-	return genericError(msg, address, []string{gatewayIP})
+	return wrkutils.GenericError(msg, address, []string{gatewayIP})
 }
 
 // gatewayInterface checks that the default gateway is using a specified interface
@@ -243,7 +244,7 @@ func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 		return 0, ""
 	}
 	msg := "Default gateway does not operate on interface"
-	return genericError(msg, name, []string{iface})
+	return wrkutils.GenericError(msg, name, []string{iface})
 }
 
 // host checks if a given host can be resolved.
@@ -347,7 +348,7 @@ func udpTimeout(parameters []string) (exitCode int, exitMessage string) {
 // returns a column of the routing table as a slice of strings
 func routingTableColumn(column int) []string {
 	cmd := exec.Command("route", "-n")
-	return commandColumnNoHeader(column, cmd)[1:]
+	return wrkutils.CommandColumnNoHeader(column, cmd)[1:]
 }
 
 // routingTableMatch(exitCode int, exitMessage string) constructs a Worker that returns whether or not the
@@ -359,7 +360,7 @@ func routingTableMatch(col int, str string) (exitCode int, exitMessage string) {
 	if tabular.StrIn(str, column) {
 		return 0, ""
 	}
-	return genericError("Not found in routing table", str, column)
+	return wrkutils.GenericError("Not found in routing table", str, column)
 }
 
 // routingTableDestination checks if an IP address is a destination in the
@@ -380,10 +381,10 @@ func routingTableGateway(parameters []string) (exitCode int, exitMessage string)
 	return routingTableMatch(1, parameters[0])
 }
 
-// urlToBytes gets the response from urlstr and returns it as a byte string
+// URLToBytes gets the response from urlstr and returns it as a byte string
 // TODO: allow insecure requests
 // http://stackoverflow.com/questions/12122159/golang-how-to-do-a-https-request-with-bad-certificate
-func urlToBytes(urlstr string, secure bool) []byte {
+func URLToBytes(urlstr string, secure bool) []byte {
 	// create http client
 	transport := &http.Transport{}
 	if !secure {
@@ -395,7 +396,7 @@ func urlToBytes(urlstr string, secure bool) []byte {
 	// get response from URL
 	resp, err := client.Get(urlstr)
 	if err != nil {
-		couldntReadError(urlstr, err)
+		wrkutils.CouldntReadError(urlstr, err)
 	}
 	defer resp.Body.Close()
 
@@ -418,13 +419,13 @@ func urlToBytes(urlstr string, secure bool) []byte {
 // responseMatchesInsecure that simply varies in the security of the connection
 func responseMatchesGeneral(parameters []string, secure bool) (exitCode int, exitMessage string) {
 	urlstr := parameters[0]
-	re := parseUserRegex(parameters[1])
-	body := urlToBytes(urlstr, secure)
+	re := wrkutils.ParseUserRegex(parameters[1])
+	body := URLToBytes(urlstr, secure)
 	if re.Match(body) {
 		return 0, ""
 	}
 	msg := "Response didn't match regexp:"
-	return genericError(msg, re.String(), []string{string(body)})
+	return wrkutils.GenericError(msg, re.String(), []string{string(body)})
 }
 
 // responseMatches asks: does the response from this URL match this regexp?
