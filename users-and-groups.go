@@ -16,7 +16,7 @@ func registerUsersAndGroups() {
 	registerCheck("useringroup", userInGroup, 2)
 	registerCheck("groupid", groupID, 2)
 	registerCheck("userexists", userExists, 1)
-	registerCheck("userhasUID", userHasUID, 2)
+	registerCheck("userhasuid", userHasUID, 2)
 	registerCheck("userhasgid", userHasGID, 2)
 	registerCheck("userhasusername", userHasUsername, 2)
 	registerCheck("userhasname", userHasName, 2)
@@ -181,7 +181,7 @@ func userExists(parameters []string) (exitCode int, exitMessage string) {
 // userHasUID checks if the user of the given username or UID has the given
 // UID.
 func userHasUID(parameters []string) (exitCode int, exitMessage string) {
-	return genericUserField(parameters[0], "UID", parameters[1])
+	return genericUserField(parameters[0], "Uid", parameters[1])
 }
 
 // userHasUsername checks if the user of the given username or UID has the given
