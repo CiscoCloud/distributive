@@ -72,8 +72,8 @@ func getRunningContainers() (containers []string) {
 	if len(lines) < 1 {
 		return []string{}
 	}
-	names := tabular.GetColumnNoHeader(1, lines)    // all docker container names
-	statuses := tabular.GetColumnNoHeader(4, lines) // all docker container statuses
+	names := tabular.GetColumnByHeader("image", lines)
+	statuses := tabular.GetColumnByHeader("status", lines)
 	for i, status := range statuses {
 		if strings.Contains(status, "Up") && len(names) > i {
 			containers = append(containers, names[i])
