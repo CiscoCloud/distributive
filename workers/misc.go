@@ -1,8 +1,9 @@
-package main
+package workers
 
 import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/CiscoCloud/distributive/wrkutils"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -13,19 +14,19 @@ import (
 	"time"
 )
 
-// register these functions as workers
-func registerMisc() {
-	registerCheck("command", command, 1)
-	registerCheck("commandoutputmatches", commandOutputMatches, 2)
-	registerCheck("running", running, 1)
-	registerCheck("phpconfig", phpConfig, 2)
-	registerCheck("diskusage", diskUsage, 2)
-	registerCheck("memoryusage", memoryUsage, 1)
-	registerCheck("swapusage", swapUsage, 1)
-	registerCheck("cpuusage", cpuUsage, 1)
-	registerCheck("temp", temp, 1)
-	registerCheck("module", module, 1)
-	registerCheck("kernelparameter", kernelParameter, 1)
+// RegisterMisc registers these checks so they can be used.
+func RegisterMisc() {
+	wrkutils.RegisterCheck("command", command, 1)
+	wrkutils.RegisterCheck("commandoutputmatches", commandOutputMatches, 2)
+	wrkutils.RegisterCheck("running", running, 1)
+	wrkutils.RegisterCheck("phpconfig", phpConfig, 2)
+	wrkutils.RegisterCheck("diskusage", diskUsage, 2)
+	wrkutils.RegisterCheck("memoryusage", memoryUsage, 1)
+	wrkutils.RegisterCheck("swapusage", swapUsage, 1)
+	wrkutils.RegisterCheck("cpuusage", cpuUsage, 1)
+	wrkutils.RegisterCheck("temp", temp, 1)
+	wrkutils.RegisterCheck("module", module, 1)
+	wrkutils.RegisterCheck("kernelparameter", kernelParameter, 1)
 }
 
 // command runs a shell command, and collapses its error code to 0 or 1.
@@ -37,7 +38,7 @@ func command(parameters []string) (exitCode int, exitMessage string) {
 	if err != nil && strings.Contains(err.Error(), "not found in $PATH") {
 		return 1, "Executable not found: " + toExec
 	} else if err != nil {
-		execError(cmd, "", err)
+		wrkutils.ExecError(cmd, "", err)
 	}
 	if err = cmd.Wait(); err != nil {
 		// this is convoluted, but should work on Windows & Unix
@@ -64,17 +65,17 @@ func command(parameters []string) (exitCode int, exitMessage string) {
 // given regexp
 func commandOutputMatches(parameters []string) (exitCode int, exitMessage string) {
 	toExec := parameters[0]
-	re := parseUserRegex(parameters[1])
+	re := wrkutils.ParseUserRegex(parameters[1])
 	cmd := exec.Command("bash", "-c", toExec)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		execError(cmd, string(out), err)
+		wrkutils.ExecError(cmd, string(out), err)
 	}
 	if re.Match(out) {
 		return 0, ""
 	}
 	msg := "Command output did not match regexp"
-	return genericError(msg, re.String(), []string{string(out)})
+	return wrkutils.GenericError(msg, re.String(), []string{string(out)})
 }
 
 // running checks if a process is running using `ps aux`, and searching for the
@@ -84,7 +85,7 @@ func running(parameters []string) (exitCode int, exitMessage string) {
 	// getRunningCommands returns the entries in the "COMMAND" column of `ps aux`
 	getRunningCommands := func() (commands []string) {
 		cmd := exec.Command("ps", "aux")
-		return commandColumnNoHeader(10, cmd)
+		return wrkutils.CommandColumnNoHeader(10, cmd)
 	}
 	proc := parameters[0]
 	// remove this process from consideration
@@ -98,7 +99,7 @@ func running(parameters []string) (exitCode int, exitMessage string) {
 	if tabular.StrIn(proc, filtered) {
 		return 0, ""
 	}
-	return genericError("Process not running", proc, filtered)
+	return wrkutils.GenericError("Process not running", proc, filtered)
 }
 
 // temp parses the output of lm_sensors and determines if Core 0 (all cores) are
@@ -124,13 +125,13 @@ func temp(parameters []string) (exitCode int, exitMessage string) {
 		return int(tempFloat)
 
 	}
-	max := parseMyInt(parameters[0])
+	max := wrkutils.ParseMyInt(parameters[0])
 	temp := getCoreTemp(0)
 	if temp < max {
 		return 0, ""
 	}
 	msg := "Core temp exceeds defined maximum"
-	return genericError(msg, fmt.Sprint(max), []string{fmt.Sprint(temp)})
+	return wrkutils.GenericError(msg, fmt.Sprint(max), []string{fmt.Sprint(temp)})
 }
 
 // module checks to see if a kernel module is installed
@@ -138,14 +139,14 @@ func module(parameters []string) (exitCode int, exitMessage string) {
 	// kernelModules returns a list of all modules that are currently loaded
 	kernelModules := func() (modules []string) {
 		cmd := exec.Command("/sbin/lsmod")
-		return commandColumnNoHeader(0, cmd)
+		return wrkutils.CommandColumnNoHeader(0, cmd)
 	}
 	name := parameters[0]
 	modules := kernelModules()
 	if tabular.StrIn(name, modules) {
 		return 0, ""
 	}
-	return genericError("Module is not loaded", name, modules)
+	return wrkutils.GenericError("Module is not loaded", name, modules)
 }
 
 // kernelParameter checks to see if a kernel parameter was set
@@ -181,7 +182,7 @@ func phpConfig(parameters []string) (exitCode int, exitMessage string) {
 		cmd := exec.Command("php", "-r", echo)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			execError(cmd, string(out), err)
+			wrkutils.ExecError(cmd, string(out), err)
 		}
 		return string(out)
 	}
@@ -192,10 +193,10 @@ func phpConfig(parameters []string) (exitCode int, exitMessage string) {
 		return 0, ""
 	} else if actualValue == "" {
 		msg := "PHP configuration variable not set"
-		return genericError(msg, value, []string{actualValue})
+		return wrkutils.GenericError(msg, value, []string{actualValue})
 	}
 	msg := "PHP variable did not match expected value"
-	return genericError(msg, value, []string{actualValue})
+	return wrkutils.GenericError(msg, value, []string{actualValue})
 }
 
 // getSwapOrMemory returns output from `free`, it is an abstraction of
@@ -221,22 +222,22 @@ func getSwapOrMemory(status string, swapOrMem string, units string) int {
 	// check to see that our keys are really in our dict
 	if _, ok := statusToColumn[status]; !ok {
 		msg := "Invalid status passed to getSwapOrMemory"
-		_, e := genericError(msg, status, []string{"total", "used", "free"})
+		_, e := wrkutils.GenericError(msg, status, []string{"total", "used", "free"})
 		log.Fatal(e)
 	} else if _, ok := unitsToFlag[units]; !ok {
 		msg := "Invalid units passed to getSwapOrMemory"
-		_, e := genericError(msg, status, []string{"b", "kb", "mb", "gb", "tb"})
+		_, e := wrkutils.GenericError(msg, status, []string{"b", "kb", "mb", "gb", "tb"})
 		log.Fatal(e)
 	} else if _, ok := typeToRow[swapOrMem]; !ok {
 		msg := "Invalid swapOrMem passed to getSwapOrMemory"
-		_, e := genericError(msg, status, []string{"memory", "swap"})
+		_, e := wrkutils.GenericError(msg, status, []string{"memory", "swap"})
 		log.Fatal(e)
 	}
 	// execute free and return the appropriate output
 	cmd := exec.Command("free", unitsToFlag[units])
-	entireColumn := commandColumnNoHeader(statusToColumn[status], cmd)
+	entireColumn := wrkutils.CommandColumnNoHeader(statusToColumn[status], cmd)
 	// TODO parse and catch here, for better error reporting
-	return parseMyInt(entireColumn[typeToRow[swapOrMem]])
+	return wrkutils.ParseMyInt(entireColumn[typeToRow[swapOrMem]])
 }
 
 // getSwap returns KiB of swap with a certain status: free | used | total
@@ -261,27 +262,27 @@ func getUsedPercent(swapOrMem string) float32 {
 // memoryUsage checks to see whether or not the system has a memory usage
 // percentage below a certain threshold
 func memoryUsage(parameters []string) (exitCode int, exitMessage string) {
-	maxPercentUsed := parseMyInt(parameters[0])
+	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
 	actualPercentUsed := getUsedPercent("memory")
 	if actualPercentUsed < float32(maxPercentUsed) {
 		return 0, ""
 	}
 	msg := "Memory usage above defined maximum"
 	slc := []string{fmt.Sprint(actualPercentUsed)}
-	return genericError(msg, fmt.Sprint(maxPercentUsed), slc)
+	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
 }
 
 // memoryUsage checks to see whether or not the system has a memory usage
 // percentage below a certain threshold
 func swapUsage(parameters []string) (exitCode int, exitMessage string) {
-	maxPercentUsed := parseMyInt(parameters[0])
+	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
 	actualPercentUsed := getUsedPercent("swap")
 	if actualPercentUsed < float32(maxPercentUsed) {
 		return 0, ""
 	}
 	msg := "Swap usage above defined maximum"
 	slc := []string{fmt.Sprint(actualPercentUsed)}
-	return genericError(msg, fmt.Sprint(maxPercentUsed), slc)
+	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
 }
 
 // getCPUSample helps cpuUsage do its thing. Taken from a stackoverflow:
@@ -320,11 +321,11 @@ func cpuUsage(parameters []string) (exitCode int, exitMessage string) {
 	idleTicks := float32(idle1 - idle0)
 	totalTicks := float32(total1 - total0)
 	actualPercentUsed := 100 * (totalTicks - idleTicks) / totalTicks
-	maxPercentUsed := parseMyInt(parameters[0])
+	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
 	if actualPercentUsed < float32(maxPercentUsed) {
 		return 0, ""
 	}
 	msg := "CPU usage above defined maximum"
 	slc := []string{fmt.Sprint(actualPercentUsed)}
-	return genericError(msg, fmt.Sprint(maxPercentUsed), slc)
+	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
 }

@@ -9,29 +9,26 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/CiscoCloud/distributive/workers"
+	"github.com/CiscoCloud/distributive/wrkutils"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
 )
 
-// verbosity settings, provided on the command line
-var maxVerbosity = 2
-var minVerbosity = 0
-var verbosity int
-
 // where remote checks are downloaded to
 var remoteCheckDir = "/var/run/distributive/"
 
 // Check is a struct for a unified interface for health checks
-// It passes its check-specific fields to that check's Worker
+// It passes its check-specific fields to that check's workers.Worker
 type Check struct {
 	Name, Notes string
 	Check       string // type of check to run
 	Parameters  []string
-	Work        Worker
+	Work        wrkutils.Worker
 }
 
 // Checklist is a struct that provides a concise way of thinking about doing
@@ -85,28 +82,28 @@ func validateParameters(chk Check) {
 	checkParameterLength := func(chk Check, expected int) {
 		given := len(chk.Parameters)
 		if given == 0 || expected == 0 {
-			msg := "Invalid check:"
-			msg += "\n\tCheck type: " + chk.Check
-			log.Fatal(msg)
+			log.WithFields(log.Fields{
+				"check type": chk.Check,
+			}).Fatal("Invalid check")
 		}
 		if given != expected {
-			msg := "Invalid check parameters: "
-			msg += "\n\tName: " + chk.Name
-			msg += "\n\tCheck type: " + chk.Check
-			msg += "\n\tExpected: " + fmt.Sprint(expected)
-			msg += "\n\tGiven: " + fmt.Sprint(given)
-			msg += "\n\tParameters: " + fmt.Sprint(chk.Parameters)
-			log.Fatal(msg)
+			log.WithFields(log.Fields{
+				"name":       chk.Name,
+				"check type": chk.Check,
+				"expected":   fmt.Sprint(expected),
+				"given":      fmt.Sprint(given),
+				"parameters": fmt.Sprint(chk.Parameters),
+			}).Fatal("Invalid check parameters")
 		}
 	}
-	checkParameterLength(chk, parameterLength[strings.ToLower(chk.Check)])
+	checkParameterLength(chk, wrkutils.ParameterLength[strings.ToLower(chk.Check)])
 }
 
-// getWorker returns a Worker based on the Check's name. It also makes sure that
+// getworkers.Worker returns a workers.Worker based on the Check's name. It also makes sure that
 // the correct number of parameters were specified.
-func getWorker(chk Check) Worker {
+func getWorker(chk Check) wrkutils.Worker {
 	validateParameters(chk)
-	work := workers[strings.ToLower(chk.Check)]
+	work := wrkutils.Workers[strings.ToLower(chk.Check)]
 	if work == nil {
 		msg := "JSON file included one or more unsupported health checks: "
 		msg += "\n\tName: " + chk.Name
@@ -123,17 +120,18 @@ func getWorker(chk Check) Worker {
 func loadRemoteChecklist(urlstr string) (chklst Checklist) {
 	// urlToFile gets the response from urlstr and writes it to path
 	urlToFile := func(urlstr string, path string) error {
-		body := urlToBytes(urlstr, true) // secure connection
+		body := workers.URLToBytes(urlstr, true) // secure connection
 		// write to file
 		err := ioutil.WriteFile(path, body, 0755)
 		if err != nil {
-			couldntWriteError(path, err)
+			wrkutils.CouldntWriteError(path, err)
 		}
 		return nil
 	}
 	// ensure temp files dir exists
-	verbosityPrint("Creating/checking remote checklist dir", maxVerbosity)
+	log.Info("Creating/checking remote checklist dir")
 	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
+		// TODO logrus this
 		msg := "Could not create temporary file directory:"
 		msg += "\n\tDirectory: " + remoteCheckDir
 		msg += "\n\tError: " + err.Error()
@@ -147,10 +145,10 @@ func loadRemoteChecklist(urlstr string) (chklst Checklist) {
 	fullpath := remoteCheckDir + filename
 	// only create it if it doesn't exist
 	if _, err := os.Stat(fullpath); err != nil {
-		verbosityPrint("Fetching remote checklist", maxVerbosity)
+		log.Info("Fetching remote checklist")
 		urlToFile(urlstr, fullpath)
 	} else {
-		verbosityPrint("Using local copy of remote checklist", maxVerbosity)
+		log.Debug("Using local copy of remote checklist")
 	}
 	// return a real checklist
 	return getChecklist(fullpath)
@@ -159,14 +157,14 @@ func loadRemoteChecklist(urlstr string) (chklst Checklist) {
 // getChecklist loads a JSON file located at path, and Unmarshals it into a
 // Checklist struct, leaving unspecified fields as their zero types.
 func getChecklist(path string) (chklst Checklist) {
-	fileJSON := fileToBytes(path)
+	fileJSON := wrkutils.FileToBytes(path)
 	err := json.Unmarshal(fileJSON, &chklst)
 	if err != nil {
-		msg := "Could not parse JSON file: "
-		msg += "\n\tPath: " + path
-		msg += "\n\tError: " + err.Error()
-		msg += "\n\tContent: " + string(fileJSON)
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"path":    path,
+			"error":   err.Error(),
+			"content": string(fileJSON),
+		}).Fatal("Couldn't parse JSON file")
 	}
 	// Go concurrent pipe - one stage to the next
 	// send all checks in checklist to the channel
@@ -177,7 +175,7 @@ func getChecklist(path string) (chklst Checklist) {
 		}
 		close(out)
 	}()
-	// get Workers for each check
+	// get workers.Workers for each check
 	out2 := make(chan Check)
 	go func() {
 		for chk := range out {
@@ -199,40 +197,28 @@ func getChecklist(path string) (chklst Checklist) {
 // getChecklistsInDir uses getChecklist to construct a checklist struct for
 // every .json file in a directory
 func getChecklistsInDir(dirpath string) (chklsts []Checklist) {
-	paths := getFilesWithExtension(dirpath, ".json")
+	paths := wrkutils.GetFilesWithExtension(dirpath, ".json")
 	for _, path := range paths {
 		chklsts = append(chklsts, getChecklist(path))
 	}
 	return chklsts
 }
 
-// getVerbosity returns the verbosity specifed by the -v flag, and checks to
-// see that it is in a valid range
+// getFlags validates and returns command line options
 func getFlags() (p string, u string, d string) {
-	// validateVerbosity ensures that verbosity is between a min and max
-	validateVerbosity := func(min int, actual int, max int) {
-		if verbosity > maxVerbosity || verbosity < minVerbosity {
-			log.Fatal("Invalid option for verbosity: " + fmt.Sprint(verbosity))
-		}
-		msg := "Running with verbosity level " + fmt.Sprint(verbosity)
-		verbosityPrint(msg, maxVerbosity)
-	}
 	validatePath := func(path string) {
 		if _, err := os.Stat(path); err != nil {
-			couldntReadError(path, err)
+			wrkutils.CouldntReadError(path, err)
 		}
 	}
 
-	verbosityMsg := "Output verbosity level (valid values are "
-	verbosityMsg += "[" + fmt.Sprint(minVerbosity) + "-" + fmt.Sprint(maxVerbosity) + "])"
-	verbosityMsg += "\n\t 0: Display only errors, with no other output."
-	verbosityMsg += "\n\t 1: Display errors and some information."
-	verbosityMsg += "\n\t 2: Display everything that's happening."
+	lvls := "info | debug | fatal | error | panic | warn"
+	verbosityMsg := "Output verbosity level (valid values are " + lvls
 	pathMsg := "Use the health check located at this "
 	versionMsg := "Get the version of distributive this binary was built from"
 	dirpathMsg := "Run all the checks in the specified directory"
 
-	verbosityFlag := flag.Int("v", 1, verbosityMsg)
+	verbosity := flag.String("log-level", "warn", verbosityMsg)
 	path := flag.String("f", "", pathMsg+"path")
 	urlstr := flag.String("u", "", pathMsg+"URL")
 	dirpath := flag.String("a", "/etc/distributive.d/", dirpathMsg)
@@ -244,29 +230,49 @@ func getFlags() (p string, u string, d string) {
 		fmt.Println("Distributive version 0.1.1")
 		os.Exit(0)
 	}
-	verbosity = *verbosityFlag
 	// check for invalid options
 	if *path == "" && *urlstr == "" && *dirpath == "" {
-		log.Fatal("No path or URL specified. Use -f or -u option.")
+		log.Fatal("No path nor URL nor dir specified. Use -f, -u, or -a options.")
 	} else if _, err := url.Parse(*urlstr); err != nil {
-		log.Fatal("Could not parse URL:\n\t" + err.Error())
+		log.WithFields(log.Fields{
+			"url":   urlstr,
+			"error": err.Error(),
+		}).Fatal("Couldn't parse URL")
 	}
-	validateVerbosity(minVerbosity, verbosity, maxVerbosity)
 	if *dirpath != "" {
 		validatePath(*dirpath)
 	}
 	if *path != "" {
 		validatePath(*path)
 	}
-	// check for invalid options
-	return *path, *urlstr, *dirpath
-}
-
-// verbosityPrint only prints its message if verbosity is above the given value
-func verbosityPrint(str string, minVerb int) {
-	if verbosity >= minVerb {
-		fmt.Println(str)
+	// set log level according to flag
+	var logLevel log.Level
+	logLevel = 0
+	switch *verbosity {
+	case "info":
+		logLevel = log.InfoLevel
+	case "debug":
+		logLevel = log.DebugLevel
+	case "fatal":
+		logLevel = log.FatalLevel
+	case "error":
+		logLevel = log.ErrorLevel
+	case "panic":
+		logLevel = log.PanicLevel
+	case "warn":
+		logLevel = log.WarnLevel
+	default:
+		log.WithFields(log.Fields{
+			"given":    *verbosity,
+			"expected": lvls,
+		}).Fatal("Invalid verbosity option")
 	}
+	log.SetLevel(logLevel)
+	log.WithFields(log.Fields{
+		"verbosity": *verbosity,
+	}).Debug("Verbosity level specified")
+	wrkutils.InitializeLogrus(logLevel)
+	return *path, *urlstr, *dirpath
 }
 
 func runChecks(chklst Checklist) Checklist {
@@ -274,21 +280,32 @@ func runChecks(chklst Checklist) Checklist {
 		if chk.Work == nil {
 			msg := "Check had a nil function associated with it!"
 			msg += " Please submit a bug report with this message."
-			msg += "\n\tCheck:" + chk.Check
-			msg += "\n\tCheck map: " + fmt.Sprint(workers)
-			log.Fatal(msg)
+			log.WithFields(log.Fields{
+				"check":     chk.Check,
+				"check map": fmt.Sprint(wrkutils.Workers),
+			}).Fatal(msg)
 		}
 		code, msg := chk.Work(chk.Parameters)
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, msg)
 		if code == 0 {
-			message := "Check exited with no errors: "
-			message += "\n\tName: " + chk.Name
-			message += "\n\tType: " + chk.Check
-			verbosityPrint(message, maxVerbosity)
+			log.WithFields(log.Fields{
+				"name": chk.Name,
+				"type": chk.Check,
+			}).Debug("Check exited with no errors")
 		}
 	}
 	return chklst
+}
+
+func registerChecks() {
+	workers.RegisterDocker()
+	workers.RegisterFilesystem()
+	workers.RegisterMisc()
+	workers.RegisterSystemctl()
+	workers.RegisterPackage()
+	workers.RegisterNetwork()
+	workers.RegisterUsersAndGroups()
 }
 
 // main reads the command line flag -f, runs the Check specified in the JSON,
@@ -299,7 +316,7 @@ func main() {
 
 	// add workers to workers, parameterLength
 	registerChecks()
-	verbosityPrint("Creating checklist(s)...", minVerbosity+1)
+	log.Info("Creating checklist(s)...")
 	// load checklists according to flags
 	var chklsts []Checklist
 	if path != "" {
@@ -309,13 +326,15 @@ func main() {
 	} else if dirpath != "" {
 		chklsts = append(chklsts, getChecklistsInDir(dirpath)...)
 	} else {
-		log.Fatal("Neither path nor URL nor directory specified.")
+		msg := "Neither path nor URL nor directory specified."
+		msg += "\nSee distributive --help for usage instructions."
+		log.Fatal(msg)
 	}
 	// run all checklists
 	for i := range chklsts {
 		// run checks, populate error codes and messages
 		msg := "Running checklist: " + chklsts[i].Name
-		verbosityPrint(msg, minVerbosity+1)
+		log.Info(msg)
 		chklsts[i] = runChecks(chklsts[i])
 		// make a printable report
 		report := makeReport(chklsts[i])
@@ -324,17 +343,25 @@ func main() {
 	// see if any checks failed, exit accordingly
 	exitStatus := 0
 	for _, chklst := range chklsts {
-		verbLevel := maxVerbosity
+		verbLevel := "info"
 		for _, code := range chklst.Codes {
 			if code != 0 {
-				verbLevel = minVerbosity
+				verbLevel = "warn"
 				exitStatus = 1
 			}
 		}
-		verbosityPrint("", verbLevel) // get an extra newline
-		msg := "Printing output from checklist: " + chklst.Name
-		verbosityPrint(msg, verbLevel)
-		verbosityPrint(chklst.Report, verbLevel)
+		switch verbLevel {
+		case "info":
+			log.WithFields(log.Fields{
+				"checklist": chklst.Name,
+				"report":    chklst.Report,
+			}).Info("All checks passed, printing checklist report")
+		case "warn":
+			log.WithFields(log.Fields{
+				"checklist": chklst.Name,
+				"report":    chklst.Report,
+			}).Warn("Some checks failed, printing checklist report")
+		}
 	}
 	os.Exit(exitStatus)
 }

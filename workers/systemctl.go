@@ -1,22 +1,23 @@
-package main
+package workers
 
 import (
 	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/CiscoCloud/distributive/wrkutils"
 	"log"
 	"os/exec"
 	"regexp"
 	"strings"
 )
 
-// register these functions as workers
-func registerSystemctl() {
-	registerCheck("systemctlloaded", systemctlLoaded, 1)
-	registerCheck("systemctlactive", systemctlActive, 1)
-	registerCheck("systemctlsockpath", systemctlSockPath, 1)
-	registerCheck("systemctlsockunit", systemctlSockUnit, 1)
-	registerCheck("systemctltimer", systemctlTimer, 1)
-	registerCheck("systemctltimerloaded", systemctlTimerLoaded, 1)
-	registerCheck("systemctlunitfilestatus", systemctlUnitFileStatus, 2)
+// RegisterSystemctl registers these checks so they can be used.
+func RegisterSystemctl() {
+	wrkutils.RegisterCheck("systemctlloaded", systemctlLoaded, 1)
+	wrkutils.RegisterCheck("systemctlactive", systemctlActive, 1)
+	wrkutils.RegisterCheck("systemctlsockpath", systemctlSockPath, 1)
+	wrkutils.RegisterCheck("systemctlsockunit", systemctlSockUnit, 1)
+	wrkutils.RegisterCheck("systemctltimer", systemctlTimer, 1)
+	wrkutils.RegisterCheck("systemctltimerloaded", systemctlTimerLoaded, 1)
+	wrkutils.RegisterCheck("systemctlunitfilestatus", systemctlUnitFileStatus, 2)
 }
 
 // systemctlExists returns whether or not systemctl is available ona given
@@ -46,7 +47,7 @@ func systemctlService(service string, activeOrLoaded string) (exitCode int, exit
 	out, err := cmd.CombinedOutput()
 	outstr := string(out)
 	if err != nil {
-		execError(cmd, outstr, err)
+		wrkutils.ExecError(cmd, outstr, err)
 	}
 	contained := "ActiveState=active"
 	if activeOrLoaded == "loaded" {
@@ -56,7 +57,7 @@ func systemctlService(service string, activeOrLoaded string) (exitCode int, exit
 		return 0, ""
 	}
 	msg := "Service not " + activeOrLoaded
-	return genericError(msg, service, []string{outstr})
+	return wrkutils.GenericError(msg, service, []string{outstr})
 }
 
 // systemctlLoaded checks to see whether or not a given service is loaded
@@ -79,11 +80,11 @@ func systemctlSock(value string, path bool) (exitCode int, exitMessage string) {
 		column = 0
 	}
 	cmd := exec.Command("systemctl", "list-sockets")
-	values := commandColumnNoHeader(column, cmd)
+	values := wrkutils.CommandColumnNoHeader(column, cmd)
 	if tabular.StrIn(value, values) {
 		return 0, ""
 	}
-	return genericError("Socket not found", value, values)
+	return wrkutils.GenericError("Socket not found", value, values)
 }
 
 // systemctlSock checks to see whether the sock at the given path is registered
@@ -119,7 +120,7 @@ func timersWorker(unit string, all bool) (exitCode int, exitMessage string) {
 	if tabular.StrIn(unit, timers) {
 		return 0, ""
 	}
-	return genericError("Timer not found", unit, timers)
+	return wrkutils.GenericError("Timer not found", unit, timers)
 }
 
 // systemctlTimer reports whether a given timer is running (by unit).
@@ -140,9 +141,9 @@ func systemctlUnitFileStatus(parameters []string) (exitCode int, exitMessage str
 	// the name of unit files with their current statuses.
 	getUnitFilesWithStatuses := func() (units []string, statuses []string) {
 		cmd := exec.Command("systemctl", "--no-pager", "list-unit-files")
-		units = commandColumnNoHeader(0, cmd)
+		units = wrkutils.CommandColumnNoHeader(0, cmd)
 		cmd = exec.Command("systemctl", "--no-pager", "list-unit-files")
-		statuses = commandColumnNoHeader(1, cmd)
+		statuses = wrkutils.CommandColumnNoHeader(1, cmd)
 		// last two are empty line and junk statistics we don't care about
 		return units[:len(units)-2], statuses[:len(statuses)-2]
 	}
@@ -159,5 +160,5 @@ func systemctlUnitFileStatus(parameters []string) (exitCode int, exitMessage str
 		}
 	}
 	msg := "Unit didn't have status"
-	return genericError(msg, status, []string{actualStatus})
+	return wrkutils.GenericError(msg, status, []string{actualStatus})
 }

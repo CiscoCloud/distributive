@@ -1,25 +1,26 @@
-package main
+package workers
 
 import (
 	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/CiscoCloud/distributive/wrkutils"
 	"github.com/fsouza/go-dockerclient"
 	"log"
 	"os/exec"
 	"strings"
 )
 
-// register these functions as workers
-func registerDocker() {
-	registerCheck("dockerimage", dockerImage, 1)
-	registerCheck("dockerrunning", dockerRunning, 1)
-	registerCheck("dockerimageregexp", dockerImageRegexp, 1)
-	registerCheck("dockerrunningregexp", dockerRunningRegexp, 1)
+// RegisterDocker registers these checks so they can be used.
+func RegisterDocker() {
+	wrkutils.RegisterCheck("dockerimage", dockerImage, 1)
+	wrkutils.RegisterCheck("dockerrunning", dockerRunning, 1)
+	wrkutils.RegisterCheck("dockerimageregexp", dockerImageRegexp, 1)
+	wrkutils.RegisterCheck("dockerrunningregexp", dockerRunningRegexp, 1)
 }
 
 // getDockerImages returns a list of all downloaded Docker images
 func getDockerImages() (images []string) {
 	cmd := exec.Command("docker", "images")
-	return commandColumnNoHeader(0, cmd)
+	return wrkutils.CommandColumnNoHeader(0, cmd)
 }
 
 // getDockerImagesAPI is like getDockerImages, but uses an external library
@@ -42,17 +43,17 @@ func dockerImage(parameters []string) (exitCode int, exitMessage string) {
 	if tabular.StrIn(name, images) {
 		return 0, ""
 	}
-	return genericError("Docker image was not found", name, images)
+	return wrkutils.GenericError("Docker image was not found", name, images)
 }
 
 // dockerImageRegexp is like dockerImage, but with a regexp match instead
 func dockerImageRegexp(parameters []string) (exitCode int, exitMessage string) {
-	re := parseUserRegex(parameters[0])
+	re := wrkutils.ParseUserRegex(parameters[0])
 	images := getDockerImages()
 	if tabular.ReIn(re, images) {
 		return 0, ""
 	}
-	return genericError("Docker image was not found", re.String(), images)
+	return wrkutils.GenericError("Docker image was not found", re.String(), images)
 }
 
 // getRunningContainers returns a list of names of running docker containers
@@ -115,15 +116,16 @@ func dockerRunning(parameters []string) (exitCode int, exitMessage string) {
 	if tabular.StrContainedIn(name, running) {
 		return 0, ""
 	}
-	return genericError("Docker container not runnning", name, running)
+	return wrkutils.GenericError("Docker container not runnning", name, running)
 }
 
 // dockerRunningRegexp is like dockerRunning, but with a regexp match instead
 func dockerRunningRegexp(parameters []string) (exitCode int, exitMessage string) {
-	re := parseUserRegex(parameters[0])
+	re := wrkutils.ParseUserRegex(parameters[0])
 	running := getRunningContainers()
 	if tabular.ReIn(re, running) {
 		return 0, ""
 	}
-	return genericError("Docker container not runnning", re.String(), running)
+	msg := "Docker container not runnning"
+	return wrkutils.GenericError(msg, re.String(), running)
 }

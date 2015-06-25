@@ -1,4 +1,4 @@
-package main
+package workers
 
 import (
 	"crypto/md5"
@@ -7,19 +7,20 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"github.com/CiscoCloud/distributive/wrkutils"
 	"os"
 	"strings"
 	"syscall"
 )
 
-// register these functions as workers
-func registerFilesystem() {
-	registerCheck("file", file, 1)
-	registerCheck("directory", directory, 1)
-	registerCheck("symlink", symlink, 1)
-	registerCheck("checksum", checksum, 3)
-	registerCheck("permissions", permissions, 2)
-	registerCheck("filecontains", fileContains, 2)
+// RegisterFilesystem registers these checks so they can be used.
+func RegisterFilesystem() {
+	wrkutils.RegisterCheck("file", file, 1)
+	wrkutils.RegisterCheck("directory", directory, 1)
+	wrkutils.RegisterCheck("symlink", symlink, 1)
+	wrkutils.RegisterCheck("checksum", checksum, 3)
+	wrkutils.RegisterCheck("permissions", permissions, 2)
+	wrkutils.RegisterCheck("filecontains", fileContains, 2)
 }
 
 type fileTypeCheck func(path string) (bool, error)
@@ -57,10 +58,10 @@ func file(parameters []string) (exitCode int, exitMessage string) {
 func directory(parameters []string) (exitCode int, exitMessage string) {
 	isDirectory := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
-		if fileInfo.Mode().IsDir() {
-			return true, err
+		if fileInfo == nil || !fileInfo.Mode().IsDir() {
+			return false, err
 		}
-		return false, err
+		return true, err
 	}
 	return isType("directory", isDirectory, parameters[0])
 }
@@ -105,7 +106,7 @@ func checksum(parameters []string) (exitCode int, exitMessage string) {
 	}
 	// getFileChecksum is self-explanatory
 	getFileChecksum := func(algorithm string, path string) (checksum string) {
-		return getChecksum(algorithm, fileToBytes(path))
+		return getChecksum(algorithm, wrkutils.FileToBytes(path))
 	}
 
 	algorithm := parameters[0]
@@ -116,14 +117,14 @@ func checksum(parameters []string) (exitCode int, exitMessage string) {
 		return 0, ""
 	}
 	msg := "Checksums do not match for file: " + path
-	return genericError(msg, checkAgainst, []string{chksum})
+	return wrkutils.GenericError(msg, checkAgainst, []string{chksum})
 }
 
 // fileContains checks whether a file matches a given regex
 func fileContains(parameters []string) (exitCode int, exitMessage string) {
 	path := parameters[0]
-	regex := parseUserRegex(parameters[1])
-	if regex.Match(fileToBytes(path)) {
+	regex := wrkutils.ParseUserRegex(parameters[1])
+	if regex.Match(wrkutils.FileToBytes(path)) {
 		return 0, ""
 	}
 	return 1, "File does not match regexp:\n\tFile: " + path
@@ -135,14 +136,14 @@ func permissions(parameters []string) (exitCode int, exitMessage string) {
 	givenMode := parameters[1]
 	finfo, err := os.Stat(path)
 	if err != nil {
-		couldntReadError(path, err)
+		wrkutils.CouldntReadError(path, err)
 	}
 	actualMode := fmt.Sprint(finfo.Mode().Perm()) // -rwxrw-r-- format
 	if actualMode == givenMode {
 		return 0, ""
 	}
 	msg := "File modes did not match"
-	return genericError(msg, givenMode, []string{actualMode})
+	return wrkutils.GenericError(msg, givenMode, []string{actualMode})
 }
 
 func diskUsage(parameters []string) (exitCode int, exitMessage string) {
@@ -160,12 +161,12 @@ func diskUsage(parameters []string) (exitCode int, exitMessage string) {
 		return percentUsed
 
 	}
-	maxPercentUsed := parseMyInt(parameters[1])
+	maxPercentUsed := wrkutils.ParseMyInt(parameters[1])
 	actualPercentUsed := percentFSUsed(parameters[0])
 	if actualPercentUsed < maxPercentUsed {
 		return 0, ""
 	}
 	msg := "More disk space used than expected"
 	slc := []string{fmt.Sprint(actualPercentUsed) + "%"}
-	return genericError(msg, fmt.Sprint(maxPercentUsed)+"%", slc)
+	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed)+"%", slc)
 }
