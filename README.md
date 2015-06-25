@@ -35,8 +35,8 @@ a checklist from a JSON file, and will record this program's exit code and
 standard out. Distributive's output includes information about which checks
 in a checklist failed, and how so.
 
-The exit code meanings are defined as [Consul] [1] and [Sensu] [2] recognize
-them.
+The exit code meanings are defined as [Consul] [1], [Sensu] [2], and
+[Nagios] [3] recognize them.
 
  * Exit code 0 - Checklist is passing
  * Exit code 1 - Checklist is warning
@@ -62,19 +62,17 @@ binary will be installed to `/bin/distributive` and the samples to
 Usage
 -----
 
-The default behavior is to run all checks in /etc/distributive.d/, in addition
-to any specified via the `-f` or `-u` options.
+The default behavior is to run all checks in /etc/distributive.d/ (the default
+directory give to the `-a` option), in addition to any specified via the `-f`
+or `-u` options.
 
 ```
 $ distributive --help
 Usage of ./distributive:
   -a="/etc/distributive.d/": Run all the checks in the specified directory
   -f="": Use the health check located at this path
+  -log-level="warn": Output verbosity level (valid values are info | debug | fatal | error | panic | warn
   -u="": Use the health check located at this URL
-  -v=1: Output verbosity level (valid values are [0-2])
-     0: Display only errors, with no other output.
-     1: Display errors and some information.
-     2: Display everything that's happening.
   -version=false: Get the version of distributive this binary was built from
 ```
 
@@ -92,21 +90,18 @@ Supported Frameworks
 --------------------
 
 Distributive attempts to be as framework-agnostic as possible. It is known to
-work well with both Sensu and Consul, which have similar architecture with
-regards to their health checks. There is documentation on how to use
+work well with Sensu, Consul, and Nagios, which have similar design in how they
+detect passing and failing checks. There is documentation on how to use
 Distributive with Consul on this project's
 [Github wiki](https://github.com/CiscoCloud/distributive/wiki/Working-with-Consul).
 
-[1]: https://www.consul.io/docs/agent/checks.html "Consul"
-[2]: https://sensuapp.org/docs/0.18/checks "Sensu"
 
 Checks
 =======
 
-Distributive provides dozens of checks ranging from CPU core temperature to
-TCP connection timeouts. For the impatient, examples of every single implemented
-check are available in the `samples/` directory, sorted by category. There
-is extensive documentation for each check available on this project's
+For the impatient, examples of every single implemented check are available in
+the `samples/` directory, sorted by category. There is extensive documentation
+for each check available on this project's
 [Github wiki](https://github.com/CiscoCloud/distributive/wiki).
 
 
@@ -122,11 +117,10 @@ Comparison to Other Software
 ============================
 
 Distributive was created with the idea of pushing responsibiliy to the nodes,
-which grants the program a certain flexibility in what kind of checks it can run.
-It has access to local data that cannot or should not be accessed over a network.
 It was also designed around the idea of constantly changing infrastructure, with
 servers being added and destroyed constantly, changing IP addresses, and even
-changing roles. Integration with Consul [provides greater flexibility](https://www.consul.io/intro/vs/nagios-sensu.html).
+changing roles. Integration with Consul provides even
+[greater flexibility](https://www.consul.io/intro/vs/nagios-sensu.html).
 
 Serverspec
 ----------
@@ -145,8 +139,10 @@ Nagios is an end-to-end monitoring, security, and notification framework. It
 provides many services not included in Distributive, and solves a very different
 problem.  Distributive is simple, lightweight, and easy to configure, and
 doesn't provide its own scheduling, dashboard, etc. It is designed to be used
-within frameworks such as Sensu and Consul. Luckily, Distributive can easily
-be used with Consul to provide data to Nagios, for a sweet combination.
+within frameworks such as Sensu and Consul. Luckily, Distributive conforms to
+[Nagios exit code specifications] [3], and can be used just like any other
+plugin. Its advantage over other plugins is that it is small, fast, and has no
+dependencies.
 
 Contributing and Getting Help
 =============================
@@ -174,3 +170,8 @@ Copyright © 2015 Cisco Systems, Inc.
 Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the "License").
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+
+[1]: https://www.consul.io/docs/agent/checks.html "Consul"
+[2]: https://sensuapp.org/docs/0.18/checks "Sensu"
+[3]: https://nagios-plugins.org/doc/guidelines.html#AEN78 "Nagios"
