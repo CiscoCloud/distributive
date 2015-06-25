@@ -58,10 +58,10 @@ func file(parameters []string) (exitCode int, exitMessage string) {
 func directory(parameters []string) (exitCode int, exitMessage string) {
 	isDirectory := func(path string) (bool, error) {
 		fileInfo, err := os.Stat(path)
-		if fileInfo.Mode().IsDir() {
-			return true, err
+		if fileInfo == nil || !fileInfo.Mode().IsDir() {
+			return false, err
 		}
-		return false, err
+		return true, err
 	}
 	return isType("directory", isDirectory, parameters[0])
 }
