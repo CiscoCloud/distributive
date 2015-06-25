@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -77,6 +77,16 @@ func repoToString(r repo) (str string) {
 func getYumRepos() (repos []repo) {
 	// safeAccess allows access w/o fear of a panic into a slice of strings
 	safeAccess := func(slc []string, index int) string {
+		// catch runtime panic
+		defer func() {
+			if err := recover(); err != nil {
+				log.WithFields(log.Fields{
+					"slice":  slc,
+					"length": len(slc),
+					"index":  index,
+				}).Warn("Accessing out-of-bounds index. Please report.")
+			}
+		}() // invoke inside defer
 		if len(slc) > index {
 			return slc[index]
 		}
@@ -93,14 +103,17 @@ func getYumRepos() (repos []repo) {
 	// parse output
 	slc := tabular.ProbabalisticSplit(outstr)
 	ids := tabular.GetColumnByHeader("repo id", slc)
-	ids = ids[:len(ids)-2] // has extra line at end
+	if len(ids) > 2 {
+		ids = ids[:len(ids)-2] // has extra line at end
+	}
 	names := tabular.GetColumnByHeader("repo name", slc)
 	statuses := tabular.GetColumnByHeader("status", slc)
 	if len(ids) != len(names) || len(names) != len(statuses) {
-		fmt.Println("Warning: could not fetch complete metadata for every repo.")
-		fmt.Println("Names: " + fmt.Sprint(len(names)))
-		fmt.Println("IDs: " + fmt.Sprint(len(ids)))
-		fmt.Println("Statuses: " + fmt.Sprint(len(statuses)))
+		log.WithFields(log.Fields{
+			"names":    len(names),
+			"ids":      len(ids),
+			"statuses": len(statuses),
+		}).Warn("Could not fetch complete metadata for every repo.")
 	}
 	// Construct repos
 	for i := range ids {
