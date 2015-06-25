@@ -102,12 +102,12 @@ func getYumRepos() (repos []repo) {
 	}
 	// parse output
 	slc := tabular.ProbabalisticSplit(outstr)
-	ids := tabular.GetColumnByHeader("repo id", slc)
+	ids := tabular.GetColumnNoHeader(0, slc)
 	if len(ids) > 2 {
 		ids = ids[:len(ids)-2] // has extra line at end
 	}
-	names := tabular.GetColumnByHeader("repo name", slc)
-	statuses := tabular.GetColumnByHeader("status", slc)
+	names := tabular.GetColumnNoHeader(1, slc)
+	statuses := tabular.GetColumnNoHeader(2, slc)
 	if len(ids) != len(names) || len(names) != len(statuses) {
 		log.WithFields(log.Fields{
 			"names":    len(names),
