@@ -9,6 +9,10 @@
         {
             "Check" : "dockerRunning",
             "Parameters" : ["failme"]
+        },
+        {
+            "Check" : "dockerRunningAPI",
+            "Parameters" : ["unix:///var/run/docker.sock", "failme"]
         }
     ]
 }

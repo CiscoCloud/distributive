@@ -13,6 +13,10 @@
         {
             "Check" : "dockerRunning",
             "Parameters" : ["siddharthist/router:latest"]
+        },
+        {
+            "Check" : "dockerRunningAPI",
+            "Parameters" : ["unix:///var/run/docker.sock", "siddharthist/router:latest"]
         }
     ]
 }

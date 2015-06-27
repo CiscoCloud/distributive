@@ -3,8 +3,8 @@ package workers
 import (
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
-	"log"
 	"os/exec"
 	"strings"
 )
@@ -13,6 +13,7 @@ import (
 func RegisterDocker() {
 	wrkutils.RegisterCheck("dockerimage", dockerImage, 1)
 	wrkutils.RegisterCheck("dockerrunning", dockerRunning, 1)
+	wrkutils.RegisterCheck("dockerrunningapi", dockerRunningAPI, 2)
 	wrkutils.RegisterCheck("dockerimageregexp", dockerImageRegexp, 1)
 	wrkutils.RegisterCheck("dockerrunningregexp", dockerRunningRegexp, 1)
 }
@@ -21,18 +22,6 @@ func RegisterDocker() {
 func getDockerImages() (images []string) {
 	cmd := exec.Command("docker", "images")
 	return wrkutils.CommandColumnNoHeader(0, cmd)
-}
-
-// getDockerImagesAPI is like getDockerImages, but uses an external library
-// in order to access the Docker API
-func getDockerImagesAPI() (images []string) {
-	endpoint := "unix:///var/run/docker.sock"
-	client, _ := docker.NewClient(endpoint)
-	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
-	for _, img := range imgs {
-		images = append(images, img.ID)
-	}
-	return images
 }
 
 // dockerImage checks to see that the specified Docker image (e.g. "user/image",
@@ -70,7 +59,7 @@ func getRunningContainers() (containers []string) {
 	// the output of `docker ps -a` has spaces in columns, but each column
 	// is separated by 2 or more spaces
 	//lines := tabular.ProbabalisticSplit(outstr)
-	lines := tabular.StringToSlice(outstr)
+	lines := tabular.ProbabalisticSplit(outstr)
 	if len(lines) < 1 {
 		return []string{}
 	}
@@ -86,8 +75,8 @@ func getRunningContainers() (containers []string) {
 
 // getRunningContainersAPI is like getRunningContainers, but uses an external
 // library in order to access the Docker API
-func getRunningContainersAPI() (containers []string) {
-	endpoint := "unix:///var/run/docker.sock"
+func getRunningContainersAPI(path string) (containers []string) {
+	endpoint := path
 	client, err := docker.NewClient(endpoint)
 	if err != nil {
 		msg := "Couldn't create Docker API client"
@@ -101,8 +90,8 @@ func getRunningContainersAPI() (containers []string) {
 		log.Fatal(msg)
 	}
 	for _, ctr := range ctrs {
-		if strings.EqualFold(ctr.Status, "Up") {
-			containers = append(containers, ctr.ID)
+		if strings.Contains(ctr.Status, "Up") {
+			containers = append(containers, ctr.Image)
 		}
 	}
 	return containers
@@ -113,6 +102,17 @@ func getRunningContainersAPI() (containers []string) {
 func dockerRunning(parameters []string) (exitCode int, exitMessage string) {
 	name := parameters[0]
 	running := getRunningContainers()
+	if tabular.StrContainedIn(name, running) {
+		return 0, ""
+	}
+	return wrkutils.GenericError("Docker container not runnning", name, running)
+}
+
+// dockerRunningAPI is like dockerRunning, but fetches its information from
+// getRunningContainersAPI.
+func dockerRunningAPI(parameters []string) (exitCode int, exitMessage string) {
+	name := parameters[1]
+	running := getRunningContainersAPI(parameters[0])
 	if tabular.StrContainedIn(name, running) {
 		return 0, ""
 	}
