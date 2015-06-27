@@ -1,8 +1,7 @@
 package tabular
 
 import (
-	"fmt"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"math"
 	"regexp"
 )
@@ -181,9 +180,9 @@ func ProbabalisticSplit(str string) (output Table) {
 			}
 		}
 		if len(colSeps) < 1 {
-			msg := "ProbabalisticSplit couldn't divide the table."
-			msg += "\n\tAttempted regexps: " + fmt.Sprint(initialColSeps)
-			log.Fatal(msg)
+			log.WithFields(log.Fields{
+				"attempted": initialColSeps,
+			}).Fatal("ProbabalisticSplit couldn't divide the table.")
 		}
 		// separate the data based on the above column regexps
 		var tables []Table
@@ -194,7 +193,10 @@ func ProbabalisticSplit(str string) (output Table) {
 		// see if any of them had utterly consistent row lengths
 		rowLengths := getRowLengths(tables)
 		if len(rowLengths) != len(tables) {
-			log.Fatal("Internal error: len(rowLengths) != len(tables)")
+			log.WithFields(log.Fields{
+				"rowLengths": rowLengths,
+				"tables":     tables,
+			}).Fatal("Internal error: len(rowLengths) != len(tables)")
 		}
 		for i, lengths := range rowLengths {
 			if allEqual(lengths) {
