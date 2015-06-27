@@ -1,5 +1,5 @@
 FROM gliderlabs/alpine:3.1
-MAINTAINER Langston Barrett <lagnston@aster.is> (@siddharthist)
+MAINTAINER Langston Barrett <langston@aster.is> (@siddharthist)
 
 # This docker container should run and then stop immediately when the checklist
 # has been completed
@@ -18,4 +18,4 @@ WORKDIR /distributive
 ADD . /distributive
 RUN go build .
 
-CMD [/distributive/distributive -f /distributive/samples/filesystem.json]
+CMD [/distributive/distributive -f /distributive/samples/filesystem.json -a "" -log-level=info]
