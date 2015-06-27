@@ -145,7 +145,7 @@ func ProbabalisticSplit(str string) (output Table) {
 				count++
 			}
 		}
-		return count > (len(rows) / 2)
+		return count >= (len(rows) / 2)
 	}
 	// getRowLengths returns row length counts for each table
 	getRowLengths := func(tables []Table) (rowLengths [][]int) {
@@ -182,6 +182,7 @@ func ProbabalisticSplit(str string) (output Table) {
 		if len(colSeps) < 1 {
 			log.WithFields(log.Fields{
 				"attempted": initialColSeps,
+				"table":     str,
 			}).Fatal("ProbabalisticSplit couldn't divide the table.")
 		}
 		// separate the data based on the above column regexps
