@@ -79,15 +79,15 @@ func getRunningContainersAPI(path string) (containers []string) {
 	endpoint := path
 	client, err := docker.NewClient(endpoint)
 	if err != nil {
-		msg := "Couldn't create Docker API client"
-		msg += "\n\tError: " + err.Error()
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Fatal("Couldn't create Docker API client")
 	}
 	ctrs, err := client.ListContainers(docker.ListContainersOptions{All: false})
 	if err != nil {
-		msg := "Couldn't list Docker containers"
-		msg += "\n\tError: " + err.Error()
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Fatal("Couldn't list Docker containers")
 	}
 	for _, ctr := range ctrs {
 		if strings.Contains(ctr.Status, "Up") {

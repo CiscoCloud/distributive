@@ -3,7 +3,7 @@ package workers
 import (
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -106,8 +106,9 @@ func getTimers(all bool) []string {
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		msg := "Couldn't execute `systemctl list-timers`:\n\t" + err.Error()
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Fatal("Couldn't execute `systemctl list-timers`")
 	}
 	// matches anything with hyphens or letters, then a ".timer"
 	re := regexp.MustCompile("(\\w|\\-)+\\.timer")

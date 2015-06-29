@@ -1,7 +1,6 @@
 package workers
 
 import (
-	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
@@ -51,7 +50,9 @@ func getManager() string {
 			return program
 		}
 	}
-	log.Fatal("No package manager found. Attempted: " + fmt.Sprint(managers))
+	log.WithFields(log.Fields{
+		"attempted": keys,
+	}).Fatal("No supported package manager found.")
 	return "" // never reaches this return
 }
 
@@ -188,9 +189,10 @@ func getRepos(manager string) (repos []repo) {
 	case "pacman":
 		return getPacmanRepos("/etc/pacman.conf")
 	default:
-		msg := "Cannot find repos of unsupported package manager: "
-		_, message := wrkutils.GenericError(msg, manager, []string{getManager()})
-		log.Fatal(message)
+		log.WithFields(log.Fields{
+			"attempted": manager,
+			"supported": keys,
+		}).Fatal("Cannot find repos of unsupported package manager")
 	}
 	return []repo{} // will never reach here b/c of default case
 }

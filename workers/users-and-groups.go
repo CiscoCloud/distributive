@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os/user"
 	"reflect"
 	"regexp"
@@ -34,7 +34,8 @@ type Group struct {
 
 // getGroups returns a list of Group structs, as parsed from /etc/group
 func getGroups() (groups []Group) {
-	data := wrkutils.FileToString("/etc/group")
+	path := "/etc/group"
+	data := wrkutils.FileToString(path)
 	rowSep := regexp.MustCompile("\n")
 	colSep := regexp.MustCompile(":")
 	lines := tabular.SeparateString(rowSep, colSep, data)
@@ -43,7 +44,10 @@ func getGroups() (groups []Group) {
 		if len(line) > 3 { // only lines that have all fields (non-empty)
 			gid, err := strconv.ParseInt(line[2], 10, 64)
 			if err != nil {
-				log.Fatal("Could not parse ID for group: " + line[0])
+				log.WithFields(log.Fields{
+					"group": line[0],
+					"path":  path,
+				}).Fatal("Could not parse ID for group")
 			}
 			userSlice := commaRegexp.Split(line[3], -1)
 			group := Group{Name: line[0], ID: int(gid), Users: userSlice}
@@ -144,11 +148,11 @@ func userHasField(usernameOrUID string, fieldName string, givenValue string) (bo
 	fieldVal := val.FieldByName(fieldName)
 	// check to see if the field is a string
 	if fieldVal.Kind() != reflect.String {
-		msg := "Failure during reflection: Field is not a string:"
-		msg += "\n\tField name: " + fieldName
-		msg += "\n\tField Kind: " + fmt.Sprint(fieldVal.Kind())
-		msg += "\n\tUser: " + user.Username
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"field": fieldName,
+			"kind":  fieldVal.Kind(),
+			"user":  user.Username,
+		}).Fatal("Internal error: failure during reflection: field is not a string")
 	}
 	actualValue := fieldVal.String()
 	return actualValue == givenValue, nil

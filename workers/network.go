@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"os/exec"
@@ -62,7 +62,10 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 	strHexToDecimal := func(hex string) int {
 		portInt, err := strconv.ParseInt(hex, 16, 64)
 		if err != nil {
-			log.Fatal("Couldn't parse hex number " + hex + ":\n\t" + err.Error())
+			log.WithFields(log.Fields{
+				"number": hex,
+				"error":  err.Error(),
+			}).Fatal("Couldn't parse hex number")
 		}
 		return int(portInt)
 	}
@@ -95,7 +98,9 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 func getInterfaces() []net.Interface {
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		log.Fatal("Could not read network interfaces:\n\t" + err.Error())
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Fatal("Could not read network interfaces")
 	}
 	return ifaces
 }
@@ -144,17 +149,19 @@ func up(parameters []string) (exitCode int, exitMessage string) {
 func getInterfaceIPs(name string, version int) (ifaceAddresses []string) {
 	// ensure valid IP version
 	if version != 4 && version != 6 {
-		msg := "Misconfigured JSON: Unsupported IP version: "
-		log.Fatal(msg + fmt.Sprint(version))
+		log.WithFields(log.Fields{
+			"version":  version,
+			"expected": "4 | 6",
+		}).Fatal("Probable configuration error: Unsupported IP version")
 	}
 	for _, iface := range getInterfaces() {
 		if iface.Name == name {
 			addresses, err := iface.Addrs()
 			if err != nil {
-				msg := "Could not get network addressed from interface: "
-				msg += "\n\tInterface name: " + iface.Name
-				msg += "\n\tError: " + err.Error()
-				log.Fatal(msg)
+				log.WithFields(log.Fields{
+					"interface": iface.Name,
+					"error":     err.Error(),
+				}).Fatal("Could not get network addressed from interface")
 			}
 			for _, addr := range addresses {
 				var ip net.IP
@@ -228,10 +235,10 @@ func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 		for i, ip := range ips {
 			if ip != "0.0.0.0" {
 				if len(names) < i {
-					msg := "Fewer names in kernel routing table than IPs:"
-					msg += "\n\tNames: " + fmt.Sprint(names)
-					msg += "\n\tIPs: " + fmt.Sprint(ips)
-					log.Fatal(msg)
+					log.WithFields(log.Fields{
+						"names": names,
+						"IPs":   ips,
+					}).Fatal("Internal error: Fewer names in kernel routing table than IPs")
 				}
 				return names[i] // interface name
 			}
@@ -269,7 +276,11 @@ func host(parameters []string) (exitCode int, exitMessage string) {
 func canConnect(host string, protocol string, timeout time.Duration) bool {
 	parseerr := func(err error) {
 		if err != nil {
-			log.Fatal("Could not parse " + protocol + " address: " + host)
+			log.WithFields(log.Fields{
+				"protocol": protocol,
+				"address":  host,
+				"error":    err.Error(),
+			}).Fatal("Couldn't parse network address")
 		}
 	}
 	var conn net.Conn
@@ -294,7 +305,8 @@ func canConnect(host string, protocol string, timeout time.Duration) bool {
 			conn, err = net.DialUDP("udp", nil, udpaddr)
 		}
 	default:
-		log.Fatal("Unsupported protocol: " + protocol)
+		msg := "Probable configuration error: Unsupported protocol"
+		log.WithField("protocol", protocol).Fatal(msg)
 	}
 	// if a duration was specified, use it
 	if nanoseconds > 0 {
@@ -316,8 +328,10 @@ func canConnect(host string, protocol string, timeout time.Duration) bool {
 func getConnectionWorker(host string, protocol string, timeoutstr string) (exitCode int, exitMessage string) {
 	dur, err := time.ParseDuration(timeoutstr)
 	if err != nil {
-		msg := "Configuration error: Could not parse duration: "
-		log.Fatal(msg + timeoutstr)
+		log.WithFields(log.Fields{
+			"duration": timeoutstr,
+			"error":    err.Error(),
+		}).Fatal("Probable configuration error: Could not parse duration")
 	}
 	if canConnect(host, protocol, dur) {
 		return 0, ""
@@ -403,14 +417,14 @@ func URLToBytes(urlstr string, secure bool) []byte {
 	// read response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		msg := "Bad response, couldn't read body:"
-		msg += "\n\tURL: " + urlstr
-		msg += "\n\tError: " + err.Error()
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"URL":   urlstr,
+			"Error": err.Error(),
+		}).Fatal("Bad response, couldn't read body")
 	} else if body == nil || bytes.Equal(body, []byte{}) {
-		msg := "Body of response was empty:"
-		msg += "\n\tURL: " + urlstr
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"URL": urlstr,
+		}).Warn("Body of response was empty")
 	}
 	return body
 }
@@ -424,7 +438,7 @@ func responseMatchesGeneral(parameters []string, secure bool) (exitCode int, exi
 	if re.Match(body) {
 		return 0, ""
 	}
-	msg := "Response didn't match regexp:"
+	msg := "Response didn't match regexp"
 	return wrkutils.GenericError(msg, re.String(), []string{string(body)})
 }
 

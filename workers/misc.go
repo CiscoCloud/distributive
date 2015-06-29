@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -109,7 +109,9 @@ func temp(parameters []string) (exitCode int, exitMessage string) {
 	getCoreTemp := func(core int) (temp int) {
 		out, err := exec.Command("sensors").Output()
 		if err != nil {
-			log.Fatal("Error while executing `sensors`:\n\t" + err.Error())
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Fatal("Error while executing `sensors`")
 		}
 		// get all-core line up to paren
 		lineRegex := regexp.MustCompile("Core " + fmt.Sprint(core) + ":?(.*)\\(")
@@ -119,8 +121,9 @@ func temp(parameters []string) (exitCode int, exitMessage string) {
 		tempString := string(tempRegex.Find(line))
 		tempFloat, err := strconv.ParseFloat(tempString, 64)
 		if err != nil {
-			msg := "Error while parsing output from `sensors`:\n\t"
-			log.Fatal(msg + err.Error())
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Fatal("Error while parsing output from `sensors`")
 		}
 		return int(tempFloat)
 
@@ -153,12 +156,13 @@ func module(parameters []string) (exitCode int, exitMessage string) {
 func kernelParameter(parameters []string) (exitCode int, exitMessage string) {
 	// parameterValue returns the value of a kernel parameter
 	parameterSet := func(name string) bool {
-		_, err := exec.Command("/sbin/sysctl", "-q", "-n", name).Output()
+		cmd := exec.Command("/sbin/sysctl", "-q", "-n", name)
+		out, err := cmd.CombinedOutput()
 		// failed on incorrect module name
 		if err != nil && strings.Contains(err.Error(), "255") {
 			return false
 		} else if err != nil {
-			log.Fatal("Error while executing /sbin/systctl:\n\tError: " + err.Error())
+			wrkutils.ExecError(cmd, string(out), err)
 		}
 		return true
 	}
@@ -221,17 +225,20 @@ func getSwapOrMemory(status string, swapOrMem string, units string) int {
 	}
 	// check to see that our keys are really in our dict
 	if _, ok := statusToColumn[status]; !ok {
-		msg := "Invalid status passed to getSwapOrMemory"
-		_, e := wrkutils.GenericError(msg, status, []string{"total", "used", "free"})
-		log.Fatal(e)
+		log.WithFields(log.Fields{
+			"status":   status,
+			"expected": []string{"total", "used", "free"},
+		}).Fatal("Internal error: inavalid status in getSwapOrMemory")
 	} else if _, ok := unitsToFlag[units]; !ok {
-		msg := "Invalid units passed to getSwapOrMemory"
-		_, e := wrkutils.GenericError(msg, status, []string{"b", "kb", "mb", "gb", "tb"})
-		log.Fatal(e)
+		log.WithFields(log.Fields{
+			"units":    units,
+			"expected": []string{"b", "kb", "mb", "gb", "tb"},
+		}).Fatal("Internal error: inavalid units in getSwapOrMemory")
 	} else if _, ok := typeToRow[swapOrMem]; !ok {
-		msg := "Invalid swapOrMem passed to getSwapOrMemory"
-		_, e := wrkutils.GenericError(msg, status, []string{"memory", "swap"})
-		log.Fatal(e)
+		log.WithFields(log.Fields{
+			"option":   swapOrMem,
+			"expected": []string{"memory", "swap"},
+		}).Fatal("Internal error: inavalid option in getSwapOrMemory")
 	}
 	// execute free and return the appropriate output
 	cmd := exec.Command("free", unitsToFlag[units])
