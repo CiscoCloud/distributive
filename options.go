@@ -114,6 +114,10 @@ func getFlags() (p string, u string, d string) {
 	var URL string
 	var directory string
 	app.Action = func(c *cli.Context) {
+		version := c.Bool("version")
+		if version {
+			os.Exit(0)
+		}
 		verbosity = c.String("verbosity")
 		file = c.String("file")
 		URL = c.String("url")
@@ -123,6 +127,9 @@ func getFlags() (p string, u string, d string) {
 			"URL":       URL,
 			"directory": directory,
 		}).Debug("Command line options")
+	}
+	if verbosity == "" {
+		verbosity = "warn"
 	}
 	app.Run(os.Args)
 	initializeLogrus(verbosity)

@@ -68,22 +68,31 @@ or `-u` options.
 
 ```
 $ distributive --help
-Usage of ./distributive:
-  -a="/etc/distributive.d/": Run all the checks in the specified directory
-  -f="": Use the health check located at this path
-  -log-level="warn": Output verbosity level (valid values are info | debug | fatal | error | panic | warn
-  -u="": Use the health check located at this URL
-  -version=false: Get the version of distributive this binary was built from
+[...]
+USAGE:
+   Distributive [global options] command [command options] [arguments...]
+
+VERSION:
+   0.1.2
+
+GLOBAL OPTIONS:
+   --verbosity "warn"               info | debug | fatal | error | panic | warn
+   --file, -f                   Read a checklist from a file
+   --url, -u                    Read a checklist from a URL
+   --directory, -d "/etc/distributive.d/"   Read all of the checklists in this directory
+   --help, -h                   show help
+   --generate-bash-completion
+   --version, -v                print the version
 ```
 
 Examples:
 
 ```
-$ /path/to/distributive -v=2 -f ./samples/filesystem.json
-$ distributive -v=0 -a="" --f="/etc/distributive/samples/network.json"
-$ ./distributive -a="" -u "http://pastebin.com/raw.php?i=5c1BAxcX"
-$ /distributive
-$ /path/to/distributive -a "/etc/distributive.d/"
+$ /path/to/distributive --verbosity="warn" -f ./samples/filesystem.json
+$ distributive -d="" --f="/etc/distributive/samples/network.json" --verbosity="debug"
+$ ./distributive -d="" -u "http://pastebin.com/raw.php?i=5c1BAxcX"
+$ /distributive --verbosity="info"
+$ /path/to/distributive -d "/etc/distributive.d/"
 ```
 
 Supported Frameworks
