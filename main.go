@@ -7,13 +7,11 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/CiscoCloud/distributive/workers"
 	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -105,11 +103,11 @@ func getWorker(chk Check) wrkutils.Worker {
 	validateParameters(chk)
 	work := wrkutils.Workers[strings.ToLower(chk.Check)]
 	if work == nil {
-		msg := "JSON file included one or more unsupported health checks: "
-		msg += "\n\tName: " + chk.Name
-		msg += "\n\tCheck type: " + chk.Check
-		msg += "\n\tParameters: " + fmt.Sprint(chk.Parameters)
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"name":       chk.Name,
+			"type":       chk.Check,
+			"parameters": chk.Parameters,
+		}).Fatal("JSON file included one or more unsupported health checks")
 		return nil
 	}
 	return work
@@ -131,11 +129,10 @@ func loadRemoteChecklist(urlstr string) (chklst Checklist) {
 	// ensure temp files dir exists
 	log.Info("Creating/checking remote checklist dir")
 	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
-		// TODO logrus this
-		msg := "Could not create temporary file directory:"
-		msg += "\n\tDirectory: " + remoteCheckDir
-		msg += "\n\tError: " + err.Error()
-		log.Fatal(msg)
+		log.WithFields(log.Fields{
+			"dir":   remoteCheckDir,
+			"error": err.Error(),
+		}).Fatal("Could not create temporary file directory:")
 	}
 
 	// write out the response to a file
@@ -204,77 +201,6 @@ func getChecklistsInDir(dirpath string) (chklsts []Checklist) {
 	return chklsts
 }
 
-// getFlags validates and returns command line options
-func getFlags() (p string, u string, d string) {
-	validatePath := func(path string) {
-		if _, err := os.Stat(path); err != nil {
-			wrkutils.CouldntReadError(path, err)
-		}
-	}
-
-	lvls := "info | debug | fatal | error | panic | warn"
-	verbosityMsg := "Output verbosity level (valid values are " + lvls
-	pathMsg := "Use the health check located at this "
-	versionMsg := "Get the version of distributive this binary was built from"
-	dirpathMsg := "Run all the checks in the specified directory"
-
-	verbosity := flag.String("log-level", "warn", verbosityMsg)
-	path := flag.String("f", "", pathMsg+"path")
-	urlstr := flag.String("u", "", pathMsg+"URL")
-	dirpath := flag.String("a", "/etc/distributive.d/", dirpathMsg)
-	version := flag.Bool("version", false, versionMsg)
-	flag.Parse()
-
-	// if they just wanted to display the version, we're good
-	if *version {
-		fmt.Println("Distributive version 0.1.1")
-		os.Exit(0)
-	}
-	// check for invalid options
-	if *path == "" && *urlstr == "" && *dirpath == "" {
-		log.Fatal("No path nor URL nor dir specified. Use -f, -u, or -a options.")
-	} else if _, err := url.Parse(*urlstr); err != nil {
-		log.WithFields(log.Fields{
-			"url":   urlstr,
-			"error": err.Error(),
-		}).Fatal("Couldn't parse URL")
-	}
-	if *dirpath != "" {
-		validatePath(*dirpath)
-	}
-	if *path != "" {
-		validatePath(*path)
-	}
-	// set log level according to flag
-	var logLevel log.Level
-	logLevel = 0
-	switch *verbosity {
-	case "info":
-		logLevel = log.InfoLevel
-	case "debug":
-		logLevel = log.DebugLevel
-	case "fatal":
-		logLevel = log.FatalLevel
-	case "error":
-		logLevel = log.ErrorLevel
-	case "panic":
-		logLevel = log.PanicLevel
-	case "warn":
-		logLevel = log.WarnLevel
-	default:
-		log.WithFields(log.Fields{
-			"given":    *verbosity,
-			"expected": lvls,
-		}).Fatal("Invalid verbosity option")
-	}
-	log.SetLevel(logLevel)
-	log.WithFields(log.Fields{
-		"verbosity": *verbosity,
-	}).Debug("Verbosity level specified")
-	wrkutils.InitializeLogrus(logLevel)
-	return *path, *urlstr, *dirpath
-}
-
 func runChecks(chklst Checklist) Checklist {
 	for _, chk := range chklst.Checklist {
 		if chk.Work == nil {
@@ -312,29 +238,27 @@ func registerChecks() {
 // and exits with the appropriate message and exit code.
 func main() {
 	// Set up and parse flags
-	path, urlstr, dirpath := getFlags()
+	file, URL, directory := getFlags()
+	validateFlags(file, URL, directory)
 
 	// add workers to workers, parameterLength
 	registerChecks()
 	log.Info("Creating checklist(s)...")
 	// load checklists according to flags
 	var chklsts []Checklist
-	if path != "" {
-		chklsts = append(chklsts, getChecklist(path))
-	} else if urlstr != "" {
-		chklsts = append(chklsts, loadRemoteChecklist(urlstr))
-	} else if dirpath != "" {
-		chklsts = append(chklsts, getChecklistsInDir(dirpath)...)
+	if file != "" {
+		chklsts = append(chklsts, getChecklist(file))
+	} else if URL != "" {
+		chklsts = append(chklsts, loadRemoteChecklist(URL))
+	} else if directory != "" {
+		chklsts = append(chklsts, getChecklistsInDir(directory)...)
 	} else {
-		msg := "Neither path nor URL nor directory specified."
-		msg += "\nSee distributive --help for usage instructions."
-		log.Fatal(msg)
+		log.Fatal("Neither file nor URL nor directory specified. Try --help.")
 	}
 	// run all checklists
 	for i := range chklsts {
 		// run checks, populate error codes and messages
-		msg := "Running checklist: " + chklsts[i].Name
-		log.Info(msg)
+		log.Info("Running checklist: " + chklsts[i].Name)
 		chklsts[i] = runChecks(chklsts[i])
 		// make a printable report
 		report := makeReport(chklsts[i])
@@ -343,24 +267,23 @@ func main() {
 	// see if any checks failed, exit accordingly
 	exitStatus := 0
 	for _, chklst := range chklsts {
-		verbLevel := "info"
+		failed := false
 		for _, code := range chklst.Codes {
 			if code != 0 {
-				verbLevel = "warn"
+				failed = true
 				exitStatus = 1
 			}
 		}
-		switch verbLevel {
-		case "info":
-			log.WithFields(log.Fields{
-				"checklist": chklst.Name,
-				"report":    chklst.Report,
-			}).Info("All checks passed, printing checklist report")
-		case "warn":
+		if failed {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,
 				"report":    chklst.Report,
 			}).Warn("Some checks failed, printing checklist report")
+		} else {
+			log.WithFields(log.Fields{
+				"checklist": chklst.Name,
+				"report":    chklst.Report,
+			}).Info("All checks passed, printing checklist report")
 		}
 	}
 	os.Exit(exitStatus)
