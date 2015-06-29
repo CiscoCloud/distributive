@@ -183,7 +183,8 @@ func ProbabalisticSplit(str string) (output Table) {
 			log.WithFields(log.Fields{
 				"attempted": initialColSeps,
 				"table":     str,
-			}).Fatal("ProbabalisticSplit couldn't divide the table.")
+			}).Warn("ProbabalisticSplit couldn't find the column separator.")
+			colSeps = initialColSeps
 		}
 		// separate the data based on the above column regexps
 		var tables []Table
