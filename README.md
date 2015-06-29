@@ -54,16 +54,20 @@ To install the development version (potentially unstable):
  2. Build a binary: `cd distributive && go build .`
  3. Run the binary (as outlined in "Usage") with `./distributive`.
 
+Depending on your installation location, you may need to add the distributive
+directory to your GOPATH environment variable (`export GOPATH=/path/to/dir`),
+and install the packages used by Distributive (`go get .`).
+
 We also provide premade RPM packages on
 [Bintray](https://bintray.com/ciscocloud/rpm/Distributive/view#files). The
 binary will be installed to `/bin/distributive` and the samples to
-`/etc/distributive/samples/`.
+`/etc/distributive.d/samples/`.
 
 Usage
 -----
 
 The default behavior is to run all checks in /etc/distributive.d/ (the default
-directory give to the `-a` option), in addition to any specified via the `-f`
+directory give to the `-d` option), in addition to any specified via the `-f`
 or `-u` options.
 
 ```
