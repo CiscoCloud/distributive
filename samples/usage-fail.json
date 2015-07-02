@@ -17,6 +17,10 @@
         {
             "Check": "freeMemory",
             "Parameters": ["100tb"]
+        },
+        {
+            "Check": "freeSwap",
+            "Parameters": ["10000gb"]
         }
     ]
 }

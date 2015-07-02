@@ -84,6 +84,7 @@ func registerUsage() {
 	wrkutils.RegisterCheck("swapusage", swapUsage, 1)
 	wrkutils.RegisterCheck("cpuusage", cpuUsage, 1)
 	wrkutils.RegisterCheck("freememory", freeMemory, 1)
+	wrkutils.RegisterCheck("freeswap", freeSwap, 1)
 }
 
 func registerUsersAndGroups() {

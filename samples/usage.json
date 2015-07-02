@@ -16,6 +16,10 @@
         {
             "Check": "freeMemory",
             "Parameters": ["10mb"]
+        },
+        {
+            "Check": "freeSwap",
+            "Parameters": ["1kb"]
         }
     ]
 }

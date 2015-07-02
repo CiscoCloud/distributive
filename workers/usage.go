@@ -56,8 +56,24 @@ func getSwapOrMemory(status string, swapOrMem string, units string) int {
 	outStr := wrkutils.CommandOutput(cmd)
 	table := tabular.ProbabalisticSplit(outStr)
 	column := tabular.GetColumnByHeader(status, table)
-	// TODO parse and catch here, for better error reporting
-	return wrkutils.ParseMyInt(column[typeToRow[swapOrMem]])
+	row := typeToRow[swapOrMem]
+	// check for errors in output of `free`
+	if row >= len(column) {
+		log.WithFields(log.Fields{
+			"output": outStr,
+			"column": column,
+			"row":    row,
+		}).Fatal("`free` didn't output enough rows")
+	}
+	toReturn, err := strconv.ParseInt(column[row], 10, 64)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"cell":   column[row],
+			"error":  err.Error(),
+			"output": outStr,
+		}).Fatal("Couldn't parse output of `free` as an int")
+	}
+	return int(toReturn)
 }
 
 // getSwap returns KiB of swap with a certain status: free | used | total
@@ -92,10 +108,10 @@ func memoryUsage(parameters []string) (exitCode int, exitMessage string) {
 	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
 }
 
-// freeMemory checks that a given amount of memory is currently free
-func freeMemory(parameters []string) (exitCode int, exitMessage string) {
+// freeMemOrSwap is an abstraction of freeMemory and freeSwap, which measures
+// if the desired resource has a quantity free above the amount specified
+func freeMemOrSwap(input string, swapOrMem string) (exitCode int, exitMessage string) {
 	// get numbers and units
-	input := parameters[0]
 	units := wrkutils.GetByteUnits(input)
 	re := regexp.MustCompile("\\d+")
 	amountString := re.FindString(input)
@@ -111,13 +127,24 @@ func freeMemory(parameters []string) (exitCode int, exitMessage string) {
 		}).Fatal("Configuration error: couldn't extract byte units from string")
 	}
 	amount := wrkutils.ParseMyInt(amountString)
-	actualAmount := getMemory("free", units)
+	actualAmount := getSwapOrMemory("free", swapOrMem, units)
 	if actualAmount > amount {
 		return 0, ""
 	}
-	msg := "Free memory lower than defined threshold"
+	msg := "Free " + swapOrMem + " lower than defined threshold"
 	actualString := fmt.Sprint(actualAmount) + units
 	return wrkutils.GenericError(msg, input, []string{actualString})
+
+}
+
+// freeMemory checks that a given amount of memory is currently free
+func freeMemory(parameters []string) (exitCode int, exitMessage string) {
+	return freeMemOrSwap(parameters[0], "memory")
+}
+
+// freeSwap checks that a given amount of swap is currently free
+func freeSwap(parameters []string) (exitCode int, exitMessage string) {
+	return freeMemOrSwap(parameters[0], "swap")
 }
 
 // memoryUsage checks to see whether or not the system has a memory usage
