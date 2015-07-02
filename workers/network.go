@@ -30,8 +30,8 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 		portRe := regexp.MustCompile(":([0-9A-F]{4})")
 		for _, address := range localAddresses {
 			port := portRe.FindString(address)
+			// TODO catch index error
 			if port != "" {
-				// TODO catch index error
 				portString := string(port[1:])
 				ports = append(ports, portString)
 			}
@@ -212,7 +212,7 @@ func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 	// operating on
 	getGatewayInterface := func() (iface string) {
 		ips := routingTableColumn(1)
-		names := routingTableColumn(7)
+		names := routingTableColumn(1)
 		for i, ip := range ips {
 			if ip != "0.0.0.0" {
 				if len(names) < i {
@@ -348,12 +348,14 @@ func udpTimeout(parameters []string) (exitCode int, exitMessage string) {
 
 // returns a column of the routing table as a slice of strings
 func routingTableColumn(column int) []string {
-	cmd := exec.Command("route", "-n")
-	out := wrkutils.CommandOutput(cmd)
-	table := tabular.ProbabalisticSplit(out)
-	finalTable := table[1 : len(table)-1]
-	col := tabular.GetColumnNoHeader(column, finalTable)
-	return col
+	/*
+		cmd := exec.Command("route", "-n")
+		out := wrkutils.CommandOutput(cmd)
+		table := tabular.ProbabalisticSplit(out)
+		fmt.Println(tabular.ToString(table))
+	*/
+	cmd2 := exec.Command("route", "-n")
+	return wrkutils.CommandColumnNoHeader(column, cmd2)[1:]
 }
 
 // routingTableMatch(exitCode int, exitMessage string) constructs a Worker that returns whether or not the
@@ -362,7 +364,7 @@ func routingTableColumn(column int) []string {
 // routingTableGateway
 func routingTableMatch(col int, str string) (exitCode int, exitMessage string) {
 	column := routingTableColumn(col)
-	if tabular.StrContainedIn(str, column) {
+	if tabular.StrIn(str, column) {
 		return 0, ""
 	}
 	return wrkutils.GenericError("Not found in routing table", str, column)
@@ -387,6 +389,7 @@ func routingTableGateway(parameters []string) (exitCode int, exitMessage string)
 }
 
 // URLToBytes gets the response from urlstr and returns it as a byte string
+// TODO: allow insecure requests
 // http://stackoverflow.com/questions/12122159/golang-how-to-do-a-https-request-with-bad-certificate
 func URLToBytes(urlstr string, secure bool) []byte {
 	// create http client

@@ -4,9 +4,9 @@
 package tabular
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 // Table is a 2D slice of strings, for representing tabular data as cells, in
@@ -19,11 +19,46 @@ type Column []string
 // Row is one element of a Table, a horizontal slice.
 type Row []string
 
-// PrintTable prints a table ([][]string) row by row.
-func PrintTable(tab Table) {
-	for _, row := range tab {
-		fmt.Println(row)
+// ToString returns a table ([][]string) as a nicely formatted string
+func ToString(table Table) string {
+	// maxInt returns the maximum of a list of integers
+	maxInt := func(slc []int) (max int) {
+		for _, i := range slc {
+			if i > max {
+				max = i
+			}
+		}
+		return max
 	}
+	// longestInColumn returns the length of the longest string in the given
+	// slice
+	longestInColumn := func(col Column) int {
+		strLengths := func(slc []string) (lengths []int) {
+			for _, str := range slc {
+				lengths = append(lengths, utf8.RuneCountInString(str))
+			}
+			return lengths
+		}
+		return maxInt(strLengths(col))
+	}
+	rows := []string{}
+	for _, row := range table {
+		rowStr := "\n"
+		for i, item := range row {
+			columnWidth := longestInColumn(GetColumn(i, table))
+			rowStr = rowStr + "| " + padString(item, " ", columnWidth) + " "
+		}
+		rows = append(rows, rowStr+"|")
+	}
+	maxLength := 0
+	for _, row := range rows {
+		length := utf8.RuneCountInString(row)
+		if length > maxLength {
+			maxLength = length
+		}
+	}
+	divider := repeatString("-", maxLength)
+	return divider + strings.Join(rows, "\n"+divider) + "\n" + divider
 }
 
 // SeparateString is an abstraction of stringToSlice that takes two kinds of

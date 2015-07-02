@@ -39,9 +39,10 @@ func CommandOutput(cmd *exec.Cmd) string {
 // without that column's header. Useful for parsing the output of shell commands,
 // which many of the Checks require.
 // TODO for some reason, this + route -n doesn't work with probabalistic.
+// TODO depreciate this
 func CommandColumnNoHeader(col int, cmd *exec.Cmd) []string {
-	out := tabular.ProbabalisticSplit(CommandOutput(cmd))
-	return tabular.GetColumnNoHeader(col, out)
+	out := CommandOutput(cmd)
+	return tabular.GetColumnNoHeader(col, tabular.StringToSlice(out))
 }
 
 // GetByteUnits returns: b | kb | mb | gb | tb, from a string containing

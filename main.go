@@ -202,11 +202,12 @@ func getChecklistsInDir(dirpath string) (chklsts []Checklist) {
 }
 
 // runChecks takes a checklist, performs every worker, and collects the results
-// in that checklist's Codes and Messages fields. TODO create a concurrent pipe.
+// in that checklist's Codes and Messages fields. TODO: Create concurrent pipe.
 func runChecks(chklst Checklist) Checklist {
 	for _, chk := range chklst.Checklist {
 		if chk.Work == nil {
-			msg := "Internal error: nil function associated with this check"
+			msg := "Nil function associated with this check."
+			msg += " Please submit a bug report with this message."
 			log.WithFields(log.Fields{
 				"check":     chk.Check,
 				"check map": fmt.Sprint(wrkutils.Workers),
@@ -248,8 +249,8 @@ func main() {
 	} else {
 		log.Fatal("Neither file nor URL nor directory specified. Try --help.")
 	}
-	// TODO: create concurrent pipe
 	// run all checklists
+	// TODO: use concurrent pipe here
 	for i := range chklsts {
 		// run checks, populate error codes and messages
 		log.Info("Running checklist: " + chklsts[i].Name)
