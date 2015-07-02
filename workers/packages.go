@@ -86,16 +86,11 @@ func getYumRepos() (repos []repo) {
 		return ""
 	}
 
-	// get output of `yum repolist`
+	// get and parse output of `yum repolist`
 	cmd := exec.Command("yum", "repolist")
-	out, err := cmd.Output()
-	outstr := string(out)
-	if err != nil {
-		wrkutils.ExecError(cmd, outstr, err)
-	}
-	// parse output
+	outstr := wrkutils.CommandOutput(cmd)
 	slc := tabular.ProbabalisticSplit(outstr)
-	ids := tabular.GetColumnNoHeader(0, slc)
+	ids := tabular.GetColumnNoHeader(0, slc) // TODO use columnbyheader here
 	if len(ids) > 2 {
 		ids = ids[:len(ids)-2] // has extra line at end
 	}

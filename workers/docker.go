@@ -38,18 +38,10 @@ func dockerImageRegexp(parameters []string) (exitCode int, exitMessage string) {
 
 // getRunningContainers returns a list of names of running docker containers
 func getRunningContainers() (containers []string) {
-	out, err := exec.Command("docker", "ps", "-a").CombinedOutput()
-	outstr := string(out)
-	// `docker images` requires root permissions
-	if err != nil && strings.Contains(outstr, "permission denied") {
-		log.Fatal("Permission denied when running: docker ps -a")
-	}
-	if err != nil {
-		log.Fatal("Error while running `docker ps -a`" + "\n\t" + err.Error())
-	}
+	cmd := exec.Command("docker", "ps", "-a")
+	outstr := wrkutils.CommandOutput(cmd)
 	// the output of `docker ps -a` has spaces in columns, but each column
-	// is separated by 2 or more spaces
-	//lines := tabular.ProbabalisticSplit(outstr)
+	// is separated by 2 or more spaces. Just what Probabalistic was made for!
 	lines := tabular.ProbabalisticSplit(outstr)
 	if len(lines) < 1 {
 		return []string{}

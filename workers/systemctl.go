@@ -17,21 +17,16 @@ func systemctlService(service string, activeOrLoaded string) (exitCode int, exit
 	if activeOrLoaded == "loaded" {
 		cmd = exec.Command("systemctl", "show", "-p", "LoadState", service)
 	}
-
-	out, err := cmd.CombinedOutput()
-	outstr := string(out)
-	if err != nil {
-		wrkutils.ExecError(cmd, outstr, err)
-	}
+	outString := wrkutils.CommandOutput(cmd)
 	contained := "ActiveState=active"
 	if activeOrLoaded == "loaded" {
 		contained = "LoadState=loaded"
 	}
-	if strings.Contains(outstr, contained) {
+	if strings.Contains(outString, contained) {
 		return 0, ""
 	}
 	msg := "Service not " + activeOrLoaded
-	return wrkutils.GenericError(msg, service, []string{outstr})
+	return wrkutils.GenericError(msg, service, []string{outString})
 }
 
 // systemctlLoaded checks to see whether or not a given service is loaded

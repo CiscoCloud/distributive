@@ -31,7 +31,6 @@ func registerFilesystem() {
 	wrkutils.RegisterCheck("filecontains", fileContains, 2)
 }
 
-// RegisterMisc registers these checks so they can be used.
 func registerMisc() {
 	wrkutils.RegisterCheck("command", command, 1)
 	wrkutils.RegisterCheck("commandoutputmatches", commandOutputMatches, 2)
@@ -42,7 +41,6 @@ func registerMisc() {
 	wrkutils.RegisterCheck("kernelparameter", kernelParameter, 1)
 }
 
-// RegisterNetwork registers these checks so they can be used.
 func registerNetwork() {
 	wrkutils.RegisterCheck("port", port, 1)
 	wrkutils.RegisterCheck("interface", interfaceExists, 1)
@@ -63,7 +61,6 @@ func registerNetwork() {
 	wrkutils.RegisterCheck("responsematchesinsecure", responseMatchesInsecure, 2)
 }
 
-// RegisterPackage registers these checks so they can be used.
 func registerPackage() {
 	wrkutils.RegisterCheck("installed", installed, 1)
 	wrkutils.RegisterCheck("repoexists", repoExists, 2)
@@ -71,7 +68,6 @@ func registerPackage() {
 	wrkutils.RegisterCheck("pacmanignore", pacmanIgnore, 1)
 }
 
-// RegisterSystemctl registers these checks so they can be used.
 func registerSystemctl() {
 	wrkutils.RegisterCheck("systemctlloaded", systemctlLoaded, 1)
 	wrkutils.RegisterCheck("systemctlactive", systemctlActive, 1)
@@ -82,7 +78,6 @@ func registerSystemctl() {
 	wrkutils.RegisterCheck("systemctlunitfilestatus", systemctlUnitFileStatus, 2)
 }
 
-// RegisterUsage registers these checks so they can be used.
 func registerUsage() {
 	wrkutils.RegisterCheck("diskusage", diskUsage, 2)
 	wrkutils.RegisterCheck("memoryusage", memoryUsage, 1)
@@ -91,7 +86,6 @@ func registerUsage() {
 	wrkutils.RegisterCheck("freememory", freeMemory, 1)
 }
 
-// RegisterUsersAndGroups registers these checks so they can be used.
 func registerUsersAndGroups() {
 	wrkutils.RegisterCheck("groupexists", groupExists, 1)
 	wrkutils.RegisterCheck("useringroup", userInGroup, 2)
