@@ -86,7 +86,6 @@ func getFlags() (p string, u string, d string) {
 			Email: "langston@aster.is",
 		},
 	}
-	app.EnableBashCompletion = true
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "verbosity",
@@ -131,7 +130,7 @@ func getFlags() (p string, u string, d string) {
 	if verbosity == "" {
 		verbosity = "warn"
 	}
-	app.Run(os.Args)
-	initializeLogrus(verbosity)
+	app.Run(os.Args)            // parse the arguments, execute app.Action
+	initializeLogrus(verbosity) // set logLevel appropriately for wrkutils
 	return file, URL, directory
 }

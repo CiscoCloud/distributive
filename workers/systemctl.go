@@ -9,34 +9,8 @@ import (
 	"strings"
 )
 
-// RegisterSystemctl registers these checks so they can be used.
-func RegisterSystemctl() {
-	wrkutils.RegisterCheck("systemctlloaded", systemctlLoaded, 1)
-	wrkutils.RegisterCheck("systemctlactive", systemctlActive, 1)
-	wrkutils.RegisterCheck("systemctlsockpath", systemctlSockPath, 1)
-	wrkutils.RegisterCheck("systemctlsockunit", systemctlSockUnit, 1)
-	wrkutils.RegisterCheck("systemctltimer", systemctlTimer, 1)
-	wrkutils.RegisterCheck("systemctltimerloaded", systemctlTimerLoaded, 1)
-	wrkutils.RegisterCheck("systemctlunitfilestatus", systemctlUnitFileStatus, 2)
-}
-
-// systemctlExists returns whether or not systemctl is available ona given
-// machine
-func systemctlExists() bool {
-	_, err := exec.Command("systemctl", "--version").CombinedOutput()
-	if err != nil && strings.Contains(err.Error(), "not found in $PATH") {
-		return false
-	}
-	return true
-}
-
-// systemctlShouldExist logs and quits if it doesn't.
-func systemctlShouldExist() {
-	if !systemctlExists() {
-		log.Fatal("Couldn't execute systemctl")
-	}
-}
-
+// systemctlService checks to see if a service has a givens status
+// status: active | loaded
 func systemctlService(service string, activeOrLoaded string) (exitCode int, exitMessage string) {
 	// cmd depends on whether we're checking active or loaded
 	cmd := exec.Command("systemctl", "show", "-p", "ActiveState", service)
@@ -74,7 +48,6 @@ func systemctlActive(parameters []string) (exitCode int, exitMessage string) {
 // it reads from `systemctl list-sockets` and sees if the value is in the
 // appropriate column.
 func systemctlSock(value string, path bool) (exitCode int, exitMessage string) {
-	systemctlShouldExist() // log.Fatal if it doesn't
 	column := 1
 	if path {
 		column = 0

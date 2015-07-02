@@ -44,11 +44,11 @@
         },
         {
             "Check": "responseMatches",
-            "Parameters": ["http://google.com:80", "yahoo"]
+            "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "failme{100}"]
         },
         {
             "Check": "responseMatchesInsecure",
-            "Parameters": ["http://google.com:80", "yahoo"]
+            "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "failme{100}"]
         }
     ]
 }

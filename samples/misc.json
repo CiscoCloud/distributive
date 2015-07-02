@@ -28,18 +28,6 @@
             "Parameters" : ["default_mimetype", "text/html"]
         },
         {
-            "Check" : "memoryUsage",
-            "Parameters" : ["90"]
-        },
-        {
-            "Check" : "swapUsage",
-            "Parameters" : ["90"]
-        },
-        {
-            "Check" : "cpuUsage",
-            "Parameters" : ["95"]
-        },
-        {
             "Check" : "command",
             "Parameters" : ["sleep .00001"]
         },

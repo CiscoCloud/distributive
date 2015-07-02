@@ -9,14 +9,6 @@ import (
 	"strings"
 )
 
-// RegisterPackage registers these checks so they can be used.
-func RegisterPackage() {
-	wrkutils.RegisterCheck("installed", installed, 1)
-	wrkutils.RegisterCheck("repoexists", repoExists, 2)
-	wrkutils.RegisterCheck("repoexistsuri", repoExistsURI, 2)
-	wrkutils.RegisterCheck("pacmanignore", pacmanIgnore, 1)
-}
-
 // getKeys returns the string keys from a string -> string map
 func getKeys(m map[string]string) []string {
 	keys := make([]string, len(m))

@@ -11,19 +11,6 @@ import (
 	"strconv"
 )
 
-// RegisterUsersAndGroups registers these checks so they can be used.
-func RegisterUsersAndGroups() {
-	wrkutils.RegisterCheck("groupexists", groupExists, 1)
-	wrkutils.RegisterCheck("useringroup", userInGroup, 2)
-	wrkutils.RegisterCheck("groupid", groupID, 2)
-	wrkutils.RegisterCheck("userexists", userExists, 1)
-	wrkutils.RegisterCheck("userhasuid", userHasUID, 2)
-	wrkutils.RegisterCheck("userhasgid", userHasGID, 2)
-	wrkutils.RegisterCheck("userhasusername", userHasUsername, 2)
-	wrkutils.RegisterCheck("userhasname", userHasName, 2)
-	wrkutils.RegisterCheck("userhashomedir", userHasHomeDir, 2)
-}
-
 // Group is a struct that contains all relevant information that can be parsed
 // from an entry in /etc/group
 type Group struct {

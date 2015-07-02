@@ -13,16 +13,6 @@ import (
 	"syscall"
 )
 
-// RegisterFilesystem registers these checks so they can be used.
-func RegisterFilesystem() {
-	wrkutils.RegisterCheck("file", file, 1)
-	wrkutils.RegisterCheck("directory", directory, 1)
-	wrkutils.RegisterCheck("symlink", symlink, 1)
-	wrkutils.RegisterCheck("checksum", checksum, 3)
-	wrkutils.RegisterCheck("permissions", permissions, 2)
-	wrkutils.RegisterCheck("filecontains", fileContains, 2)
-}
-
 type fileTypeCheck func(path string) (bool, error)
 
 // isType checks if the resource at path is of the type specified by name by

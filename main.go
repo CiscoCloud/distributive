@@ -224,16 +224,6 @@ func runChecks(chklst Checklist) Checklist {
 	return chklst
 }
 
-func registerChecks() {
-	workers.RegisterDocker()
-	workers.RegisterFilesystem()
-	workers.RegisterMisc()
-	workers.RegisterSystemctl()
-	workers.RegisterPackage()
-	workers.RegisterNetwork()
-	workers.RegisterUsersAndGroups()
-}
-
 // main reads the command line flag -f, runs the Check specified in the JSON,
 // and exits with the appropriate message and exit code.
 func main() {
@@ -242,7 +232,7 @@ func main() {
 	validateFlags(file, URL, directory)
 
 	// add workers to workers, parameterLength
-	registerChecks()
+	workers.RegisterAll()
 	log.Info("Creating checklist(s)...")
 	// load checklists according to flags
 	var chklsts []Checklist

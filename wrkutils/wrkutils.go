@@ -24,6 +24,17 @@ type Worker func(parameters []string) (exitCode int, exitMessage string)
 
 //// STRING UTILITIES
 
+// CommandOutput returns a string version of the ouput of a given command,
+// and reports errors effectively.
+func CommandOutput(cmd *exec.Cmd) string {
+	out, err := cmd.CombinedOutput()
+	outStr := string(out)
+	if err != nil {
+		ExecError(cmd, outStr, err)
+	}
+	return outStr
+}
+
 // CommandColumnNoHeader returns a specified column of the output of a command,
 // without that column's header. Useful for parsing the output of shell commands,
 // which many of the Checks require.
@@ -31,14 +42,42 @@ type Worker func(parameters []string) (exitCode int, exitMessage string)
 func CommandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	out, err := cmd.CombinedOutput()
 	outstr := string(out)
-	if strings.Contains(outstr, "permission denied") {
-		log.WithFields(log.Fields{
-			"command": cmd.Args,
-		}).Fatal("Permission denied when running: " + cmd.Path)
-	} else if err != nil {
+	if err != nil {
 		ExecError(cmd, outstr, err)
 	}
 	return tabular.GetColumnNoHeader(col, tabular.StringToSlice(string(out)))
+}
+
+// GetByteUnits returns: b | kb | mb | gb | tb, from a string containing
+// some form of any of the above. It is for normalization.
+// NOTE: this doesn't differentiate between kb and kib, and I don't know how
+// `free` does.
+func GetByteUnits(str string) string {
+	regexps := map[string]*regexp.Regexp{
+		"b":  regexp.MustCompile("^bytes{0,1}|^[bB]{1}"),
+		"kb": regexp.MustCompile("kilo(bytes){0,1}|[kK]{1}[iI]{0,1}[bB]{1}"),
+		"mb": regexp.MustCompile("mega(bytes){0,1}|[mM]{1}[iI]{0,1}[bB]{1}"),
+		"gb": regexp.MustCompile("giga(bytes){0,1}|[gG]{1}[iI]{0,1}[bB]{1}"),
+		"tb": regexp.MustCompile("terra(bytes){0,1}|[tT]{1}[iI]{0,1}[bB]{1}"),
+	}
+	for unit, re := range regexps {
+		if re.MatchString(str) {
+			return unit
+		}
+	}
+	// warn the user that the string couldn't be matched
+	units := []string{}
+	regexpStrings := []string{}
+	for unit, re := range regexps {
+		units = append(units, unit)
+		regexpStrings = append(regexpStrings, re.String())
+	}
+	log.WithFields(log.Fields{
+		"string":  str,
+		"seeking": units,
+		"regexps": regexpStrings,
+	}).Warn("Couldn't extract byte units from string")
+	return ""
 }
 
 //// ERROR UTILITIES
@@ -85,13 +124,20 @@ func GenericError(msg string, name string, actual []string) (exitCode int, exitM
 
 // ExecError logs.Fatal with a useful message
 func ExecError(cmd *exec.Cmd, out string, err error) {
+	msg := "Failed to execute command"
+	if strings.Contains(out, "permission denied") {
+		msg = "Permission denied when running command"
+	}
+	if err != nil && strings.Contains(err.Error(), "not found in $PATH") {
+		msg = "Couldn't find executable when running command"
+	}
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd.Args,
 			"path":    cmd.Path,
 			"output":  out,
 			"error":   err.Error(),
-		}).Fatal("Failed to execute command")
+		}).Fatal(msg)
 	}
 }
 

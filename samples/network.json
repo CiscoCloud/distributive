@@ -79,11 +79,11 @@
         },
         {
             "Check": "responseMatches",
-            "Parameters": ["http://google.com:80", "g(o{2})gle"]
+            "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "[hHl]\\w[^eiwa]+s[^7ga]"]
         },
         {
             "Check": "responseMatchesInsecure",
-            "Parameters": ["http://google.com:80", "g(o{2})gle"]
+            "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "[hHl]\\w[^eiwa]+s[^7ga]"]
         }
     ]
 }

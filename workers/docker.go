@@ -9,15 +9,6 @@ import (
 	"strings"
 )
 
-// RegisterDocker registers these checks so they can be used.
-func RegisterDocker() {
-	wrkutils.RegisterCheck("dockerimage", dockerImage, 1)
-	wrkutils.RegisterCheck("dockerrunning", dockerRunning, 1)
-	wrkutils.RegisterCheck("dockerrunningapi", dockerRunningAPI, 2)
-	wrkutils.RegisterCheck("dockerimageregexp", dockerImageRegexp, 1)
-	wrkutils.RegisterCheck("dockerrunningregexp", dockerRunningRegexp, 1)
-}
-
 // getDockerImages returns a list of all downloaded Docker images
 func getDockerImages() (images []string) {
 	cmd := exec.Command("docker", "images")

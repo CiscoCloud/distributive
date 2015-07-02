@@ -13,29 +13,9 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
-
-// RegisterNetwork registers these checks so they can be used.
-func RegisterNetwork() {
-	wrkutils.RegisterCheck("port", port, 1)
-	wrkutils.RegisterCheck("interface", interfaceExists, 1)
-	wrkutils.RegisterCheck("up", up, 1)
-	wrkutils.RegisterCheck("ip4", ip4, 2)
-	wrkutils.RegisterCheck("ip6", ip6, 2)
-	wrkutils.RegisterCheck("gateway", gateway, 1)
-	wrkutils.RegisterCheck("gatewayinterface", gatewayInterface, 1)
-	wrkutils.RegisterCheck("host", host, 1)
-	wrkutils.RegisterCheck("tcp", tcp, 1)
-	wrkutils.RegisterCheck("udp", udp, 1)
-	wrkutils.RegisterCheck("tcptimeout", tcpTimeout, 2)
-	wrkutils.RegisterCheck("udptimeout", udpTimeout, 2)
-	wrkutils.RegisterCheck("routingtabledestination", routingTableDestination, 1)
-	wrkutils.RegisterCheck("routingtableinterface", routingTableInterface, 1)
-	wrkutils.RegisterCheck("routingtablegateway", routingTableGateway, 1)
-	wrkutils.RegisterCheck("responsematches", responseMatches, 2)
-	wrkutils.RegisterCheck("responsematchesinsecure", responseMatchesInsecure, 2)
-}
 
 // port parses /proc/net/tcp to determine if a given port is in an open state
 // and returns an error if it is not.
@@ -274,8 +254,14 @@ func host(parameters []string) (exitCode int, exitMessage string) {
 // canConnect tests whether a connection can be made to a given host on its
 // given port using protocol ("TCP"|"UDP")
 func canConnect(host string, protocol string, timeout time.Duration) bool {
-	parseerr := func(err error) {
-		if err != nil {
+	resolveError := func(err error) {
+		if err != nil && strings.Contains(err.Error(), "no such host") {
+			log.WithFields(log.Fields{
+				"protocol": protocol,
+				"address":  host,
+				"error":    err.Error(),
+			}).Fatal("Couldn't resolve network address")
+		} else if err != nil {
 			log.WithFields(log.Fields{
 				"protocol": protocol,
 				"address":  host,
@@ -291,7 +277,7 @@ func canConnect(host string, protocol string, timeout time.Duration) bool {
 	switch protocol {
 	case "TCP":
 		tcpaddr, err := net.ResolveTCPAddr("tcp", host)
-		parseerr(err)
+		resolveError(err)
 		timeoutAddress = tcpaddr.String()
 		if nanoseconds <= 0 {
 			conn, err = net.DialTCP(timeoutNetwork, nil, tcpaddr)
@@ -299,7 +285,7 @@ func canConnect(host string, protocol string, timeout time.Duration) bool {
 	case "UDP":
 		timeoutNetwork = "udp"
 		udpaddr, err := net.ResolveUDPAddr("udp", host)
-		parseerr(err)
+		resolveError(err)
 		timeoutAddress = udpaddr.String()
 		if nanoseconds <= 0 {
 			conn, err = net.DialUDP("udp", nil, udpaddr)
