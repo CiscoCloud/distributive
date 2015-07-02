@@ -79,7 +79,7 @@ func getFlags() (p string, u string, d string) {
 	app := cli.NewApp()
 	app.Name = "Distributive"
 	app.Usage = "Perform distributed health tests"
-	app.Version = "0.1.2"
+	app.Version = "0.1.3-dev"
 	app.Authors = []cli.Author{
 		cli.Author{
 			Name:  "Langston Barrett",

@@ -38,8 +38,6 @@ func CommandOutput(cmd *exec.Cmd) string {
 // CommandColumnNoHeader returns a specified column of the output of a command,
 // without that column's header. Useful for parsing the output of shell commands,
 // which many of the Checks require.
-// TODO for some reason, this + route -n doesn't work with probabalistic.
-// TODO depreciate this
 func CommandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	out := CommandOutput(cmd)
 	return tabular.GetColumnNoHeader(col, tabular.StringToSlice(out))
