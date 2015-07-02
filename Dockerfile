@@ -19,4 +19,4 @@ ADD . /distributive
 RUN go get .
 RUN go build .
 
-CMD [/distributive/distributive -f /distributive/samples/filesystem.json -a "" -log-level=info]
+CMD [/distributive/distributive -f /distributive/samples/filesystem.json -d "" --verbosity=info]
