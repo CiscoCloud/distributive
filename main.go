@@ -163,7 +163,7 @@ func getChecklist(path string) (chklst Checklist) {
 			"content": string(fileJSON),
 		}).Fatal("Couldn't parse JSON file")
 	}
-	// Go concurrent pipe - one stage to the next
+	//// Go concurrent pipe - one stage to the next
 	// send all checks in checklist to the channel
 	out := make(chan Check)
 	go func() {
@@ -201,11 +201,12 @@ func getChecklistsInDir(dirpath string) (chklsts []Checklist) {
 	return chklsts
 }
 
+// runChecks takes a checklist, performs every worker, and collects the results
+// in that checklist's Codes and Messages fields. TODO create a concurrent pipe.
 func runChecks(chklst Checklist) Checklist {
 	for _, chk := range chklst.Checklist {
 		if chk.Work == nil {
-			msg := "Check had a nil function associated with it!"
-			msg += " Please submit a bug report with this message."
+			msg := "Internal error: nil function associated with this check"
 			log.WithFields(log.Fields{
 				"check":     chk.Check,
 				"check map": fmt.Sprint(wrkutils.Workers),
@@ -214,12 +215,14 @@ func runChecks(chklst Checklist) Checklist {
 		code, msg := chk.Work(chk.Parameters)
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, msg)
+		no := ""
 		if code == 0 {
-			log.WithFields(log.Fields{
-				"name": chk.Name,
-				"type": chk.Check,
-			}).Debug("Check exited with no errors")
+			no = " no"
 		}
+		log.WithFields(log.Fields{
+			"name": chk.Name,
+			"type": chk.Check,
+		}).Debug("Check exited with" + no + " errors")
 	}
 	return chklst
 }
@@ -245,6 +248,7 @@ func main() {
 	} else {
 		log.Fatal("Neither file nor URL nor directory specified. Try --help.")
 	}
+	// TODO: create concurrent pipe
 	// run all checklists
 	for i := range chklsts {
 		// run checks, populate error codes and messages
