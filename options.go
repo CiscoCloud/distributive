@@ -8,6 +8,11 @@ import (
 	"os"
 )
 
+// Version is self explanatory: it contains the version number of this binary
+// of Distributive. It is set at compile time using the flag
+// -X main.version $VERSION
+var Version string
+
 // validateFlags ensures that all options passed via the command line are valid
 func validateFlags(file string, URL string, directory string) {
 	// validatePath ensures that something is at a given path
@@ -79,7 +84,7 @@ func getFlags() (p string, u string, d string) {
 	app := cli.NewApp()
 	app.Name = "Distributive"
 	app.Usage = "Perform distributed health tests"
-	app.Version = "0.1.3-dev"
+	app.Version = Version
 	app.Authors = []cli.Author{
 		cli.Author{
 			Name:  "Langston Barrett",
