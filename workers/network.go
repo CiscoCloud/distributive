@@ -189,7 +189,7 @@ func ip6(parameters []string) (exitCode int, exitMessage string) {
 func gateway(parameters []string) (exitCode int, exitMessage string) {
 	// getGatewayAddress filters all gateway IPs for a non-zero value
 	getGatewayAddress := func() (addr string) {
-		ips := routingTableColumn(1)
+		ips := routingTableColumn("Gateway")
 		for _, ip := range ips {
 			if ip != "0.0.0.0" {
 				return ip
@@ -211,8 +211,8 @@ func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 	// getGatewayInterface returns the interface that the default gateway is
 	// operating on
 	getGatewayInterface := func() (iface string) {
-		ips := routingTableColumn(1)
-		names := routingTableColumn(1)
+		ips := routingTableColumn("Gateway")
+		names := routingTableColumn("Iface")
 		for i, ip := range ips {
 			if ip != "0.0.0.0" {
 				if len(names) < i {
@@ -347,18 +347,25 @@ func udpTimeout(parameters []string) (exitCode int, exitMessage string) {
 }
 
 // returns a column of the routing table as a slice of strings
-func routingTableColumn(column int) []string {
+func routingTableColumn(name string) []string {
 	cmd := exec.Command("route", "-n")
 	out := wrkutils.CommandOutput(cmd)
 	table := tabular.ProbabalisticSplit(out)
-	return tabular.GetColumnNoHeader(column, table)[1:]
+	if len(table) < 1 {
+		log.WithFields(log.Fields{
+			"column": name,
+			"table":  "\n" + tabular.ToString(table),
+		}).Fatal("Routing table was not available or not properly parsed")
+	}
+	finalTable := table[1:] // has extra line before headers
+	return tabular.GetColumnByHeader(name, finalTable)
 }
 
 // routingTableMatch(exitCode int, exitMessage string) constructs a Worker that returns whether or not the
 // given string was found in the given column of the routing table. It is an
 // astraction of routingTableDestination, routingTableInterface, and
 // routingTableGateway
-func routingTableMatch(col int, str string) (exitCode int, exitMessage string) {
+func routingTableMatch(col string, str string) (exitCode int, exitMessage string) {
 	column := routingTableColumn(col)
 	if tabular.StrIn(str, column) {
 		return 0, ""
@@ -369,19 +376,19 @@ func routingTableMatch(col int, str string) (exitCode int, exitMessage string) {
 // routingTableDestination checks if an IP address is a destination in the
 // kernel's IP routing table, as accessed by `route -n`.
 func routingTableDestination(parameters []string) (exitCode int, exitMessage string) {
-	return routingTableMatch(0, parameters[0])
+	return routingTableMatch("Destination", parameters[0])
 }
 
 // routingTableInterface checks if a given name is an interface in the
 // kernel's IP routing table, as accessed by `route -n`.
 func routingTableInterface(parameters []string) (exitCode int, exitMessage string) {
-	return routingTableMatch(7, parameters[0])
+	return routingTableMatch("Iface", parameters[0])
 }
 
 // routeTableGateway checks if an IP address is a gateway's IP in the
 // kernel's IP routing table, as accessed by `route -n`.
 func routingTableGateway(parameters []string) (exitCode int, exitMessage string) {
-	return routingTableMatch(1, parameters[0])
+	return routingTableMatch("Gateway", parameters[0])
 }
 
 // URLToBytes gets the response from urlstr and returns it as a byte string
