@@ -59,6 +59,7 @@ func makeReport(chklst Checklist) (report string) {
 			failMessages = append(failMessages, "\n"+chklst.Messages[i])
 		}
 	}
+	// TODO logrus this, once and for all!
 	// output global stats
 	total := len(chklst.Codes)
 	passed := countInt(0, chklst.Codes)
@@ -215,10 +216,11 @@ func checklistFromURL(urlstr string) (chklst Checklist) {
 }
 
 // getChecklists returns a list of checklists based on the supplied sources
-// TODO assign origins to checklists
 func getChecklists(file string, dir string, url string, stdin bool) (checklists []Checklist) {
 	msg := "Creating checklist(s)..."
 	switch {
+	// checklists from file are already tagged with their origin
+	// this applies to FromFile, FromDir, FromURL
 	case file != "":
 		log.WithFields(log.Fields{
 			"type": "file",
@@ -242,7 +244,9 @@ func getChecklists(file string, dir string, url string, stdin bool) (checklists 
 			"type": "url",
 			"path": url,
 		}).Info(msg)
-		checklists = append(checklists, checklistFromStdin())
+		checklist := checklistFromStdin()
+		checklist.Origin = "stdin"
+		checklists = append(checklists, checklist)
 	default:
 		log.Fatal("Neither file, URL, directory, nor stdin specified. Try --help.")
 	}
