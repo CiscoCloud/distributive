@@ -3,7 +3,7 @@
 # This script comiles and runs distributive, mirroring the way it's done in
 # package/package.sh. Simply for ease of use.
 
-VERSION=0.1.3_dev
+version=0.1.3_dev
 # -X sets the value of a string variable in main, others are size optimizations
-go build -ldflags "-w -s -O -X main.Version $VERSION" ./
+go build -ldflags "-w -s -O -X main.Version $version" ./
 sudo ./distributive -d "" --verbosity="debug" -f samples/network.json
