@@ -41,14 +41,31 @@ func ToString(table Table) string {
 		}
 		return maxInt(strLengths(col))
 	}
+	// columnWidths gets the lengths of the widest strings in each column of a
+	// table
+	columnWidths := func(table Table) []int {
+		columnWidths := []int{}
+		for _, row := range table {
+			for i, item := range row {
+				itemLength := utf8.RuneCountInString(item)
+				if len(columnWidths) <= i {
+					columnWidths = append(columnWidths, itemLength)
+				} else if columnWidths[i] < itemLength {
+					columnWidths[i] = itemLength
+				}
+			}
+		}
+		return columnWidths
+	}
+
 	rows := []string{}
 	for _, row := range table {
-		rowStr := "\n"
+		rowStr := "\n| "
 		for i, item := range row {
 			columnWidth := longestInColumn(GetColumn(i, table))
-			rowStr = rowStr + "| " + padString(item, " ", columnWidth) + " "
+			rowStr = rowStr + padString(item, " ", columnWidth) + " |"
 		}
-		rows = append(rows, rowStr+"|")
+		rows = append(rows, rowStr)
 	}
 	maxLength := 0
 	for _, row := range rows {
@@ -57,8 +74,23 @@ func ToString(table Table) string {
 			maxLength = length
 		}
 	}
-	divider := repeatString("-", maxLength)
-	return divider + strings.Join(rows, "\n"+divider) + "\n" + divider
+	// construct RST style row dividers
+	normalDivider := "+"
+	headerDivider := "+"
+	for _, width := range columnWidths(table) {
+		normalDivider += repeatString("-", width) + "--+"
+		headerDivider += repeatString("=", width) + "==+"
+	}
+	// intersperse those dividers
+	separatedRows := []string{}
+	for i, row := range rows {
+		divider := normalDivider
+		if i == 0 {
+			divider = headerDivider
+		}
+		separatedRows = append(separatedRows, row, "\n"+divider)
+	}
+	return normalDivider + strings.Join(separatedRows, "")
 }
 
 // SeparateString is an abstraction of stringToSlice that takes two kinds of
@@ -100,6 +132,7 @@ func GetColumnNoHeader(col int, tab Table) Column {
 	if len(column) < 1 {
 		return column
 	}
+	// TODO log.Fatal on length less than 1
 	return column[1:]
 }
 
