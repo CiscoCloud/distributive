@@ -1,15 +1,11 @@
 package workers
 
 import (
-	"bytes"
-	"crypto/tls"
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
-	"io/ioutil"
 	"net"
-	"net/http"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -391,46 +387,12 @@ func routingTableGateway(parameters []string) (exitCode int, exitMessage string)
 	return routingTableMatch("Gateway", parameters[0])
 }
 
-// URLToBytes gets the response from urlstr and returns it as a byte string
-// TODO: allow insecure requests
-// http://stackoverflow.com/questions/12122159/golang-how-to-do-a-https-request-with-bad-certificate
-func URLToBytes(urlstr string, secure bool) []byte {
-	// create http client
-	transport := &http.Transport{}
-	if !secure {
-		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-	}
-	client := &http.Client{Transport: transport}
-	// get response from URL
-	resp, err := client.Get(urlstr)
-	if err != nil {
-		wrkutils.CouldntReadError(urlstr, err)
-	}
-	defer resp.Body.Close()
-
-	// read response
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"URL":   urlstr,
-			"Error": err.Error(),
-		}).Fatal("Bad response, couldn't read body")
-	} else if body == nil || bytes.Equal(body, []byte{}) {
-		log.WithFields(log.Fields{
-			"URL": urlstr,
-		}).Warn("Body of response was empty")
-	}
-	return body
-}
-
 // responseMatchesGeneral is an abstraction of responseMatches and
 // responseMatchesInsecure that simply varies in the security of the connection
 func responseMatchesGeneral(parameters []string, secure bool) (exitCode int, exitMessage string) {
 	urlstr := parameters[0]
 	re := wrkutils.ParseUserRegex(parameters[1])
-	body := URLToBytes(urlstr, secure)
+	body := wrkutils.URLToBytes(urlstr, secure)
 	if re.Match(body) {
 		return 0, ""
 	}

@@ -77,15 +77,15 @@ USAGE:
    Distributive [global options] command [command options] [arguments...]
 
 VERSION:
-   0.1.2
+   0.1.3
 
 GLOBAL OPTIONS:
-   --verbosity "warn"               info | debug | fatal | error | panic | warn
+   --verbosity "warn"           info | debug | fatal | error | panic | warn
    --file, -f                   Read a checklist from a file
    --url, -u                    Read a checklist from a URL
    --directory, -d "/etc/distributive.d/"   Read all of the checklists in this directory
+   --stdin, -s                  Read data piped from stdin as a checklist
    --help, -h                   show help
-   --generate-bash-completion
    --version, -v                print the version
 ```
 
@@ -93,10 +93,11 @@ Examples:
 
 ```
 $ /path/to/distributive --verbosity="warn" -f ./samples/filesystem.json
-$ distributive -d="" --f="/etc/distributive/samples/network.json" --verbosity="debug"
+$ distributive -d="" --f="/etc/distributive/samples/network.json" --verbosity=debug
 $ ./distributive -d="" -u "http://pastebin.com/raw.php?i=5c1BAxcX"
 $ /distributive --verbosity="info"
 $ /path/to/distributive -d "/etc/distributive.d/"
+$ cat samples/filesystem.json | ./distributive -d "" -s=true --verbosity=fatal
 ```
 
 Supported Frameworks

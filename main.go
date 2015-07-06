@@ -63,9 +63,9 @@ func makeReport(chklst Checklist) (report string) {
 	total := len(chklst.Codes)
 	passed := countInt(0, chklst.Codes)
 	failed := countInt(1, chklst.Codes)
-	report += "Total: " + fmt.Sprint(total) + "\n"
-	report += "Passed: " + fmt.Sprint(passed) + "\n"
-	report += "Failed: " + fmt.Sprint(failed) + "\n"
+	report += "\nTotal: " + fmt.Sprint(total)
+	report += "\nPassed: " + fmt.Sprint(passed)
+	report += "\nFailed: " + fmt.Sprint(failed)
 	for _, msg := range failMessages {
 		report += msg
 	}
@@ -113,55 +113,15 @@ func getWorker(chk Check) wrkutils.Worker {
 	return work
 }
 
-// loadRemoteChecklist either downloads a checklist from a remote URL and puts
-// it in /etc/distributive/url.json
-func loadRemoteChecklist(urlstr string) (chklst Checklist) {
-	// urlToFile gets the response from urlstr and writes it to path
-	urlToFile := func(urlstr string, path string) error {
-		body := workers.URLToBytes(urlstr, true) // secure connection
-		// write to file
-		err := ioutil.WriteFile(path, body, 0755)
-		if err != nil {
-			wrkutils.CouldntWriteError(path, err)
-		}
-		return nil
-	}
-	// ensure temp files dir exists
-	log.Info("Creating/checking remote checklist dir")
-	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
-		log.WithFields(log.Fields{
-			"dir":   remoteCheckDir,
-			"error": err.Error(),
-		}).Fatal("Could not create temporary file directory:")
-	}
-
-	// write out the response to a file
-	// filter these chars: /?%*:|<^>. \
-	pathRegex := regexp.MustCompile("[\\/\\?%\\*:\\|\"<\\^>\\.\\ ]")
-	filename := pathRegex.ReplaceAllString(urlstr, "") + ".json"
-	fullpath := remoteCheckDir + filename
-	// only create it if it doesn't exist
-	if _, err := os.Stat(fullpath); err != nil {
-		log.Info("Fetching remote checklist")
-		urlToFile(urlstr, fullpath)
-	} else {
-		log.Debug("Using local copy of remote checklist")
-	}
-	// return a real checklist
-	return getChecklist(fullpath)
-}
-
-// getChecklist loads a JSON file located at path, and Unmarshals it into a
-// Checklist struct, leaving unspecified fields as their zero types.
-func getChecklist(path string) (chklst Checklist) {
-	fileJSON := wrkutils.FileToBytes(path)
-	err := json.Unmarshal(fileJSON, &chklst)
+// checklistFromBytes takes a bytestring of utf8 encoded JSON and turns it into
+// a checklist struct. Used by all checklist constructors below.
+func checklistFromBytes(data []byte) (chklst Checklist) {
+	err := json.Unmarshal(data, &chklst)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"path":    path,
 			"error":   err.Error(),
-			"content": string(fileJSON),
-		}).Fatal("Couldn't parse JSON file")
+			"content": string(data),
+		}).Fatal("Couldn't parse checklist JSON.")
 	}
 	//// Go concurrent pipe - one stage to the next
 	// send all checks in checklist to the channel
@@ -182,23 +142,111 @@ func getChecklist(path string) (chklst Checklist) {
 		close(out2)
 	}()
 	// collect data, reassign check list
-	var newChecklist []Check
+	var listOfChecks []Check
 	for chk := range out2 {
-		newChecklist = append(newChecklist, chk)
+		listOfChecks = append(listOfChecks, chk)
 	}
-	chklst.Checklist = newChecklist
-	chklst.Origin = path
+	chklst.Checklist = listOfChecks
 	return
 }
 
-// getChecklistsInDir uses getChecklist to construct a checklist struct for
-// every .json file in a directory
-func getChecklistsInDir(dirpath string) (chklsts []Checklist) {
+// checklistFromFile reads the file at the path and parses its utf8 encoded json
+// data, turning it into a checklist struct.
+func checklistFromFile(path string) (chklst Checklist) {
+	return checklistFromBytes(wrkutils.FileToBytes(path))
+}
+
+// checklistFromStdin reads the stdin pipe and parses its utf8 encoded json
+// data, turning it into a checklist struct.
+func checklistFromStdin() (chklst Checklist) {
+	stdinAsBytes := func() []byte {
+		bytes, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Fatal("Couldn't read from stdin")
+		}
+		return bytes
+	}
+	return checklistFromBytes(stdinAsBytes())
+}
+
+// checklistsFromDir reads all of the files in the path and parses their utf8
+// encoded json data, turning it into a checklist struct.
+func checklistsFromDir(dirpath string) (chklsts []Checklist) {
 	paths := wrkutils.GetFilesWithExtension(dirpath, ".json")
 	for _, path := range paths {
-		chklsts = append(chklsts, getChecklist(path))
+		chklsts = append(chklsts, checklistFromFile(path))
 	}
 	return chklsts
+}
+
+// checklistsFromDir reads data retrieved from the URL and parses its utf8
+// encoded json data, turning it into a checklist struct. It also caches this
+// data at remoteCheckDir, currently "/var/run/distributive/"
+func checklistFromURL(urlstr string) (chklst Checklist) {
+	// ensure temp files dir exists
+	log.Debug("Creating/checking remote checklist dir")
+	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
+		log.WithFields(log.Fields{
+			"dir":   remoteCheckDir,
+			"error": err.Error(),
+		}).Fatal("Could not create temporary file directory:")
+	}
+
+	// write out the response to a file
+	// filter these (path illegal) chars: /?%*:|<^>. \
+	// TODO use a golang loop with straight up strings, instead of regexp
+	pathRegex := regexp.MustCompile("[\\/\\?%\\*:\\|\"<\\^>\\.\\ ]")
+	filename := pathRegex.ReplaceAllString(urlstr, "") + ".json"
+	fullpath := remoteCheckDir + filename
+	// only create it if it doesn't exist
+	if _, err := os.Stat(fullpath); err != nil {
+		log.Info("Fetching remote checklist")
+		body := wrkutils.URLToBytes(urlstr, true) // secure connection
+		log.Debug("Writing remote checklist to cache")
+		wrkutils.BytesToFile(body, fullpath)
+		return checklistFromBytes(body)
+	}
+	log.WithFields(log.Fields{
+		"path": fullpath,
+	}).Info("Using local copy of remote checklist")
+	return checklistFromFile(fullpath)
+}
+
+// getChecklists returns a list of checklists based on the supplied sources
+// TODO assign origins to checklists
+func getChecklists(file string, dir string, url string, stdin bool) (checklists []Checklist) {
+	msg := "Creating checklist(s)..."
+	switch {
+	case file != "":
+		log.WithFields(log.Fields{
+			"type": "file",
+			"path": file,
+		}).Info(msg)
+		checklists = append(checklists, checklistFromFile(file))
+	case dir != "":
+		log.WithFields(log.Fields{
+			"type": "dir",
+			"path": dir,
+		}).Info(msg)
+		checklists = append(checklists, checklistsFromDir(dir)...)
+	case url != "":
+		log.WithFields(log.Fields{
+			"type": "url",
+			"path": url,
+		}).Info(msg)
+		checklists = append(checklists, checklistFromURL(url))
+	case stdin == true:
+		log.WithFields(log.Fields{
+			"type": "url",
+			"path": url,
+		}).Info(msg)
+		checklists = append(checklists, checklistFromStdin())
+	default:
+		log.Fatal("Neither file, URL, directory, nor stdin specified. Try --help.")
+	}
+	return checklists
 }
 
 // runChecks takes a checklist, performs every worker, and collects the results
@@ -216,10 +264,12 @@ func runChecks(chklst Checklist) Checklist {
 		code, msg := chk.Work(chk.Parameters)
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, msg)
+		// were errors encountered?
 		no := ""
 		if code == 0 {
 			no = " no"
 		}
+		// warn log happens later
 		log.WithFields(log.Fields{
 			"name": chk.Name,
 			"type": chk.Check,
@@ -232,23 +282,12 @@ func runChecks(chklst Checklist) Checklist {
 // and exits with the appropriate message and exit code.
 func main() {
 	// Set up and parse flags
-	file, URL, directory := getFlags()
+	file, URL, directory, stdin := getFlags()
 	validateFlags(file, URL, directory)
 
 	// add workers to workers, parameterLength
 	workers.RegisterAll()
-	log.Info("Creating checklist(s)...")
-	// load checklists according to flags
-	var chklsts []Checklist
-	if file != "" {
-		chklsts = append(chklsts, getChecklist(file))
-	} else if URL != "" {
-		chklsts = append(chklsts, loadRemoteChecklist(URL))
-	} else if directory != "" {
-		chklsts = append(chklsts, getChecklistsInDir(directory)...)
-	} else {
-		log.Fatal("Neither file nor URL nor directory specified. Try --help.")
-	}
+	chklsts := getChecklists(file, directory, URL, stdin)
 	// run all checklists
 	// TODO: use concurrent pipe here
 	for i := range chklsts {

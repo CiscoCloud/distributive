@@ -30,9 +30,6 @@ func validateFlags(file string, URL string, directory string) {
 			}).Fatal("Couldn't parse URL")
 		}
 	}
-	if file == "" && URL == "" && directory == "" {
-		log.Fatal("No path nor URL nor dir specified. Use -f, -u, or -d options.")
-	}
 	if URL != "" {
 		validateURL(URL)
 	}
@@ -77,7 +74,7 @@ func initializeLogrus(verbosity string) {
 }
 
 // getFlags validates and returns command line options
-func getFlags() (p string, u string, d string) {
+func getFlags() (f string, u string, d string, s bool) {
 	lvls := "info | debug | fatal | error | panic | warn"
 	defaultVerbosity := "warn"
 
@@ -112,11 +109,16 @@ func getFlags() (p string, u string, d string) {
 			Value: "/etc/distributive.d/",
 			Usage: "Read all of the checklists in this directory",
 		},
+		cli.BoolFlag{
+			Name:  "stdin, s",
+			Usage: "Read data piped from stdin as a checklist",
+		},
 	}
 	var verbosity string
 	var file string
 	var URL string
 	var directory string
+	var stdin bool
 	app.Action = func(c *cli.Context) {
 		version := c.Bool("version")
 		if version {
@@ -126,10 +128,12 @@ func getFlags() (p string, u string, d string) {
 		file = c.String("file")
 		URL = c.String("url")
 		directory = c.String("directory")
+		stdin = c.Bool("stdin")
 		log.WithFields(log.Fields{
 			"file":      file,
 			"URL":       URL,
 			"directory": directory,
+			"stdin":     stdin,
 		}).Debug("Command line options")
 	}
 	if verbosity == "" {
@@ -137,5 +141,5 @@ func getFlags() (p string, u string, d string) {
 	}
 	app.Run(os.Args)            // parse the arguments, execute app.Action
 	initializeLogrus(verbosity) // set logLevel appropriately for wrkutils
-	return file, URL, directory
+	return file, URL, directory, stdin
 }

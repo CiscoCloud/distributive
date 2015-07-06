@@ -2,10 +2,12 @@ package wrkutils
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
+	"net/http"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -89,7 +91,7 @@ func PathError(path string, err error, read bool) {
 		log.WithFields(log.Fields{
 			"path":  path,
 			"error": err.Error(),
-		}).Fatal("Couldn't " + readOrWrite + " file")
+		}).Fatal("Couldn't " + readOrWrite + " file/dir")
 	}
 }
 
@@ -168,6 +170,46 @@ func FileToString(path string) string {
 // and returns those lines as byte slices
 func FileToLines(path string) [][]byte {
 	return bytes.Split(FileToBytes(path), []byte("\n"))
+}
+
+// BytesToFile writes the given data to the file at the path, and handles errors
+func BytesToFile(data []byte, path string) {
+	err := ioutil.WriteFile(path, data, 0755)
+	if err != nil {
+		CouldntWriteError(path, err)
+	}
+}
+
+// URLToBytes gets the response from urlstr and returns it as a byte string
+func URLToBytes(urlstr string, secure bool) []byte {
+	// create http client
+	transport := &http.Transport{}
+	if !secure {
+		transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+	client := &http.Client{Transport: transport}
+	// get response from URL
+	resp, err := client.Get(urlstr)
+	if err != nil {
+		CouldntReadError(urlstr, err)
+	}
+	defer resp.Body.Close()
+
+	// read response
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"URL":   urlstr,
+			"Error": err.Error(),
+		}).Fatal("Bad response, couldn't read body")
+	} else if body == nil || bytes.Equal(body, []byte{}) {
+		log.WithFields(log.Fields{
+			"URL": urlstr,
+		}).Warn("Body of response was empty")
+	}
+	return body
 }
 
 // ParseMyInt parses an int or logs the error
