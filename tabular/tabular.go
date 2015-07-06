@@ -66,13 +66,17 @@ func ToString(table Table) string {
 func SeparateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (output Table) {
 	lines := rowSep.Split(str, -1)
 	for _, line := range lines {
-		output = append(output, colSep.Split(line, -1))
+		row := colSep.Split(line, -1)
+		if len(row) > 0 && HasNonEmpty(row) {
+			output = append(output, row)
+		}
 	}
 	return output
 }
 
 // StringToSlice takes in a string and returns a 2D slice of its output,
 // separated on whitespace and newlines
+// TODO: this should be depreciated by probabalisticSplit
 func StringToSlice(str string) (output Table) {
 	rowSep := regexp.MustCompile("\n+")
 	colSep := regexp.MustCompile("\\s+")
@@ -155,4 +159,11 @@ func StrContainedIn(str string, slice []string) bool {
 func ReIn(re *regexp.Regexp, slice []string) bool {
 	pred := func(strx string) bool { return re.MatchString(strx) }
 	return AnySatisfies(pred, slice)
+}
+
+// HasNonEmpty checks to see if there is a single string with a non-whitespace
+// character in the list
+func HasNonEmpty(slice []string) bool {
+	// regexp matches: beginning of string, >0 non-whitespace char, eof
+	return ReIn(regexp.MustCompile("\\S+"), slice)
 }
