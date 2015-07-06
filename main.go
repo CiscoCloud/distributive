@@ -223,7 +223,7 @@ func runChecks(chklst Checklist) Checklist {
 		log.WithFields(log.Fields{
 			"name": chk.Name,
 			"type": chk.Check,
-		}).Debug("Check exited with" + no + " errors")
+		}).Info("Check exited with" + no + " errors")
 	}
 	return chklst
 }

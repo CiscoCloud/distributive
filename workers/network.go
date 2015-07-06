@@ -348,14 +348,10 @@ func udpTimeout(parameters []string) (exitCode int, exitMessage string) {
 
 // returns a column of the routing table as a slice of strings
 func routingTableColumn(column int) []string {
-	/*
-		cmd := exec.Command("route", "-n")
-		out := wrkutils.CommandOutput(cmd)
-		table := tabular.ProbabalisticSplit(out)
-		fmt.Println(tabular.ToString(table))
-	*/
-	cmd2 := exec.Command("route", "-n")
-	return wrkutils.CommandColumnNoHeader(column, cmd2)[1:]
+	cmd := exec.Command("route", "-n")
+	out := wrkutils.CommandOutput(cmd)
+	table := tabular.ProbabalisticSplit(out)
+	return tabular.GetColumnNoHeader(column, table)[1:]
 }
 
 // routingTableMatch(exitCode int, exitMessage string) constructs a Worker that returns whether or not the

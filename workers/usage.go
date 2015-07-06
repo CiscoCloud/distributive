@@ -58,6 +58,12 @@ func getSwapOrMemory(status string, swapOrMem string, units string) int {
 	column := tabular.GetColumnByHeader(status, table)
 	row := typeToRow[swapOrMem]
 	// check for errors in output of `free`
+	if column == nil {
+		log.WithFields(log.Fields{
+			"header": status,
+			"table":  "\n" + tabular.ToString(table),
+		}).Fatal("Free column was empty")
+	}
 	if row >= len(column) {
 		log.WithFields(log.Fields{
 			"output": outStr,
