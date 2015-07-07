@@ -134,13 +134,7 @@ func userHasField(usernameOrUID string, fieldName string, givenValue string) (bo
 	val := reflect.ValueOf(*user)
 	fieldVal := val.FieldByName(fieldName)
 	// check to see if the field is a string
-	if fieldVal.Kind() != reflect.String {
-		log.WithFields(log.Fields{
-			"field": fieldName,
-			"kind":  fieldVal.Kind(),
-			"user":  user.Username,
-		}).Fatal("Internal error: failure during reflection: field is not a string")
-	}
+	wrkutils.ReflectError(fieldVal, reflect.String, "userHasField")
 	actualValue := fieldVal.String()
 	return actualValue == givenValue, nil
 }

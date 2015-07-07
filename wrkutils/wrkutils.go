@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -107,19 +108,23 @@ func CouldntReadError(path string, err error) {
 
 // GenericError is a general error where the requested variable was not found in
 // a given list of variables. This is pure DRY.
-func GenericError(msg string, name string, actual []string) (exitCode int, exitMessage string) {
-	// get a list of strings, append them, truncate them
+func GenericError(msg string, specified interface{}, actual interface{}) (exitCode int, exitMessage string) {
+	ReflectError(actual, reflect.Slice, "GenericError")
+
+	threshold := 50
 	actualStrSlc := []string{}
-	for _, val := range actual {
-		actualStrSlc = append(actualStrSlc, fmt.Sprint(val))
+	for i := 0; i < reflect.TypeOf(actual).Len() && i < threshold; i++ {
+		valueString := fmt.Sprint(reflect.ValueOf(actual).Index(i))
+		actualStrSlc = append(actualStrSlc, valueString)
 	}
 	actualStr := strings.Join(actualStrSlc, ", ")
-	msg += ":\n\tSpecified: " + name
+	msg += ":\n\tSpecified: " + fmt.Sprint(specified)
 	msg += "\n\tActual: " + actualStr
 	return 1, msg
 }
 
-// ExecError logs.Fatal with a useful message
+// ExecError logs.Fatal with a useful message for errors that occur when
+// using os/exec to run commands
 func ExecError(cmd *exec.Cmd, out string, err error) {
 	msg := "Failed to execute command"
 	if strings.Contains(out, "permission denied") {
@@ -135,6 +140,32 @@ func ExecError(cmd *exec.Cmd, out string, err error) {
 			"output":  out,
 			"error":   err.Error(),
 		}).Fatal(msg)
+	}
+}
+
+// IndexError logs a message about an attempt to access an array element outside
+// the range of a given list
+func IndexError(msg string, i int, slc interface{}) {
+	ReflectError(slc, reflect.Slice, "IndexError")
+	length := reflect.TypeOf(slc).Len()
+	if i >= length || i < 0 {
+		log.WithFields(log.Fields{
+			"index":  i,
+			"slice":  fmt.Sprint(slc),
+			"length": length,
+		}).Fatal("IndexError: " + msg)
+	}
+}
+
+// ReflectError logs a message about a failure of types during reflection
+func ReflectError(value interface{}, expectedKind reflect.Kind, funcName string) {
+	kind := reflect.ValueOf(value).Kind()
+	if kind != expectedKind {
+		log.WithFields(log.Fields{
+			"expected": expectedKind,
+			"actual":   kind,
+			"value":    value,
+		}).Fatal("ReflectError: Value didn't have expected kind in " + funcName)
 	}
 }
 
