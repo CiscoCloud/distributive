@@ -123,7 +123,7 @@ func getAptRepos() (repos []repo) {
 		for _, f := range sourceLists {
 			split := tabular.ProbabalisticSplit(wrkutils.FileToString(f))
 			// filter out comments
-			commentRegex := regexp.MustCompile("^\\s*#.*")
+			commentRegex := regexp.MustCompile("^\\s*#")
 			for _, line := range split {
 				if len(line) > 1 && !(commentRegex.MatchString(line[0])) {
 					urls = append(urls, line[1])

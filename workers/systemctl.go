@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
-	log "github.com/Sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -68,20 +67,19 @@ func systemctlSockUnit(parameters []string) (exitCode int, exitMessage string) {
 	return systemctlSock(parameters[0], false)
 }
 
+// getTimers returns of all the timers under the UNIT column of
+// `systemctl list-timers` TODO: get rid of regexp, use tabular (somehow!)
 func getTimers(all bool) []string {
 	cmd := exec.Command("systemctl", "list-timers")
 	if all {
 		cmd = exec.Command("systemctl", "list-timers", "--all")
 	}
 	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Fatal("Couldn't execute `systemctl list-timers`")
-	}
+	outstr := string(out)
+	wrkutils.ExecError(cmd, outstr, err)
 	// matches anything with hyphens or letters, then a ".timer"
-	re := regexp.MustCompile("(\\w|\\-)+\\.timer")
-	return re.FindAllString(string(out), -1)
+	re := regexp.MustCompile("\\s+(\\w|\\-)+\\.timer\\s+")
+	return re.FindAllString(outstr, -1)
 }
 
 // timers(exitCode int, exitMessage string) is pure DRY for systemctlTimer and systemctlTimerLoaded
