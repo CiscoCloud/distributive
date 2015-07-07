@@ -302,7 +302,7 @@ func main() {
 		log.Info("Running checklist: " + chklsts[i].Name)
 		chklsts[i] = runChecks(chklsts[i])
 		// make a printable report
-		report := chklst.makeReport()
+		report := chklsts[i].makeReport()
 		failed := false
 		for _, code := range chklst.Codes {
 			if code != 0 {

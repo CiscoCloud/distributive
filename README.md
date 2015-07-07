@@ -55,11 +55,11 @@ scripts will install it for you.
 
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
- 2. Compile and run the binary with `./run.sh`
+ 2. Build a binary with `./build.sh`
+ 3. Follow the "Usage" instructions below
 
 Depending on your installation location, you may need to add the distributive
-directory to your [GOPATH environment variable] [gopath]. Dependencies are
-installed via gpm.
+directory to your [GOPATH environment variable] [gopath].
 
 We also provide premade RPM packages on [Bintray] [bintray]. The binary will
 be installed to `/bin/distributive` and the samples to
