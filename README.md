@@ -28,7 +28,7 @@ This readme documents the current (development) version of distributive.
 Distributive is a tool for running distributed health checks in datacenters.
 It was designed with Consul in mind, but is platform agnostic. It is simple
 to configure (with JSON checklists) and easy to deploy and run. It has no
-dependencies, and can be shipped as a speedy 7MB (yes, megabytes!) binary.
+dependencies, and can be shipped as a speedy 6.3MB (yes, megabytes!) binary.
 
 Usually, some external server will ask the host to execute this program, reading
 a checklist from a JSON file, and will record this program's exit code and
@@ -53,6 +53,8 @@ To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
  2. Build a binary: `cd distributive && go build .`
  3. Run the binary (as outlined in "Usage") with `./distributive`.
+Alternatively,
+ 2. Compile and run the binary with `./run.sh`
 
 Depending on your installation location, you may need to add the distributive
 directory to your GOPATH environment variable (`export GOPATH=/path/to/dir`),
@@ -68,7 +70,7 @@ Usage
 
 The default behavior is to run all checks in /etc/distributive.d/ (the default
 directory give to the `-d` option), in addition to any specified via the `-f`
-or `-u` options.
+`-u`, or `-s` options.
 
 ```
 $ distributive --help
