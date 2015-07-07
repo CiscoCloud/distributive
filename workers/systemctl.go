@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
@@ -114,6 +115,9 @@ func systemctlUnitFileStatus(parameters []string) (exitCode int, exitMessage str
 		cmd = exec.Command("systemctl", "--no-pager", "list-unit-files")
 		statuses = wrkutils.CommandColumnNoHeader(1, cmd)
 		// last two are empty line and junk statistics we don't care about
+		msg := fmt.Sprint(cmd.Args) + " didn't output enough lines"
+		wrkutils.IndexError(msg, 2, units)
+		wrkutils.IndexError(msg, 2, statuses)
 		return units[:len(units)-2], statuses[:len(statuses)-2]
 	}
 	unit := parameters[0]

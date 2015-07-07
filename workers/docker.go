@@ -49,6 +49,7 @@ func getRunningContainers() (containers []string) {
 	names := tabular.GetColumnByHeader("image", lines)
 	statuses := tabular.GetColumnByHeader("status", lines)
 	for i, status := range statuses {
+		// index error caught by second condition in if clause
 		if strings.Contains(status, "Up") && len(names) > i {
 			containers = append(containers, names[i])
 		}

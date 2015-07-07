@@ -73,11 +73,8 @@ func getYumRepos() (repos []repo) {
 		// catch runtime panic
 		defer func() {
 			if err := recover(); err != nil {
-				log.WithFields(log.Fields{
-					"slice":  slc,
-					"length": len(slc),
-					"index":  index,
-				}).Warn("Accessing out-of-bounds index. Please report.")
+				msg := "safeAccess: Please report this error"
+				wrkutils.IndexError(msg, index, slc)
 			}
 		}() // invoke inside defer
 		if len(slc) > index {
@@ -90,12 +87,13 @@ func getYumRepos() (repos []repo) {
 	cmd := exec.Command("yum", "repolist")
 	outstr := wrkutils.CommandOutput(cmd)
 	slc := tabular.ProbabalisticSplit(outstr)
+
 	ids := tabular.GetColumnNoHeader(0, slc) // TODO use columnbyheader here
-	if len(ids) > 2 {
-		ids = ids[:len(ids)-2] // has extra line at end
-	}
-	names := tabular.GetColumnNoHeader(1, slc)
-	statuses := tabular.GetColumnNoHeader(2, slc)
+	wrkutils.IndexError("getYumRepos", 2, ids)
+	ids = ids[:len(ids)-2]
+
+	names := tabular.GetColumnNoHeader(1, slc)    // TODO and here
+	statuses := tabular.GetColumnNoHeader(2, slc) // TODO and here
 	if len(ids) != len(names) || len(names) != len(statuses) {
 		log.WithFields(log.Fields{
 			"names":    len(names),
@@ -158,9 +156,17 @@ func getPacmanRepos(path string) (repos []repo) {
 			urls = append(urls, string(urlRegex.Find(line)))
 		}
 	}
+	if len(names) != len(urls) {
+		log.WithFields(log.Fields{
+			"names": len(names),
+			"urls":  len(urls),
+		}).Warn("Could not fetch complete metadata for every repo.")
+	}
 	for i, name := range names {
 		if len(urls) > i {
 			repos = append(repos, repo{Name: name, URL: urls[i]})
+		} else {
+			repos = append(repos, repo{Name: name})
 		}
 	}
 	return repos
@@ -229,17 +235,17 @@ func repoExistsURI(parameters []string) (exitCode int, exitMessage string) {
 // IgnorePkg setting
 func pacmanIgnore(parameters []string) (exitCode int, exitMessage string) {
 	pkg := parameters[0]
-	data := wrkutils.FileToString("/etc/pacman.conf")
+	path := "/etc/pacman.conf"
+	data := wrkutils.FileToString(path)
 	re := regexp.MustCompile("[^#]IgnorePkg\\s+=\\s+.+")
 	find := re.FindString(data)
 	var packages []string
 	if find != "" {
 		spl := strings.Split(find, " ")
-		if len(spl) > 2 {
-			packages = spl[2:] // first two are "IgnorePkg" and "="
-			if tabular.StrIn(pkg, packages) {
-				return 0, ""
-			}
+		wrkutils.IndexError("Not enough lines in "+path, 2, spl)
+		packages = spl[2:] // first two are "IgnorePkg" and "="
+		if tabular.StrIn(pkg, packages) {
+			return 0, ""
 		}
 	}
 	msg := "Couldn't find package in IgnorePkg"

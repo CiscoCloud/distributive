@@ -134,7 +134,7 @@ func userHasField(usernameOrUID string, fieldName string, givenValue string) (bo
 	val := reflect.ValueOf(*user)
 	fieldVal := val.FieldByName(fieldName)
 	// check to see if the field is a string
-	wrkutils.ReflectError(fieldVal, reflect.String, "userHasField")
+	wrkutils.ReflectError(fieldVal, reflect.Struct, "userHasField")
 	actualValue := fieldVal.String()
 	return actualValue == givenValue, nil
 }

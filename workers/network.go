@@ -18,7 +18,8 @@ import (
 func port(parameters []string) (exitCode int, exitMessage string) {
 	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
 	getHexPorts := func() (ports []string) {
-		data := wrkutils.FileToString("/proc/net/tcp")
+		path := "/proc/net/tcp"
+		data := wrkutils.FileToString(path)
 		table := tabular.ProbabalisticSplit(data)
 		// TODO by header isn't working
 		//localAddresses := tabular.GetColumnByHeader("local_address", table)
@@ -26,8 +27,13 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 		portRe := regexp.MustCompile(":([0-9A-F]{4})")
 		for _, address := range localAddresses {
 			port := portRe.FindString(address)
-			// TODO catch index error
 			if port != "" {
+				if len(port) < 2 {
+					log.WithFields(log.Fields{
+						"port":   port,
+						"length": len(port),
+					}).Fatal("Couldn't parse port number in " + path)
+				}
 				portString := string(port[1:])
 				ports = append(ports, portString)
 			}
@@ -211,12 +217,8 @@ func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
 		names := routingTableColumn("Iface")
 		for i, ip := range ips {
 			if ip != "0.0.0.0" {
-				if len(names) < i {
-					log.WithFields(log.Fields{
-						"names": names,
-						"IPs":   ips,
-					}).Fatal("Internal error: Fewer names in kernel routing table than IPs")
-				}
+				msg := "Fewer names in kernel routing table than IPs"
+				wrkutils.IndexError(msg, i, names)
 				return names[i] // interface name
 			}
 		}

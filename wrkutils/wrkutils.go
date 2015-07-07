@@ -113,7 +113,7 @@ func GenericError(msg string, specified interface{}, actual interface{}) (exitCo
 
 	threshold := 50
 	actualStrSlc := []string{}
-	for i := 0; i < reflect.TypeOf(actual).Len() && i < threshold; i++ {
+	for i := 0; i < reflect.ValueOf(actual).Len() && i < threshold; i++ {
 		valueString := fmt.Sprint(reflect.ValueOf(actual).Index(i))
 		actualStrSlc = append(actualStrSlc, valueString)
 	}
@@ -129,8 +129,7 @@ func ExecError(cmd *exec.Cmd, out string, err error) {
 	msg := "Failed to execute command"
 	if strings.Contains(out, "permission denied") {
 		msg = "Permission denied when running command"
-	}
-	if err != nil && strings.Contains(err.Error(), "not found in $PATH") {
+	} else if err != nil && strings.Contains(err.Error(), "not found in $PATH") {
 		msg = "Couldn't find executable when running command"
 	}
 	if err != nil {
@@ -147,7 +146,7 @@ func ExecError(cmd *exec.Cmd, out string, err error) {
 // the range of a given list
 func IndexError(msg string, i int, slc interface{}) {
 	ReflectError(slc, reflect.Slice, "IndexError")
-	length := reflect.TypeOf(slc).Len()
+	length := reflect.ValueOf(slc).Len()
 	if i >= length || i < 0 {
 		log.WithFields(log.Fields{
 			"index":  i,
