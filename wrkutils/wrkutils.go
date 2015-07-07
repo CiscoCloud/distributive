@@ -78,6 +78,23 @@ func GetByteUnits(str string) string {
 	return ""
 }
 
+// SubmatchMap returns a map of submatch names to their captures, if any.
+// If no matches are found, it returns an empty dict.
+// Submatch names are specified using (?P<name>[matchme])
+func SubmatchMap(re *regexp.Regexp, str string) (dict map[string]string) {
+	dict = make(map[string]string)
+	names := re.SubexpNames()
+	matches := re.FindStringSubmatch(str)
+	if len(names) > 0 && len(matches) > 0 {
+		names = names[1:]
+		matches = matches[1:]
+		for i, name := range names {
+			dict[name] = matches[i] // offset from names[1:]
+		}
+	}
+	return dict
+}
+
 //// ERROR UTILITIES
 
 // PathError is an abstraction of CouldntReadError and CouldntWriteError
@@ -126,13 +143,13 @@ func GenericError(msg string, specified interface{}, actual interface{}) (exitCo
 // ExecError logs.Fatal with a useful message for errors that occur when
 // using os/exec to run commands
 func ExecError(cmd *exec.Cmd, out string, err error) {
-	msg := "Failed to execute command"
-	if strings.Contains(out, "permission denied") {
-		msg = "Permission denied when running command"
-	} else if err != nil && strings.Contains(err.Error(), "not found in $PATH") {
-		msg = "Couldn't find executable when running command"
-	}
 	if err != nil {
+		msg := "Failed to execute command"
+		if strings.Contains(out, "permission denied") {
+			msg = "Permission denied when running command"
+		} else if strings.Contains(err.Error(), "not found in $PATH") {
+			msg = "Couldn't find executable when running command"
+		}
 		log.WithFields(log.Fields{
 			"command": cmd.Args,
 			"path":    cmd.Path,

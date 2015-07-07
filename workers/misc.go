@@ -88,28 +88,44 @@ func running(parameters []string) (exitCode int, exitMessage string) {
 // temp parses the output of lm_sensors and determines if Core 0 (all cores) are
 // over a certain threshold as specified in the JSON.
 func temp(parameters []string) (exitCode int, exitMessage string) {
+	// allCoreTemps returns the temperature of each core
+	allCoreTemps := func() (temps []int) {
+		cmd := exec.Command("sensors")
+		out, err := cmd.CombinedOutput()
+		outstr := string(out)
+		wrkutils.ExecError(cmd, outstr, err)
+		restr := "Core\\s\\d+:\\s+[\\+\\-](?P<temp>\\d+)\\.*\\d*°C"
+		re := regexp.MustCompile(restr)
+		for _, line := range regexp.MustCompile("\n+").Split(outstr, -1) {
+			if re.MatchString(line) {
+				// submatch captures only the integer part of the temperature
+				matchDict := wrkutils.SubmatchMap(re, line)
+				if _, ok := matchDict["temp"]; !ok {
+					log.WithFields(log.Fields{
+						"regexp":    re.String(),
+						"matchDict": matchDict,
+						"output":    outstr,
+					}).Fatal("Couldn't find any temperatures in `sensors` output")
+				}
+				tempInt64, err := strconv.ParseInt(matchDict["temp"], 10, 64)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"regexp":    re.String(),
+						"matchDict": matchDict,
+						"output":    outstr,
+						"error":     err.Error(),
+					}).Fatal("Couldn't parse integer from `sensors` output")
+				}
+				temps = append(temps, int(tempInt64))
+			}
+		}
+		return temps
+	}
 	// getCoreTemp returns an integer temperature for a certain core
 	getCoreTemp := func(core int) (temp int) {
-		out, err := exec.Command("sensors").Output()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Fatal("Error while executing `sensors`")
-		}
-		// get all-core line up to paren
-		lineRegex := regexp.MustCompile("Core " + fmt.Sprint(core) + ":?(.*)\\(")
-		line := lineRegex.Find(out)
-		// get temp from that line
-		tempRegex := regexp.MustCompile("\\d+\\.\\d*")
-		tempString := string(tempRegex.Find(line))
-		tempFloat, err := strconv.ParseFloat(tempString, 64)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Fatal("Error while parsing output from `sensors`")
-		}
-		return int(tempFloat)
-
+		temps := allCoreTemps()
+		wrkutils.IndexError("No such core available", core, temps)
+		return temps[core]
 	}
 	max := wrkutils.ParseMyInt(parameters[0])
 	temp := getCoreTemp(0)
@@ -117,7 +133,7 @@ func temp(parameters []string) (exitCode int, exitMessage string) {
 		return 0, ""
 	}
 	msg := "Core temp exceeds defined maximum"
-	return wrkutils.GenericError(msg, fmt.Sprint(max), []string{fmt.Sprint(temp)})
+	return wrkutils.GenericError(msg, max, []string{fmt.Sprint(temp)})
 }
 
 // module checks to see if a kernel module is installed

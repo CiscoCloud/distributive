@@ -1,3 +1,3 @@
 #!/bin/bash
 source build.sh
-sudo ./distributive -d samples --verbosity="debug"
+sudo ./distributive -d "" -f samples/misc.json --verbosity="debug"
