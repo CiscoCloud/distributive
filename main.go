@@ -304,7 +304,7 @@ func main() {
 		// make a printable report
 		report := chklsts[i].makeReport()
 		failed := false
-		for _, code := range chklst.Codes {
+		for _, code := range chklsts[i].Codes {
 			if code != 0 {
 				failed = true
 				exitStatus = 1

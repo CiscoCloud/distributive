@@ -4,10 +4,13 @@
 package tabular
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 )
+
+var rowSep = regexp.MustCompile("\n+")
 
 // Table is a 2D slice of strings, for representing tabular data as cells, in
 // rows and columns.
@@ -106,11 +109,87 @@ func SeparateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (o
 	return output
 }
 
+// SeparateOnAlignment splits a table based on the indicies of its headers,
+// assuming all columns are left-aligned and all headers are separated by
+// whitespace
+func SeparateOnAlignment(str string) (table Table) {
+	// wordAfterIndex gets the first whitespace-delimited word of a string
+	// that occurs after the given index
+	wordAfterIndex := func(i int, str string) string {
+		if i < 0 {
+			log.WithFields(log.Fields{
+				"index": i,
+			}).Fatal("Internal error: negative index passed to wordAfterIndex")
+		}
+		msg := "Couldn't get wordAfterIndex, "
+		if len(str) < i {
+			log.WithFields(log.Fields{
+				"index": i,
+				"str":   str,
+			}).Warn(msg + "string was too short")
+			return ""
+		}
+		fields := strings.Fields(str[i:])
+		if len(fields) < 1 {
+			log.WithFields(log.Fields{
+				"index": i,
+				"str":   str,
+			}).Warn(msg + "string had only whitespace")
+		}
+		return strings.TrimSpace(fields[0])
+	}
+	// getHeaders returns a list of table headers from a unseparated string,
+	// assumed to be separated by a unicode.IsSpace character
+	getHeaders := func(str string) []string {
+		rows := regexp.MustCompile("\n+").Split(str, -1)
+		if len(rows) < 2 {
+			log.WithFields(log.Fields{
+				"row regexp": rowSep.String(),
+				"length":     len(rows),
+				"string":     str,
+			}).Fatal("Couldn't split table based on headers")
+		}
+		headers := strings.Fields(rows[0])
+		if len(headers) < 1 {
+			log.WithFields(log.Fields{
+				"string": str,
+			}).Fatal("Couldn't get headers of table, row 0 was only whitespace")
+		}
+		return headers
+	}
+	rows := regexp.MustCompile("\n+").Split(str, -1)
+	headers := getHeaders(str)
+	headerIndicies := IndiciesOf(headers, rows[0])
+	// error out on negative indicies, headers should always all be found.
+	for i, index := range headerIndicies {
+		if index < 0 {
+			header := ""
+			if len(headers) > i {
+				header = headers[i]
+			}
+			log.WithFields(log.Fields{
+				"index":    index,
+				"indicies": headerIndicies,
+				"header":   header,
+				"row":      rows[0],
+			}).Fatal("Internal error: negative header index")
+		}
+	}
+	// split string based on indicies
+	//table = append(table, headers)
+	for i, row := range rows {
+		table = append(table, []string{}) // make a new row
+		for _, index := range headerIndicies {
+			table[i] = append(table[i], wordAfterIndex(index, row))
+		}
+	}
+	return table
+}
+
 // StringToSlice takes in a string and returns a 2D slice of its output,
 // separated on whitespace and newlines
 // TODO: this should be depreciated by probabalisticSplit
 func StringToSlice(str string) (output Table) {
-	rowSep := regexp.MustCompile("\n+")
 	colSep := regexp.MustCompile("\\s+")
 	return SeparateString(rowSep, colSep, str)
 }
@@ -132,7 +211,12 @@ func GetColumnNoHeader(col int, tab Table) Column {
 	if len(column) < 1 {
 		return column
 	}
-	// TODO log.Fatal on length less than 1
+	if len(column) < 1 {
+		log.WithFields(log.Fields{
+			"column": column,
+			"length": len(column),
+		}).Fatal("Column too short to remove header from")
+	}
 	return column[1:]
 }
 

@@ -120,9 +120,10 @@ func chauvenet(data []int) (result []int) {
 	return data
 }
 
-// ProbabalisticSplit splits a string based on the regexp that gives the most
-// consistent line length (potentially discarding one outlier line length).
-func ProbabalisticSplit(str string) (output Table) {
+// getColumnRegex is the core of the logic. It determines which regex most
+// accurately splits the data into columns by testing the deviation in the
+// row lengths using different regexps.
+func getColumnRegex(str string, rowSep *regexp.Regexp) *regexp.Regexp {
 	// matchesMost is used to ensure that our regexp actually is splitting the
 	// lines of a table, instead of just returning them whole.
 	matchesMost := func(re *regexp.Regexp, rows []string) bool {
@@ -144,7 +145,6 @@ func ProbabalisticSplit(str string) (output Table) {
 	// getVariance returns the variance of the split provided by a regexp,
 	// after discarding a number of outliers
 	getVariance := func(colSep *regexp.Regexp, outliers int) float64 {
-		rowSep := regexp.MustCompile("\n+")
 		table := SeparateString(rowSep, colSep, str)
 		rowLengths := getRowLengths(table)
 		for i := 0; i < outliers; i++ {
@@ -163,64 +163,63 @@ func ProbabalisticSplit(str string) (output Table) {
 		}
 		return false
 	}
-	// getColumnRegex is the core of the logic. It determines which regex most
-	// accurately splits the data into columns by testing the deviation in the
-	// row lengths using different regexps.
-	getColumnRegex := func(str string, rowSep *regexp.Regexp) *regexp.Regexp {
-		// different column separators to try out
-		initialColSeps := []*regexp.Regexp{
-			regexp.MustCompile("\\s+"),    // any whitespace
-			regexp.MustCompile("\\s{2,}"), // two+ whitespace (spaces in cols)
-			regexp.MustCompile("\\s{4}"),  // exactly four whitespaces
-			regexp.MustCompile("\\t+"),    // tabs
+	// different column separators to try out
+	initialColSeps := []*regexp.Regexp{
+		regexp.MustCompile("\\s+"),    // any whitespace
+		regexp.MustCompile("\\s{2,}"), // two+ whitespace (spaces in cols)
+		regexp.MustCompile("\\s{4}"),  // exactly four whitespaces
+		regexp.MustCompile("\\t+"),    // tabs
+	}
+	// filter regexps that have no matches at all - they will always return
+	// rows of even length (length 1).
+	colSeps := []*regexp.Regexp{}
+	rows := rowSep.Split(str, -1)
+	for _, re := range initialColSeps {
+		if matchesMost(re, rows) {
+			colSeps = append(colSeps, re)
 		}
-		// filter regexps that have no matches at all - they will always return
-		// rows of even length (length 1).
-		colSeps := []*regexp.Regexp{}
-		rows := rowSep.Split(str, -1)
-		for _, re := range initialColSeps {
-			if matchesMost(re, rows) {
-				colSeps = append(colSeps, re)
-			}
-		}
-		if len(colSeps) < 1 {
-			log.WithFields(log.Fields{
-				"attempted": initialColSeps,
-				"table":     str,
-			}).Warn("ProbabalisticSplit couldn't find a column separator.")
-			colSeps = initialColSeps
-		}
-		// discarding up to passes outliers, test each regexp for row length
-		// consistency
-		passes := 3
-		for i := 0; i < passes; i++ {
-			for _, re := range colSeps {
-				if testRegexp(re, i) {
-					return re
-				}
-			}
-		}
-		// if still not done, just pick the one with the lowest variance
+	}
+	if len(colSeps) < 1 {
 		log.WithFields(log.Fields{
 			"attempted": initialColSeps,
-			"outliers":  passes,
-		}).Debug("ProbabalisticSplit couldn't find a consistent regexp")
-		var variances []float64
-		for _, colSep := range colSeps {
-			variances = append(variances, getVariance(colSep, passes))
-		}
-		// ensure that index can be found in tables
-		minVarianceIndex := extremaIndex(minFunc, variances)
-		if len(colSeps) <= minVarianceIndex {
-			msg := "Internal error: minVarianceIndex couldn't be found in colSeps"
-			log.WithFields(log.Fields{
-				"index":   minVarianceIndex,
-				"colSeps": colSeps,
-			}).Fatal(msg)
-		}
-		return colSeps[minVarianceIndex]
+			"table":     str,
+		}).Warn("ProbabalisticSplit couldn't find a column separator.")
+		colSeps = initialColSeps
 	}
-	rowSep := regexp.MustCompile("\n+")
+	// discarding up to passes outliers, test each regexp for row length
+	// consistency
+	passes := 3
+	for i := 0; i < passes; i++ {
+		for _, re := range colSeps {
+			if testRegexp(re, i) {
+				return re
+			}
+		}
+	}
+	// if still not done, just pick the one with the lowest variance
+	log.WithFields(log.Fields{
+		"attempted": initialColSeps,
+		"outliers":  passes,
+	}).Debug("ProbabalisticSplit couldn't find a consistent regexp")
+	var variances []float64
+	for _, colSep := range colSeps {
+		variances = append(variances, getVariance(colSep, passes))
+	}
+	// ensure that index can be found in tables
+	minVarianceIndex := extremaIndex(minFunc, variances)
+	if len(colSeps) <= minVarianceIndex {
+		msg := "Internal error: minVarianceIndex couldn't be found in colSeps"
+		log.WithFields(log.Fields{
+			"index":   minVarianceIndex,
+			"colSeps": colSeps,
+		}).Fatal(msg)
+	}
+	return colSeps[minVarianceIndex]
+}
+
+// ProbabalisticSplit splits a string based on the regexp that gives the most
+// consistent line length (potentially discarding one outlier line length).
+func ProbabalisticSplit(str string) (output Table) {
 	colSep := getColumnRegex(str, rowSep)
 	log.WithFields(log.Fields{
 		"regexp": colSep.String(),
