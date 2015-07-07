@@ -36,13 +36,16 @@ type Checklist struct {
 	Checklist   []Check // list of Checks to run
 	Codes       []int
 	Messages    []string
-	Report      string
 	Origin      string // where did it come from?
 }
 
 // makeReport returns a string used for a checklist.Report attribute, printed
 // after all the checks have been run
-func makeReport(chklst Checklist) (report string) {
+// TODO transform use of makeReport into a logReport that uses logrus
+func (chklst *Checklist) makeReport() (report string) {
+	if chklst == nil {
+		return ""
+	}
 	// countInt counts the occurences of int in this []int
 	countInt := func(i int, slice []int) (counter int) {
 		for _, in := range slice {
@@ -59,7 +62,6 @@ func makeReport(chklst Checklist) (report string) {
 			failMessages = append(failMessages, "\n"+chklst.Messages[i])
 		}
 	}
-	// TODO logrus this, once and for all!
 	// output global stats
 	total := len(chklst.Codes)
 	passed := countInt(0, chklst.Codes)
@@ -294,17 +296,13 @@ func main() {
 	chklsts := getChecklists(file, directory, URL, stdin)
 	// run all checklists
 	// TODO: use concurrent pipe here
-	for i := range chklsts {
+	exitStatus := 0
+	for i, chklst := range chklsts {
 		// run checks, populate error codes and messages
 		log.Info("Running checklist: " + chklsts[i].Name)
 		chklsts[i] = runChecks(chklsts[i])
 		// make a printable report
-		report := makeReport(chklsts[i])
-		chklsts[i].Report = report
-	}
-	// see if any checks failed, exit accordingly
-	exitStatus := 0
-	for _, chklst := range chklsts {
+		report := chklst.makeReport()
 		failed := false
 		for _, code := range chklst.Codes {
 			if code != 0 {
@@ -315,14 +313,15 @@ func main() {
 		if failed {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,
-				"report":    chklst.Report,
+				"report":    report,
 			}).Warn("Some checks failed, printing checklist report")
 		} else {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,
-				"report":    chklst.Report,
+				"report":    report,
 			}).Info("All checks passed, printing checklist report")
 		}
 	}
+	// see if any checks failed, exit accordingly
 	os.Exit(exitStatus)
 }

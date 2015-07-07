@@ -35,8 +35,8 @@ a checklist from a JSON file, and will record this program's exit code and
 standard out. Distributive's output includes information about which checks
 in a checklist failed, and how so.
 
-The exit code meanings are defined as [Consul] [1], [Sensu] [2], and
-[Nagios] [3] recognize them.
+The exit code meanings are defined as [Consul] [consul], [Sensu] [sensu], and
+[Nagios] [nagios] recognize them.
 
  * Exit code 0 - Checklist is passing
  * Exit code 1 - Checklist is warning
@@ -49,20 +49,20 @@ Installation and Usage
 
 Installation
 ------------
+This package uses [gpm] [gpm] for dependency management. If you don't have it
+installed, you can either install it manually, or the run.sh and package.sh
+scripts will install it for you.
+
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
- 2. Build a binary: `cd distributive && go build .`
- 3. Run the binary (as outlined in "Usage") with `./distributive`.
-Alternatively,
  2. Compile and run the binary with `./run.sh`
 
 Depending on your installation location, you may need to add the distributive
-directory to your GOPATH environment variable (`export GOPATH=/path/to/dir`),
-and install the packages used by Distributive (`go get .`).
+directory to your [GOPATH environment variable] [gopath]. Dependencies are
+installed via gpm.
 
-We also provide premade RPM packages on
-[Bintray](https://bintray.com/ciscocloud/rpm/Distributive/view#files). The
-binary will be installed to `/bin/distributive` and the samples to
+We also provide premade RPM packages on [Bintray] [bintray]. The binary will
+be installed to `/bin/distributive` and the samples to
 `/etc/distributive.d/samples/`.
 
 Usage
@@ -109,7 +109,7 @@ Distributive attempts to be as framework-agnostic as possible. It is known to
 work well with Sensu, Consul, and Nagios, which have similar design in how they
 detect passing and failing checks. There is documentation on how to use
 Distributive with Consul on this project's
-[Github wiki](https://github.com/CiscoCloud/distributive/wiki/Working-with-Consul).
+[Github wiki] [wiki].
 
 
 Checks
@@ -117,8 +117,7 @@ Checks
 
 For the impatient, examples of every single implemented check are available in
 the `samples/` directory, sorted by category. There is extensive documentation
-for each check available on this project's
-[Github wiki](https://github.com/CiscoCloud/distributive/wiki).
+for each check available on this project's [Github wiki] [wiki].
 
 
 Dependencies
@@ -127,7 +126,7 @@ Dependencies
 Distributive itself has no dependencies; it is compiled as a standalone Go
 binary. Some checks, however, rely on output from specific packages. These
 dependencies are outlined for each check on this project's
-[Github wiki](https://github.com/CiscoCloud/distributive/wiki/Checks-and-Checklists).
+[Github wiki] [wiki].
 
 Comparison to Other Software
 ============================
@@ -156,7 +155,7 @@ provides many services not included in Distributive, and solves a very different
 problem.  Distributive is simple, lightweight, and easy to configure, and
 doesn't provide its own scheduling, dashboard, etc. It is designed to be used
 within frameworks such as Sensu and Consul. Luckily, Distributive conforms to
-[Nagios exit code specifications] [3], and can be used just like any other
+[Nagios exit code specifications] [Nagios], and can be used just like any other
 plugin. Its advantage over other plugins is that it is small, fast, and has no
 dependencies.
 
@@ -175,19 +174,24 @@ Getting Help
 Feature requests, documentation requests, help installing and using, pull
 requests, and other comments or questions are all always welcome. We strive to
 provide expedient and detailed support for anyone using our software. Please
-submit any requests via our
-[Github Issues Page](https://github.com/CiscoCloud/distributive/issues),
-where someone will see it and get to work promptly.
+submit any requests via our [Github Issues Page] [issues], where someone will
+see it and get to work promptly.
 
 License
 =======
 Copyright © 2015 Cisco Systems, Inc.
 
-Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the "License").
+Licensed under the [Apache License, Version 2.0] [license] (the "License").
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 
-[1]: https://www.consul.io/docs/agent/checks.html "Consul"
-[2]: https://sensuapp.org/docs/0.18/checks "Sensu"
-[3]: https://nagios-plugins.org/doc/guidelines.html#AEN78 "Nagios"
+[1]: http://www.apache.org/licenses/LICENSE-2.0 "license"
+[2]: https://github.com/CiscoCloud/distributive/wiki "wiki"
+[3]: https://github.com/CiscoCloud/distributive/issues "issues"
+[4]: https://bintray.com/ciscocloud/rpm/Distributive/view#files "bintray"
+[5]: https://www.consul.io/docs/agent/checks.html "Consul"
+[6]: https://sensuapp.org/docs/0.18/checks "Sensu"
+[7]: https://nagios-plugins.org/doc/guidelines.html#AEN78 "Nagios"
+[8]: https://golang.org/doc/code.html#GOPATH "gopath"
+[9]: https://github.com/pote/gpm "gpm"

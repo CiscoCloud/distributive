@@ -82,12 +82,15 @@ func getFlags() (f string, u string, d string, s bool) {
 	app.Name = "Distributive"
 	app.Usage = "Perform distributed health tests"
 	app.Version = Version
+	app.Author = "Langston Barrett"
+	/* For a newer version of cli:
 	app.Authors = []cli.Author{
 		cli.Author{
 			Name:  "Langston Barrett",
 			Email: "langston@aster.is",
 		},
 	}
+	*/
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "verbosity",
