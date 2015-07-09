@@ -1,0 +1,10 @@
+test.json
+test.go
+run.sh
+bin/
+.gvp/
+.godeps/
+.godeps/*
+*.swp
+*.rpm
+*.bak
