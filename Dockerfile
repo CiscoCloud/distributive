@@ -16,7 +16,6 @@ ENV PATH $PATH:$GOROOT/bin:$GOPATH/bin
 
 WORKDIR /distributive
 ADD . /distributive
-RUN go get .
-RUN go build .
+RUN sh build.sh
 
-CMD [/distributive/distributive -f /distributive/samples/filesystem.json -d "" --verbosity=info]
+CMD [/distributive/bin/distributive -f /distributive/samples/filesystem.json -d "" --verbosity=info]

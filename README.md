@@ -49,17 +49,13 @@ Installation and Usage
 
 Installation
 ------------
-This package uses [gpm] [gpm] for dependency management. If you don't have it
-installed, you can either install it manually, or the run.sh and package.sh
-scripts will install it for you.
+This package uses [gpm] [gpm] and [gvp] [gvp] for dependency management. Any of
+the shell scripts will install them for you.
 
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
  2. Build a binary with `./build.sh`
  3. Follow the "Usage" instructions below
-
-Depending on your installation location, you may need to add the distributive
-directory to your [GOPATH environment variable] [gopath].
 
 We also provide premade RPM packages on [Bintray] [bintray]. The binary will
 be installed to `/bin/distributive` and the samples to
@@ -195,3 +191,5 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [7]: https://nagios-plugins.org/doc/guidelines.html#AEN78 "Nagios"
 [8]: https://golang.org/doc/code.html#GOPATH "gopath"
 [9]: https://github.com/pote/gpm "gpm"
+[10]: https://github.com/pote/gvp "gvp"
+

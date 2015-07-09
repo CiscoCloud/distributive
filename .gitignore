@@ -1,0 +1,19 @@
+test.json
+test.go
+run.sh
+<<<<<<< HEAD
+bin/
+.gvp/
+.godeps/
+.godeps/*
+*.swp
+*.rpm
+*.bak
+=======
+bin/*
+.gvp/*
+*.swp
+*.rpm
+*.bak
+*.rpm*.bak
+>>>>>>> master
