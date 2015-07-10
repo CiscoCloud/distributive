@@ -1,4 +1,4 @@
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
+<!-- markdown-toc start -->
 **Table of Contents**
 
 - [Overview](#overview)
@@ -21,7 +21,7 @@
 Overview
 ========
 
-[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/CiscoCloud/distributive/tabular)
+[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)][godoc]
 
 This readme documents the current (development) version of distributive.
 
@@ -35,8 +35,8 @@ a checklist from a JSON file, and will record this program's exit code and
 standard out. Distributive's output includes information about which checks
 in a checklist failed, and how so.
 
-The exit code meanings are defined as [Consul] [consul], [Sensu] [sensu], and
-[Nagios] [nagios] recognize them.
+The exit code meanings are defined as [Consul][consul], [Sensu][sensu], and
+[Nagios][nagios] recognize them.
 
  * Exit code 0 - Checklist is passing
  * Exit code 1 - Checklist is warning
@@ -49,7 +49,7 @@ Installation and Usage
 
 Installation
 ------------
-This package uses [gpm] [gpm] and [gvp] [gvp] for dependency management. Any of
+This package uses [gpm][gpm] and [gvp][gvp] for dependency management. Any of
 the shell scripts will install them for you.
 
 To install the development version (potentially unstable):
@@ -57,7 +57,7 @@ To install the development version (potentially unstable):
  2. Build a binary with `./build.sh`
  3. Follow the "Usage" instructions below
 
-We also provide premade RPM packages on [Bintray] [bintray]. The binary will
+We also provide premade RPM packages on [Bintray][bintray]. The binary will
 be installed to `/bin/distributive` and the samples to
 `/etc/distributive.d/samples/`.
 
@@ -104,8 +104,7 @@ Supported Frameworks
 Distributive attempts to be as framework-agnostic as possible. It is known to
 work well with Sensu, Consul, and Nagios, which have similar design in how they
 detect passing and failing checks. There is documentation on how to use
-Distributive with Consul on this project's
-[Github wiki] [wiki].
+Distributive with Consul on our [Github wiki][wiki].
 
 
 Checks
@@ -113,7 +112,7 @@ Checks
 
 For the impatient, examples of every single implemented check are available in
 the `samples/` directory, sorted by category. There is extensive documentation
-for each check available on this project's [Github wiki] [wiki].
+for each check available on our [Github wiki][wiki].
 
 
 Dependencies
@@ -121,8 +120,7 @@ Dependencies
 
 Distributive itself has no dependencies; it is compiled as a standalone Go
 binary. Some checks, however, rely on output from specific packages. These
-dependencies are outlined for each check on this project's
-[Github wiki] [wiki].
+dependencies are outlined for each check on our [Github wiki][wiki].
 
 Comparison to Other Software
 ============================
@@ -162,7 +160,7 @@ Contributing
 ------------
 
 Thank you for your interest in contributing! To get started, please check out
-[this page on our wiki](https://github.com/CiscoCloud/distributive/wiki/How-It-Works-%28and-So-Can-You!%29).
+[our wiki][wiki]
 
 Getting Help
 ------------
@@ -177,19 +175,19 @@ License
 =======
 Copyright © 2015 Cisco Systems, Inc.
 
-Licensed under the [Apache License, Version 2.0] (the "License").
+Licensed under the [Apache License, Version 2.0][license] (the "License").
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 
-[1]: http://www.apache.org/licenses/LICENSE-2.0 "Apache License, Version 2.0"
-[2]: https://github.com/CiscoCloud/distributive/wiki "wiki"
-[3]: https://github.com/CiscoCloud/distributive/issues "Github Issues Page"
-[4]: https://bintray.com/ciscocloud/rpm/Distributive/view#files "bintray"
-[5]: https://www.consul.io/docs/agent/checks.html "Consul"
-[6]: https://sensuapp.org/docs/0.18/checks "Sensu"
-[7]: https://nagios-plugins.org/doc/guidelines.html#AEN78 "Nagios exit code specifications"
-[8]: https://golang.org/doc/code.html#GOPATH "gopath"
-[9]: https://github.com/pote/gpm "gpm"
-[10]: https://github.com/pote/gvp "gvp"
-
+[license]: http://www.apache.org/licenses/LICENSE-2.0
+[wiki]: https://github.com/CiscoCloud/distributive/wiki
+[issues]: https://github.com/CiscoCloud/distributive/issues
+[bintray]: https://bintray.com/ciscocloud/rpm/Distributive/view#files
+[consul]: https://www.consul.io/docs/agent/checks.html
+[sensu]: https://sensuapp.org/docs/0.18/checks
+[nagios]: https://nagios-plugins.org/doc/guidelines.html#AEN78
+[gopath]: https://golang.org/doc/code.html#GOPATH
+[gpm]: https://github.com/pote/gpm
+[gvp]: https://github.com/pote/gvp
+[godoc]: https://godoc.org/github.com/CiscoCloud/distributive/wrkutils
