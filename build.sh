@@ -5,7 +5,7 @@
 
 #### GLOBALS
 
-version=0.1.3_dev
+version=0.2
 src=./src/github.com/CiscoCloud/distributive
 
 #### GET DEPENDENCIES

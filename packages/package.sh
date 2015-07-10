@@ -7,7 +7,7 @@
 #### GLOBALS
 
 binary_dir=/usr/bin/
-sample_dir=/etc/distributive.d/samples/
+sample_dir=/etc/distributive.d/
 binary=../bin/distributive
 samples=../samples
 
