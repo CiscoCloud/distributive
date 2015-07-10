@@ -54,6 +54,8 @@ $gpm install
 #### BUILD
 
 # -X sets the value of a string variable in main, others are size optimizations
+bindir=./bin
+mkdir -p ./bin 2&> /dev/null
 if [ ! -w ./bin ]
 then
     echo "Can't write to ./bin, please change its permissions"
