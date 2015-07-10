@@ -20,7 +20,7 @@ function download_to_dir() {
         mkdir $dest
     fi
 
-    wget $url
+    curl -O $url
     chmod +x $filename
     if [ ! -w $dest ]
     then
