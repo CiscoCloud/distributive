@@ -271,15 +271,15 @@ func runChecks(chklst Checklist) Checklist {
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, msg)
 		// were errors encountered?
-		no := ""
+		passed := "failed"
 		if code == 0 {
-			no = " no"
+			passed = "passed"
 		}
 		// warn log happens later
 		log.WithFields(log.Fields{
 			"name": chk.Name,
 			"type": chk.Check,
-		}).Info("Check exited with" + no + " errors")
+		}).Info("Check " + passed)
 	}
 	return chklst
 }
@@ -314,7 +314,7 @@ func main() {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,
 				"report":    report,
-			}).Warn("Some checks failed, printing checklist report")
+			}).Warn("Check(s) failed, printing checklist report")
 		} else {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,

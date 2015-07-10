@@ -117,7 +117,8 @@ func fileContains(parameters []string) (exitCode int, exitMessage string) {
 	if regex.Match(wrkutils.FileToBytes(path)) {
 		return 0, ""
 	}
-	return 1, "File does not match regexp:\n\tFile: " + path
+	msg := "File does not match regexp:\n\tFile: "
+	return 1, msg + path + "\n\tRegexp" + regex.String()
 }
 
 // permissions checks to see if a file's octal permissions match the given set

@@ -151,7 +151,7 @@ provides many services not included in Distributive, and solves a very different
 problem.  Distributive is simple, lightweight, and easy to configure, and
 doesn't provide its own scheduling, dashboard, etc. It is designed to be used
 within frameworks such as Sensu and Consul. Luckily, Distributive conforms to
-[Nagios exit code specifications] [Nagios], and can be used just like any other
+[Nagios exit code specifications], and can be used just like any other
 plugin. Its advantage over other plugins is that it is small, fast, and has no
 dependencies.
 
@@ -170,25 +170,25 @@ Getting Help
 Feature requests, documentation requests, help installing and using, pull
 requests, and other comments or questions are all always welcome. We strive to
 provide expedient and detailed support for anyone using our software. Please
-submit any requests via our [Github Issues Page] [issues], where someone will
+submit any requests via our [Github Issues Page], where someone will
 see it and get to work promptly.
 
 License
 =======
 Copyright © 2015 Cisco Systems, Inc.
 
-Licensed under the [Apache License, Version 2.0] [license] (the "License").
+Licensed under the [Apache License, Version 2.0] (the "License").
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 
-[1]: http://www.apache.org/licenses/LICENSE-2.0 "license"
+[1]: http://www.apache.org/licenses/LICENSE-2.0 "Apache License, Version 2.0"
 [2]: https://github.com/CiscoCloud/distributive/wiki "wiki"
-[3]: https://github.com/CiscoCloud/distributive/issues "issues"
+[3]: https://github.com/CiscoCloud/distributive/issues "Github Issues Page"
 [4]: https://bintray.com/ciscocloud/rpm/Distributive/view#files "bintray"
 [5]: https://www.consul.io/docs/agent/checks.html "Consul"
 [6]: https://sensuapp.org/docs/0.18/checks "Sensu"
-[7]: https://nagios-plugins.org/doc/guidelines.html#AEN78 "Nagios"
+[7]: https://nagios-plugins.org/doc/guidelines.html#AEN78 "Nagios exit code specifications"
 [8]: https://golang.org/doc/code.html#GOPATH "gopath"
 [9]: https://github.com/pote/gpm "gpm"
 [10]: https://github.com/pote/gvp "gvp"

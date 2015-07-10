@@ -1,3 +1,3 @@
 #!/bin/bash
 source build.sh
-sudo ./bin/distributive -d "" -f samples/systemctl-fail.json --verbosity="debug"
+sudo ./bin/distributive -d samples --verbosity="info"
