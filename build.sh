@@ -31,7 +31,7 @@ function download_to_dir() {
 }
 
 # Install gpm if the user doesn't have it
-gpm_dir=/usr/local/bin
+gpm_dir=./.gpm
 gpm=$gpm_dir/gpm
 if [ ! -x $gpm ]
 then

@@ -4,6 +4,7 @@ test.go
 run.sh
 bin/
 .gvp/
+.gpm/
 .godeps/
 .godeps/*
 *.swp

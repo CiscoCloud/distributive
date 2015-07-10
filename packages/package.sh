@@ -13,9 +13,8 @@ samples=../samples
 
 #### BUILD
 
-cd ..
-source build.sh
-cd -
+(cd .. && source build.sh) # subshell
+
 
 #### PACKAGE
 
