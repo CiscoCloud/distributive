@@ -66,7 +66,7 @@ func (chklst *Checklist) makeReport() (report string) {
 	total := len(chklst.Codes)
 	passed := countInt(0, chklst.Codes)
 	failed := countInt(1, chklst.Codes)
-	report += "\nTotal: " + fmt.Sprint(total)
+	report += "↴\nTotal: " + fmt.Sprint(total) // prints below logrus line
 	report += "\nPassed: " + fmt.Sprint(passed)
 	report += "\nFailed: " + fmt.Sprint(failed)
 	for _, msg := range failMessages {
@@ -82,20 +82,32 @@ func validateParameters(chk Check) {
 	// parameters, and exits otherwise. Can't do much with a broken check!
 	checkParameterLength := func(chk Check, expected int) {
 		given := len(chk.Parameters)
-		if given == 0 || expected == 0 {
-			log.WithFields(log.Fields{
-				"check type": chk.Check,
-			}).Fatal("Invalid check")
-		}
-		if given != expected {
+		if expected == 0 {
 			log.WithFields(log.Fields{
 				"name":       chk.Name,
 				"check type": chk.Check,
-				"expected":   fmt.Sprint(expected),
-				"given":      fmt.Sprint(given),
-				"parameters": fmt.Sprint(chk.Parameters),
+				"parameters": chk.Parameters,
+			}).Fatal("Invalid check")
+		} else if given != expected {
+			log.WithFields(log.Fields{
+				"name":       chk.Name,
+				"check type": chk.Check,
+				"expected":   expected,
+				"given":      given,
+				"parameters": chk.Parameters,
 			}).Fatal("Invalid check parameters")
 		}
+	}
+	if len(wrkutils.ParameterLength) < 1 {
+		workers.RegisterAll()
+	}
+	if len(wrkutils.ParameterLength) < 1 {
+		log.WithFields(log.Fields{
+			"name":       chk.Name,
+			"check type": chk.Check,
+			"given":      len(chk.Parameters),
+			"parameters": chk.Parameters,
+		}).Fatal("No workers could be registered with ParameterLength")
 	}
 	checkParameterLength(chk, wrkutils.ParameterLength[strings.ToLower(chk.Check)])
 }
@@ -103,14 +115,15 @@ func validateParameters(chk Check) {
 // getworkers.Worker returns a workers.Worker based on the Check's name. It also makes sure that
 // the correct number of parameters were specified.
 func getWorker(chk Check) wrkutils.Worker {
-	validateParameters(chk)
 	work := wrkutils.Workers[strings.ToLower(chk.Check)]
 	if work == nil {
+		msg := "JSON file included one or more unsupported health checks"
+		msg2 := "(check lookup returned nil function)"
 		log.WithFields(log.Fields{
 			"name":       chk.Name,
 			"type":       chk.Check,
 			"parameters": chk.Parameters,
-		}).Fatal("JSON file included one or more unsupported health checks")
+		}).Fatal(msg + " " + msg2)
 		return nil
 	}
 	return work
@@ -139,6 +152,7 @@ func checklistFromBytes(data []byte) (chklst Checklist) {
 	out2 := make(chan Check)
 	go func() {
 		for chk := range out {
+			validateParameters(chk)
 			chk.Work = getWorker(chk)
 			out2 <- chk
 		}
@@ -292,7 +306,6 @@ func main() {
 	validateFlags(file, URL, directory)
 
 	// add workers to workers, parameterLength
-	workers.RegisterAll()
 	chklsts := getChecklists(file, directory, URL, stdin)
 	// run all checklists
 	// TODO: use concurrent pipe here

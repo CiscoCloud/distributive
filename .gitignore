@@ -1,6 +1,6 @@
-distributive
+# for some reason, this ignores main_test.go
+# distributive
 test.json
-test.go
 run.sh
 bin/
 .gvp/

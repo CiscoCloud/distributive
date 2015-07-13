@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env sh
+# only use posix compliant syntax
+set -o posix
 
 # This script compiles and runs distributive, downloading any dependencies on
 # the fly.
