@@ -116,26 +116,34 @@ func SeparateOnAlignment(str string) (table Table) {
 	// wordAfterIndex gets the first whitespace-delimited word of a string
 	// that occurs after the given index
 	wordAfterIndex := func(i int, str string) string {
-		if i < 0 {
-			log.WithFields(log.Fields{
-				"index": i,
-			}).Fatal("Internal error: negative index passed to wordAfterIndex")
-		}
+		// Report any possible errors
 		msg := "Couldn't get wordAfterIndex, "
-		if len(str) < i {
+		fatal := false
+		switch {
+		case i < 0:
+			msg += "negative index passed to wordAfterIndex"
+			fatal = true
+		case len(strings.Fields(str)) < 1:
+			msg += "string had only whitespace"
+			return ""
+		case len(str) < i:
+			msg += "string was too short"
+			fatal = true
+		}
+		if msg != "Couldn't get wordAfterIndex, " {
+			if fatal {
+				log.WithFields(log.Fields{
+					"index": i,
+					"str":   str,
+				}).Fatal(msg + "string was too short")
+			}
 			log.WithFields(log.Fields{
 				"index": i,
 				"str":   str,
 			}).Warn(msg + "string was too short")
-			return ""
 		}
+		// Find the first word after that index
 		fields := strings.Fields(str[i:])
-		if len(fields) < 1 {
-			log.WithFields(log.Fields{
-				"index": i,
-				"str":   str,
-			}).Warn(msg + "string had only whitespace")
-		}
 		return strings.TrimSpace(fields[0])
 	}
 	// getHeaders returns a list of table headers from a unseparated string,

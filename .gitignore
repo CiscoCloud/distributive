@@ -3,6 +3,8 @@
 test.json
 run.sh
 bin/
+bin/distributive
+packages/distributive
 .gvp/
 .gpm/
 .godeps/

@@ -44,7 +44,7 @@ func validateFlags(file string, URL string, directory string) {
 // initializeLogrus sets the logrus log level according to the specified
 // verbosity level, both for packages main and wrkutils
 func initializeLogrus(verbosity string) {
-	lvls := "info | debug | fatal | error | panic | warn"
+	lvls := "info | debug | fatal | panic | warn"
 	var logLevel log.Level
 	logLevel = 0
 	switch verbosity {

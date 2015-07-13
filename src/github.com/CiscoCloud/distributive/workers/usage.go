@@ -114,6 +114,19 @@ func memoryUsage(parameters []string) (exitCode int, exitMessage string) {
 	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
 }
 
+// swapUsage checks to see whether or not the system has a swap usage
+// percentage below a certain threshold
+func swapUsage(parameters []string) (exitCode int, exitMessage string) {
+	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
+	actualPercentUsed := getUsedPercent("swap")
+	if actualPercentUsed < float32(maxPercentUsed) {
+		return 0, ""
+	}
+	msg := "Swap usage above defined maximum"
+	slc := []string{fmt.Sprint(actualPercentUsed)}
+	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
+}
+
 // freeMemOrSwap is an abstraction of freeMemory and freeSwap, which measures
 // if the desired resource has a quantity free above the amount specified
 func freeMemOrSwap(input string, swapOrMem string) (exitCode int, exitMessage string) {
@@ -153,19 +166,6 @@ func freeSwap(parameters []string) (exitCode int, exitMessage string) {
 	return freeMemOrSwap(parameters[0], "swap")
 }
 
-// memoryUsage checks to see whether or not the system has a memory usage
-// percentage below a certain threshold
-func swapUsage(parameters []string) (exitCode int, exitMessage string) {
-	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
-	actualPercentUsed := getUsedPercent("swap")
-	if actualPercentUsed < float32(maxPercentUsed) {
-		return 0, ""
-	}
-	msg := "Swap usage above defined maximum"
-	slc := []string{fmt.Sprint(actualPercentUsed)}
-	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
-}
-
 // getCPUSample helps cpuUsage do its thing. Taken from a stackoverflow:
 // http://stackoverflow.com/questions/11356330/getting-cpu-usage-with-golang
 func getCPUSample() (idle, total uint64) {
@@ -196,13 +196,17 @@ func getCPUSample() (idle, total uint64) {
 
 // cpuUsage checks to see whether or not CPU usage is below a certain %.
 func cpuUsage(parameters []string) (exitCode int, exitMessage string) {
-	idle0, total0 := getCPUSample()
-	time.Sleep(3 * time.Second)
-	idle1, total1 := getCPUSample()
-	idleTicks := float32(idle1 - idle0)
-	totalTicks := float32(total1 - total0)
-	actualPercentUsed := 100 * (totalTicks - idleTicks) / totalTicks
+	// TODO check that parameters are in range 0 < x < 100
+	cpuPercentUsed := func(sampleTime time.Duration) float32 {
+		idle0, total0 := getCPUSample()
+		time.Sleep(sampleTime)
+		idle1, total1 := getCPUSample()
+		idleTicks := float32(idle1 - idle0)
+		totalTicks := float32(total1 - total0)
+		return (100 * (totalTicks - idleTicks) / totalTicks)
+	}
 	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
+	actualPercentUsed := cpuPercentUsed(3 * time.Second)
 	if actualPercentUsed < float32(maxPercentUsed) {
 		return 0, ""
 	}

@@ -1,17 +1,56 @@
 package workers
 
 import (
-	"strings"
 	"testing"
 )
 
-func TestDockerImageFail(t *testing.T) {
-	parameters := []string{"failme"}
-	msgTest := func(exitMessage string) (passing bool, msg string) {
-		if strings.Contains(exitMessage, "not found") {
-			return true, ""
-		}
-		return false, "Expected exit message to contain 'not found'"
+func TestDockerImage(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping docker tests in short mode")
+	} else {
+		t.Parallel()
+		losers := []parameters{[]string{"failme"}, []string{""}}
+		testInputs(t, dockerImage, []parameters{}, losers)
 	}
-	generalTestFunction(dockerImage, parameters, gtZero, msgTest, t)
+}
+
+func TestDockerImageRegexp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping docker tests in short mode")
+	} else {
+		t.Parallel()
+		losers := []parameters{[]string{"failme"}, []string{"regexp"}}
+		testInputs(t, dockerImageRegexp, []parameters{}, losers)
+	}
+}
+
+func TestDockerRunning(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping docker tests in short mode")
+	} else {
+		t.Parallel()
+		losers := []parameters{[]string{"failme"}, []string{""}}
+		testInputs(t, dockerRunning, []parameters{}, losers)
+	}
+}
+
+func TestDockerRunningAPI(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping docker tests in short mode")
+	} else {
+		t.Parallel()
+		path := "/var/run/docker.sock"
+		losers := []parameters{[]string{path, "failme"}, []string{path, ""}}
+		testInputs(t, dockerRunningAPI, []parameters{}, losers)
+	}
+}
+
+func TestDockerRunningRegexp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping docker tests in short mode")
+	} else {
+		t.Parallel()
+		losers := []parameters{[]string{"failme"}, []string{""}}
+		testInputs(t, dockerRunningRegexp, []parameters{}, losers)
+	}
 }

@@ -208,8 +208,13 @@ func checklistFromURL(urlstr string) (chklst Checklist) {
 		log.WithFields(log.Fields{
 			"dir":   remoteCheckDir,
 			"error": err.Error(),
-		}).Fatal("Could not create temporary file directory:")
+		}).Warn("Could not create remote check directory")
+		remoteCheckDir = "./.remote-checks"
+		if err := os.MkdirAll(remoteCheckDir, 0755); err != nil {
+			wrkutils.CouldntWriteError(remoteCheckDir, err)
+		}
 	}
+	log.Debug("Using " + remoteCheckDir + " for remote check storage")
 
 	// write out the response to a file
 	// filter these (path illegal) chars: /?%*:|<^>. \

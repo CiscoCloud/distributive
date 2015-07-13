@@ -1,7 +1,6 @@
 package tabular
 
 import (
-	"regexp"
 	"strings"
 )
 
@@ -32,9 +31,9 @@ func IndiciesOf(needles []string, haystack string) (indicies []int) {
 	return indicies
 }
 
-// Lines splits a string on newlines+
+// Lines splits a string on newlines
 func Lines(str string) []string {
-	return regexp.MustCompile("\\n+").Split(str, -1)
+	return strings.Split(str, "\n")
 }
 
 // Unlines is the inverse operation of lines
