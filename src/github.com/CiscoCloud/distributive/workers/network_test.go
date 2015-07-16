@@ -108,14 +108,22 @@ func TestRoutingTableGateway(t *testing.T) {
 
 func TestReponseMatches(t *testing.T) {
 	t.Parallel()
-	winners := appendParameter(validURLs, "html")
-	losers := appendParameter(validURLs, "asfdjhow012u")
-	testInputs(t, responseMatches, winners, losers)
+	if testing.Short() {
+		t.Skip("Skipping tests that query remote servers in short mode")
+	} else {
+		winners := appendParameter(validURLs, "html")
+		losers := appendParameter(validURLs, "asfdjhow012u")
+		testInputs(t, responseMatches, winners, losers)
+	}
 }
 
 func TestReponseMatchesInsecure(t *testing.T) {
 	t.Parallel()
-	winners := appendParameter(validURLs, "html")
-	losers := appendParameter(validURLs, "asfdjhow012u")
-	testInputs(t, responseMatches, winners, losers)
+	if testing.Short() {
+		t.Skip("Skipping tests that query remote servers in short mode")
+	} else {
+		winners := appendParameter(validURLs, "html")
+		losers := appendParameter(validURLs, "asfdjhow012u")
+		testInputs(t, responseMatches, winners, losers)
+	}
 }

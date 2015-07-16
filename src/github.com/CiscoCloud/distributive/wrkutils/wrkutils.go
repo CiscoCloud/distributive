@@ -52,11 +52,12 @@ func CommandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 // `free` does.
 func GetByteUnits(str string) string {
 	regexps := map[string]*regexp.Regexp{
-		"b":  regexp.MustCompile("[^oa]bytes{0,1}|[^kKmMgGtT][bB]{1}"),
-		"kb": regexp.MustCompile("kilo(bytes){0,1}|[kK]{1}[iI]{0,1}[bB]{1}"),
-		"mb": regexp.MustCompile("mega(bytes){0,1}|[mM]{1}[iI]{0,1}[bB]{1}"),
-		"gb": regexp.MustCompile("giga(bytes){0,1}|[gG]{1}[iI]{0,1}[bB]{1}"),
-		"tb": regexp.MustCompile("terra(bytes){0,1}|[tT]{1}[iI]{0,1}[bB]{1}"),
+		// because "bytes" is harder, use it last
+		"tb": regexp.MustCompile(`tera(bytes){0,1}|[tT]{1}[iI]{0,1}[bB]{1}`),
+		"gb": regexp.MustCompile(`giga(bytes){0,1}|[gG]{1}[iI]{0,1}[bB]{1}`),
+		"mb": regexp.MustCompile(`mega(bytes){0,1}|[mM]{1}[iI]{0,1}[bB]{1}`),
+		"kb": regexp.MustCompile(`kilo(bytes){0,1}|[kK]{1}[iI]{0,1}[bB]{1}`),
+		"b":  regexp.MustCompile(`[^oa]bytes{0,1}|[^kKmMgGtT][bB]{1}`),
 	}
 	for unit, re := range regexps {
 		if re.MatchString(str) {

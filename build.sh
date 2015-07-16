@@ -1,76 +1,63 @@
 #!/usr/bin/env sh
 # only use posix compliant syntax
 set -o posix
+set -euo pipefail
+#IFS=$'\n\t' # bash only
 
 # This script compiles and runs distributive, downloading any dependencies on
 # the fly.
 
 #### GLOBALS
 
-version=0.2
-src=./src/github.com/CiscoCloud/distributive
+version="0.2"
+src="./src/github.com/CiscoCloud/distributive"
+bindir="./bin/"
 
 #### GET DEPENDENCIES
 
-function download_to_dir() {
-    dest=$1
-    url=$2
-    filename=`basename $url`
-
-    if [ ! -w $dest ]
-    then
-        mkdir $dest
-    fi
-
-    curl -O $url
-    chmod +x $filename
-    if [ ! -w $dest ]
-    then
-        sudo mv $filename $dest
-    else
-        mv $filename $dest
-    fi
-}
-
-# Install gpm if the user doesn't have it
-gpm_dir=./.gpm
-gpm=$gpm_dir/gpm
-if [ ! -x $gpm ]
-then
-    download_to_dir $gpm_dir https://raw.githubusercontent.com/pote/gpm/v1.3.2/bin/gpm
-fi
-
-# Install gvp if the user doesn't have it
-gvp_dir=./.gvp
-gvp=$gvp_dir/gvp
-if [ ! -x $gvp ]
-then
-    mkdir $gvp_dir
-    download_to_dir $gvp_dir https://raw.githubusercontent.com/pote/gvp/v0.2.0/bin/gvp
-fi
-
-# install depedencies
-source $gvp
-$gpm install
+# Put them all in ./.godeps
+. "./.envrc"
+go get ./...
 
 #### BUILD
 
+if [ ! -e "$bindir" ]; then
+    mkdir "$bindir"
+fi
+if [ ! -w "$bindir" ]
+then
+    echo "I always wished I were a better writer,"
+    echo "but I can't even write to $bindir"
+    exit 1
+fi
+if [ ! -r "$src" ]
+then
+    echo "This code is so bad it's unreadable! But really, can't read $src"
+    exit 1
+fi
+
 # -X sets the value of a string variable in main, others are size optimizations
-bindir=./bin
-mkdir -p ./bin 2&> /dev/null
-if [ ! -w ./bin ]
-then
-    echo "Can't write to ./bin, please change its permissions"
-    exit 1
-fi
-if [ ! -d ./bin ]
-then
-    mkdir ./bin
-fi
-if [ ! -r src ]
-then
-    echo "Couldn't read source files in $src"
-    exit 1
-fi
 go build -ldflags "-w -s -O -X main.Version $version" $src
-mv ./distributive ./bin
+if [ -e "./distributive" ]; then
+    mv ./distributive "$bindir"
+else
+    echo "I couldn't find that binary at ./distributive..."
+    echo "I know I put it around here somewhere..."
+    echo 'Oh go "find" it yourself:'
+    find . -name "distributive" -type f -executable
+fi
+
+#### CLEAN UP
+
+# For some reason, this weird dir gets made...
+if [ -e "./bin:/" ]; then
+    rm -r "./bin:/"
+fi
+
+if [ -d "./pkg/" ]; then
+    rm -r "./pkg/"
+fi
+
+if [ -f "./src/github.com/CiscoCloud/distributive/distributive" ]; then
+    rm "./src/github.com/CiscoCloud/distributive/distributive"
+fi

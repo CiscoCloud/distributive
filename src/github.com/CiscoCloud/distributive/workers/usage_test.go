@@ -67,7 +67,6 @@ func TestSwapUsage(t *testing.T) {
 }
 
 func testFreeMemoryOrSwap(t *testing.T, wrk worker) {
-	t.Parallel()
 	bWinners := suffixParameter(smallInts, "b")
 	kbWinners := suffixParameter(smallInts, "kb")
 	mbWinners := suffixParameter(smallInts, "mb")

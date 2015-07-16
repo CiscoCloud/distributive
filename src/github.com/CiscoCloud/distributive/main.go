@@ -13,6 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -221,7 +222,7 @@ func checklistFromURL(urlstr string) (chklst Checklist) {
 	// TODO use a golang loop with straight up strings, instead of regexp
 	pathRegex := regexp.MustCompile("[\\/\\?%\\*:\\|\"<\\^>\\.\\ ]")
 	filename := pathRegex.ReplaceAllString(urlstr, "") + ".json"
-	fullpath := remoteCheckDir + filename
+	fullpath := filepath.Join(remoteCheckDir, filename)
 	// only create it if it doesn't exist
 	if _, err := os.Stat(fullpath); err != nil {
 		log.Info("Fetching remote checklist")

@@ -1,6 +1,0 @@
-# For use with GPM
-# https://github.com/pote/gpm
-
-github.com/fsouza/go-dockerclient 0357d46c2e01023011c1adbde146b10d5ccdab2d
-github.com/codegangsta/cli v1.2.0
-github.com/Sirupsen/logrus v0.8.2
