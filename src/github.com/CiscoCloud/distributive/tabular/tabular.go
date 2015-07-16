@@ -33,6 +33,19 @@ func ToString(table Table) string {
 		}
 		return max
 	}
+	// longestRow finds the longest row in the table and returns its length
+	longestRow := func(table Table) int {
+		if len(table) < 1 {
+			return 0
+		}
+		max := len(table[0])
+		for _, row := range table {
+			if len(row) > max {
+				max = len(row)
+			}
+		}
+		return max
+	}
 	// longestInColumn returns the length of the longest string in the given
 	// slice
 	longestInColumn := func(col Column) int {
@@ -62,11 +75,16 @@ func ToString(table Table) string {
 	}
 
 	rows := []string{}
+	longest := longestRow(table)
 	for _, row := range table {
 		rowStr := "\n| "
-		for i, item := range row {
+		for i := 0; i < longest; i++ {
+			item := ""
+			if len(row) > i {
+				item = row[i]
+			}
 			columnWidth := longestInColumn(GetColumn(i, table))
-			rowStr = rowStr + padString(item, " ", columnWidth) + " |"
+			rowStr = rowStr + padString(item, " ", columnWidth) + " | "
 		}
 		rows = append(rows, rowStr)
 	}
@@ -96,12 +114,29 @@ func ToString(table Table) string {
 	return normalDivider + strings.Join(separatedRows, "")
 }
 
+// TableEqual tests the equality of the tables by examining each cell
+func TableEqual(t1 Table, t2 Table) bool {
+	if len(t1) != len(t2) {
+		return false
+	}
+	for i := range t1 {
+		if !SliceEqual(t1[i], t2[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // SeparateString is an abstraction of stringToSlice that takes two kinds of
 // separators, and splits a string into a 2D slice based on those separators
 func SeparateString(rowSep *regexp.Regexp, colSep *regexp.Regexp, str string) (output Table) {
 	lines := rowSep.Split(str, -1)
 	for _, line := range lines {
-		row := colSep.Split(line, -1)
+		rawRow := colSep.Split(line, -1)
+		row := []string{}
+		for _, cell := range rawRow {
+			row = append(row, strings.TrimSpace(cell))
+		}
 		if len(row) > 0 && HasNonEmpty(row) {
 			output = append(output, row)
 		}

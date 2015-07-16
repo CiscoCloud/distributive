@@ -21,8 +21,8 @@ func repeatString(str string, length int) (result string) {
 	return result
 }
 
-// IndiciesOf takes a list of needles and a haystack and returns the locations
-// of all the needles
+// IndiciesOf takes a list of needles and a haystack and returns the first
+// locations of all the needles
 func IndiciesOf(needles []string, haystack string) (indicies []int) {
 	for _, needle := range needles {
 		index := strings.Index(haystack, needle)
@@ -39,4 +39,16 @@ func Lines(str string) []string {
 // Unlines is the inverse operation of lines
 func Unlines(slc []string) string {
 	return strings.Join(slc, "\n")
+}
+
+func SliceEqual(slc1 []string, slc2 []string) bool {
+	if len(slc1) != len(slc2) {
+		return false
+	}
+	for i := range slc1 {
+		if slc1[i] != slc2[i] {
+			return false
+		}
+	}
+	return true
 }
