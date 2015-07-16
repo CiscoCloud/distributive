@@ -1,0 +1,7 @@
+language: go
+
+install:
+    - ./build.sh
+
+script:
+    - source .envrc && go test -v -short ./...

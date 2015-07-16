@@ -258,12 +258,18 @@ func installed(parameters []string) (exitCode int, exitMessage string) {
 	pkg := parameters[0]
 	name := getManager()
 	options := managers[name]
-	out, _ := exec.Command(name, options, pkg).Output()
-	if strings.Contains(string(out), pkg) {
+	cmd := exec.Command(name, options, pkg)
+	out, err := cmd.CombinedOutput()
+	outstr := string(out)
+	if strings.Contains(outstr, pkg) {
 		return 0, ""
+	} else if outstr != "" && err != nil {
+		// pacman - outstr == "", and exit code of 1 if it can't find the pkg
+		wrkutils.ExecError(cmd, outstr, err)
 	}
 	msg := "Package was not found:"
 	msg += "\n\tPackage name: " + pkg
 	msg += "\n\tPackage manager: " + name
+	msg += "\n\tCommand output: " + outstr
 	return 1, msg
 }

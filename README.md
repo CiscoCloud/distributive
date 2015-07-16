@@ -49,9 +49,6 @@ Installation and Usage
 
 Installation
 ------------
-This package uses [gpm][gpm] and [gvp][gvp] for dependency management. Any of
-the shell scripts will install them for you.
-
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
  2. Build a binary with `./build.sh`
@@ -188,6 +185,5 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [sensu]: https://sensuapp.org/docs/0.18/checks
 [nagios]: https://nagios-plugins.org/doc/guidelines.html#AEN78
 [gopath]: https://golang.org/doc/code.html#GOPATH
-[gpm]: https://github.com/pote/gpm
-[gvp]: https://github.com/pote/gvp
+[direnv]: https://github.com/direnv/direnv
 [godoc]: https://godoc.org/github.com/CiscoCloud/distributive/wrkutils

@@ -59,12 +59,12 @@ func getRunningContainers() (containers []string) {
 
 // getRunningContainersAPI is like getRunningContainers, but uses an external
 // library in order to access the Docker API
-func getRunningContainersAPI(path string) (containers []string) {
-	endpoint := path
+func getRunningContainersAPI(endpoint string) (containers []string) {
 	client, err := docker.NewClient(endpoint)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error": err.Error(),
+			"endpoint": endpoint,
+			"error":    err.Error(),
 		}).Fatal("Couldn't create Docker API client")
 	}
 	ctrs, err := client.ListContainers(docker.ListContainersOptions{All: false})

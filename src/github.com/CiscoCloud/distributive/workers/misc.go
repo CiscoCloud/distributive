@@ -88,6 +88,7 @@ func running(parameters []string) (exitCode int, exitMessage string) {
 // temp parses the output of lm_sensors and determines if Core 0 (all cores) are
 // over a certain threshold as specified in the JSON.
 func temp(parameters []string) (exitCode int, exitMessage string) {
+	// TODO: check for negative, outrageously high temperatures
 	// allCoreTemps returns the temperature of each core
 	allCoreTemps := func() (temps []int) {
 		cmd := exec.Command("sensors")
@@ -139,6 +140,7 @@ func temp(parameters []string) (exitCode int, exitMessage string) {
 // module checks to see if a kernel module is installed
 func module(parameters []string) (exitCode int, exitMessage string) {
 	// kernelModules returns a list of all modules that are currently loaded
+	// TODO just read from /proc/modules
 	kernelModules := func() (modules []string) {
 		cmd := exec.Command("/sbin/lsmod")
 		return wrkutils.CommandColumnNoHeader(0, cmd)

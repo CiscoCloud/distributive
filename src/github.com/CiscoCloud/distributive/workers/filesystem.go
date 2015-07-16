@@ -31,10 +31,22 @@ func isType(name string, checker fileTypeCheck, path string) (exitCode int, mess
 	return 1, "Is not a " + name + ": " + path
 }
 
+func isSymlink(path string) (bool, error) {
+	_, err := os.Readlink(path)
+	if err == nil {
+		return true, err
+	}
+	return false, err
+}
+
 // file checks to see if the given path represents a normal file
 func file(parameters []string) (exitCode int, exitMessage string) {
 	// returns true if there is a regular ol' file at path
+	// TODO fails on /dev/null
 	isFile := func(path string) (bool, error) {
+		if is, _ := isSymlink(path); is {
+			return false, nil
+		}
 		fileInfo, err := os.Stat(path)
 		if fileInfo == nil || !fileInfo.Mode().IsRegular() {
 			return false, err
@@ -47,6 +59,9 @@ func file(parameters []string) (exitCode int, exitMessage string) {
 // directory checks to see if a directory exists at the specified path
 func directory(parameters []string) (exitCode int, exitMessage string) {
 	isDirectory := func(path string) (bool, error) {
+		if is, _ := isSymlink(path); is {
+			return false, nil
+		}
 		fileInfo, err := os.Stat(path)
 		if fileInfo == nil || !fileInfo.Mode().IsDir() {
 			return false, err
@@ -59,13 +74,6 @@ func directory(parameters []string) (exitCode int, exitMessage string) {
 // symlink checks to see if a symlink exists at a given path
 func symlink(parameters []string) (exitCode int, exitMessage string) {
 	// isSymlink checks to see if a symlink exists at this path.
-	isSymlink := func(path string) (bool, error) {
-		_, err := os.Readlink(path)
-		if err == nil {
-			return true, err
-		}
-		return false, err
-	}
 	return isType("symlink", isSymlink, parameters[0])
 }
 
@@ -103,6 +111,7 @@ func checksum(parameters []string) (exitCode int, exitMessage string) {
 	checkAgainst := parameters[1]
 	path := parameters[2]
 	chksum := getFileChecksum(algorithm, path)
+	// TODO warn on unequal lengths
 	if chksum == checkAgainst {
 		return 0, ""
 	}

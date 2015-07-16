@@ -1,12 +1,12 @@
-distributive
-test.json
-test.go
+# for some reason, this ignores main_test.go
+# distributive
 run.sh
 bin/
-.gvp/
-.gpm/
+pkg/
 .godeps/
-.godeps/*
+src/github.com/CiscoCloud/distributive/distributive
 *.swp
 *.rpm
 *.bak
+.remote*
+test*

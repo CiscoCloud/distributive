@@ -41,13 +41,14 @@ func systemctlActive(parameters []string) (exitCode int, exitMessage string) {
 // systemctlSock is an abstraction of systemctlSockPath and systemctlSockUnit,
 // it reads from `systemctl list-sockets` and sees if the value is in the
 // appropriate column.
-func systemctlSock(value string, path bool) (exitCode int, exitMessage string) {
-	column := 1
-	if path {
-		column = 0
-	}
-	cmd := exec.Command("systemctl", "list-sockets")
-	values := wrkutils.CommandColumnNoHeader(column, cmd)
+func systemctlSock(value string, column string) (exitCode int, exitMessage string) {
+	outstr := wrkutils.CommandOutput(exec.Command("systemctl", "list-sockets"))
+	lines := tabular.Lines(outstr)
+	msg := "systemctl list-sockers didn't output enough rows"
+	wrkutils.IndexError(msg, len(lines)-4, lines)
+	unlines := tabular.Unlines(lines[:len(lines)-4])
+	table := tabular.SeparateOnAlignment(unlines)
+	values := tabular.GetColumnByHeader(column, table)
 	if tabular.StrIn(value, values) {
 		return 0, ""
 	}
@@ -57,13 +58,13 @@ func systemctlSock(value string, path bool) (exitCode int, exitMessage string) {
 // systemctlSock checks to see whether the sock at the given path is registered
 // within systemd using the sock's filesystem path.
 func systemctlSockPath(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlSock(parameters[0], true)
+	return systemctlSock(parameters[0], "LISTEN")
 }
 
 // systemctlSock checks to see whether the sock at the given path is registered
 // within systemd using the sock's unit name.
 func systemctlSockUnit(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlSock(parameters[0], false)
+	return systemctlSock(parameters[0], "UNIT")
 }
 
 // getTimers returns of all the timers under the UNIT column of
@@ -125,6 +126,7 @@ func systemctlUnitFileStatus(parameters []string) (exitCode int, exitMessage str
 	status := parameters[1]
 	units, statuses := getUnitFilesWithStatuses()
 	var actualStatus string
+	// TODO check if unit could be found at all
 	for i, un := range units {
 		if un == unit {
 			actualStatus = statuses[i]

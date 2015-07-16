@@ -61,6 +61,7 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 		return ports
 	}
 
+	// TODO check if it is in a valid range
 	port := wrkutils.ParseMyInt(parameters[0])
 	open := getOpenPorts()
 	for _, p := range open {
@@ -250,17 +251,26 @@ func host(parameters []string) (exitCode int, exitMessage string) {
 	return 1, "Host cannot be resolved: " + host
 }
 
+func validHost(host string) bool {
+	_, err := net.ResolveTCPAddr("tcp", host)
+	if err != nil && strings.Contains(err.Error(), "no such host") {
+		return false
+	}
+	_, err = net.ResolveUDPAddr("udp", host)
+	if err != nil && strings.Contains(err.Error(), "no such host") {
+		return false
+	}
+	return true
+}
+
 // canConnect tests whether a connection can be made to a given host on its
 // given port using protocol ("TCP"|"UDP")
 func canConnect(host string, protocol string, timeout time.Duration) bool {
+	if !validHost(host) {
+		return false
+	}
 	resolveError := func(err error) {
-		if err != nil && strings.Contains(err.Error(), "no such host") {
-			log.WithFields(log.Fields{
-				"protocol": protocol,
-				"address":  host,
-				"error":    err.Error(),
-			}).Fatal("Couldn't resolve network address")
-		} else if err != nil {
+		if err != nil {
 			log.WithFields(log.Fields{
 				"protocol": protocol,
 				"address":  host,
@@ -324,6 +334,7 @@ func getConnectionWorker(host string, protocol string, timeoutstr string) (exitC
 	return 1, "Could not connect over " + protocol + " to host: " + host
 }
 
+// TODO add default port of :80 if none is provided
 // tcp sees if a given IP/port can be reached with a TCP connection
 func tcp(parameters []string) (exitCode int, exitMessage string) {
 	return getConnectionWorker(parameters[0], "TCP", "0ns")
