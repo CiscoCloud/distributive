@@ -1,8 +1,4 @@
 #!/usr/bin/env sh
-# only use posix compliant syntax
-set -o posix
-set -euo pipefail
-#IFS=$'\n\t' # bash only
 
 # This script compiles and runs distributive, downloading any dependencies on
 # the fly.
