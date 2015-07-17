@@ -2,7 +2,7 @@ language: go
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -y net-tools systemd systemd-services
+    - sudo apt-get install -y net-tools systemd-services
 
 install:
     - ./build.sh
