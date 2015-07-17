@@ -61,7 +61,6 @@ func TestModule(t *testing.T) {
 	winners := []parameters{
 		[]string{"iptable_nat"},
 		[]string{"ip_tables"},
-		[]string{"loop"},
 	}
 	losers := []parameters{
 		[]string{"knecht"},
