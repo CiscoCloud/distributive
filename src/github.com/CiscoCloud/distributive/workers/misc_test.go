@@ -60,7 +60,7 @@ func TestModule(t *testing.T) {
 	t.Parallel()
 	winners := []parameters{
 		[]string{"iptable_nat"},
-		[]string{"snd"},
+		[]string{"ip_tables"},
 		[]string{"loop"},
 	}
 	losers := []parameters{
