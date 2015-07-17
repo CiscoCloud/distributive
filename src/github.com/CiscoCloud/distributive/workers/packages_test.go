@@ -46,7 +46,9 @@ func TestRepoExistsURI(t *testing.T) {
 
 func TestPacmanIgnore(t *testing.T) {
 	t.Parallel()
-	testInputs(t, pacmanIgnore, []parameters{}, names)
+	if getManager() == "pacman" {
+		testInputs(t, pacmanIgnore, []parameters{}, names)
+	}
 }
 
 func TestInstalled(t *testing.T) {
