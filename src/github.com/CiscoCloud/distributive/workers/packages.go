@@ -175,9 +175,9 @@ func getPacmanRepos(path string) (repos []repo) {
 // getRepos simply returns a list of repos based on the manager chosen
 func getRepos(manager string) (repos []repo) {
 	switch manager {
-	case "yum":
+	case "rpm":
 		return getYumRepos()
-	case "apt":
+	case "dpkg":
 		return getAptRepos()
 	case "pacman":
 		return getPacmanRepos("/etc/pacman.conf")
