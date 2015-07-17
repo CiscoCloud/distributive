@@ -23,7 +23,6 @@ var dirParameters = []parameters{
 
 var symlinkParameters = []parameters{
 	[]string{"/bin/sh"},
-	[]string{"/bin"},
 }
 
 func TestFile(t *testing.T) {
