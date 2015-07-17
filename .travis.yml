@@ -1,9 +1,5 @@
 language: go
 
-before_install:
-    - sudo apt-get update -qq
-    - sudo apt-get install -y lm-sensors
-
 install:
     - ./build.sh
 

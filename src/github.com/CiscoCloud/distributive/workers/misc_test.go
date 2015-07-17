@@ -48,6 +48,7 @@ func TestRunning(t *testing.T) {
 	testInputs(t, running, winners, losers)
 }
 
+/* lm-sensors doesn't work in Travis CI
 func TestTemp(t *testing.T) {
 	t.Parallel()
 	winners := []parameters{
@@ -62,6 +63,7 @@ func TestTemp(t *testing.T) {
 	}
 	testInputs(t, temp, winners, losers)
 }
+*/
 
 func TestModule(t *testing.T) {
 	t.Parallel()
