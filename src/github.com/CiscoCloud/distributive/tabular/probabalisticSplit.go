@@ -165,10 +165,10 @@ func getColumnRegex(str string, rowSep *regexp.Regexp) *regexp.Regexp {
 	}
 	// different column separators to try out
 	initialColSeps := []*regexp.Regexp{
-		regexp.MustCompile("\\t+"),    // tabs
-		regexp.MustCompile("\\s{4}"),  // exactly four whitespaces
-		regexp.MustCompile("\\s{2,}"), // two+ whitespace (spaces in cols)
-		regexp.MustCompile("\\s+"),    // any whitespace
+		regexp.MustCompile(`\t+`),    // tabs
+		regexp.MustCompile(`\s{4}`),  // exactly four whitespaces
+		regexp.MustCompile(`\s{2,}`), // two+ whitespace (spaces in cols)
+		regexp.MustCompile(`\s+`),    // any whitespace
 	}
 	// filter regexps that have no matches at all - they will always return
 	// rows of even length (length 1).

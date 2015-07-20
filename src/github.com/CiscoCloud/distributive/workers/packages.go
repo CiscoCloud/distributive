@@ -123,7 +123,7 @@ func getAptRepos() (repos []repo) {
 		for _, f := range sourceLists {
 			split := tabular.ProbabalisticSplit(wrkutils.FileToString(f))
 			// filter out comments
-			commentRegex := regexp.MustCompile("^\\s*#")
+			commentRegex := regexp.MustCompile(`^\s*#`)
 			for _, line := range split {
 				if len(line) > 1 && !(commentRegex.MatchString(line[0])) {
 					urls = append(urls, line[1])
@@ -143,9 +143,9 @@ func getAptRepos() (repos []repo) {
 func getPacmanRepos(path string) (repos []repo) {
 	data := wrkutils.FileToLines(path)
 	// match words and dashes in brackets without comments
-	nameRegex := regexp.MustCompile("[^#]\\[(\\w|\\-)+\\]")
+	nameRegex := regexp.MustCompile(`[^#]\[(\w|\-)+\]`)
 	// match lines that start with Include= or Server= and anything after that
-	urlRegex := regexp.MustCompile("[^#](Include|Server)\\s*=\\s*.*")
+	urlRegex := regexp.MustCompile(`[^#](Include|Server)\s*=\s*.*`)
 	var names []string
 	var urls []string
 	for _, line := range data {
@@ -237,7 +237,7 @@ func pacmanIgnore(parameters []string) (exitCode int, exitMessage string) {
 	pkg := parameters[0]
 	path := "/etc/pacman.conf"
 	data := wrkutils.FileToString(path)
-	re := regexp.MustCompile("[^#]IgnorePkg\\s+=\\s+.+")
+	re := regexp.MustCompile(`[^#]IgnorePkg\s+=\s+.+`)
 	find := re.FindString(data)
 	var packages []string
 	if find != "" {

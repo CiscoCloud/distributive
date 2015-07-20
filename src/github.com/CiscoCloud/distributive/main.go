@@ -220,7 +220,7 @@ func checklistFromURL(urlstr string) (chklst Checklist) {
 	// write out the response to a file
 	// filter these (path illegal) chars: /?%*:|<^>. \
 	// TODO use a golang loop with straight up strings, instead of regexp
-	pathRegex := regexp.MustCompile("[\\/\\?%\\*:\\|\"<\\^>\\.\\ ]")
+	pathRegex := regexp.MustCompile(`[\/\?%\*:\|"<\^>\.\ \\]`)
 	filename := pathRegex.ReplaceAllString(urlstr, "") + ".json"
 	fullpath := filepath.Join(remoteCheckDir, filename)
 	// only create it if it doesn't exist

@@ -95,9 +95,9 @@ func temp(parameters []string) (exitCode int, exitMessage string) {
 		out, err := cmd.CombinedOutput()
 		outstr := string(out)
 		wrkutils.ExecError(cmd, outstr, err)
-		restr := "Core\\s\\d+:\\s+[\\+\\-](?P<temp>\\d+)\\.*\\d*°C"
+		restr := `Core\s\d+:\s+[\+\-](?P<temp>\d+)\.*\d*°C`
 		re := regexp.MustCompile(restr)
-		for _, line := range regexp.MustCompile("\n+").Split(outstr, -1) {
+		for _, line := range regexp.MustCompile(`\n+`).Split(outstr, -1) {
 			if re.MatchString(line) {
 				// submatch captures only the integer part of the temperature
 				matchDict := wrkutils.SubmatchMap(re, line)

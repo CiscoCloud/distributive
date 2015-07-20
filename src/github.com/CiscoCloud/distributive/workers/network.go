@@ -24,7 +24,7 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 		// TODO by header isn't working
 		//localAddresses := tabular.GetColumnByHeader("local_address", table)
 		localAddresses := tabular.GetColumnNoHeader(1, table)
-		portRe := regexp.MustCompile("([0-9A-F]{8}):([0-9A-F]{4})")
+		portRe := regexp.MustCompile(`([0-9A-F]{8}):([0-9A-F]{4})`)
 		for _, address := range localAddresses {
 			port := portRe.FindString(address)
 			if port != "" {

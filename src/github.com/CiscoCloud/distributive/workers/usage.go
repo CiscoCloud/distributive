@@ -132,7 +132,7 @@ func swapUsage(parameters []string) (exitCode int, exitMessage string) {
 func freeMemOrSwap(input string, swapOrMem string) (exitCode int, exitMessage string) {
 	// get numbers and units
 	units := wrkutils.GetByteUnits(input)
-	re := regexp.MustCompile("\\d+")
+	re := regexp.MustCompile(`\d+`)
 	amountString := re.FindString(input)
 	// report errors
 	if amountString == "" {

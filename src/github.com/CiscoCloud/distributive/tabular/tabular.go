@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-var rowSep = regexp.MustCompile("\n+")
+var rowSep = regexp.MustCompile(`\n+`)
 
 // Table is a 2D slice of strings, for representing tabular data as cells, in
 // rows and columns.
@@ -233,7 +233,7 @@ func SeparateOnAlignment(str string) (table Table) {
 // separated on whitespace and newlines
 // TODO: this should be depreciated by probabalisticSplit
 func StringToSlice(str string) (output Table) {
-	colSep := regexp.MustCompile("\\s+")
+	colSep := regexp.MustCompile(`\s+`)
 	return SeparateString(rowSep, colSep, str)
 }
 
@@ -325,5 +325,5 @@ func ReIn(re *regexp.Regexp, slice []string) bool {
 // character in the list
 func HasNonEmpty(slice []string) bool {
 	// regexp matches: beginning of string, >0 non-whitespace char, eof
-	return ReIn(regexp.MustCompile("\\S+"), slice)
+	return ReIn(regexp.MustCompile(`\S+`), slice)
 }

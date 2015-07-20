@@ -23,10 +23,10 @@ type Group struct {
 func getGroups() (groups []Group) {
 	path := "/etc/group"
 	data := wrkutils.FileToString(path)
-	rowSep := regexp.MustCompile("\n")
-	colSep := regexp.MustCompile(":")
+	rowSep := regexp.MustCompile(`\n`)
+	colSep := regexp.MustCompile(`:`)
 	lines := tabular.SeparateString(rowSep, colSep, data)
-	commaRegexp := regexp.MustCompile(",")
+	commaRegexp := regexp.MustCompile(`,`)
 	for _, line := range lines {
 		if len(line) > 3 { // only lines that have all fields (non-empty)
 			gid, err := strconv.ParseInt(line[2], 10, 64)

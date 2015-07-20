@@ -5,6 +5,7 @@ bin/
 pkg/
 .godeps/
 src/github.com/CiscoCloud/distributive/distributive
+.travis.yml
 *.swp
 *.rpm
 *.bak
