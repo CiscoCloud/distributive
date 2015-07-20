@@ -5,7 +5,7 @@
 
 #### GLOBALS
 
-version="0.2"
+version="0.2.1"
 src="./src/github.com/CiscoCloud/distributive"
 bindir="./bin/"
 
