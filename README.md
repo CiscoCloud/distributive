@@ -26,7 +26,7 @@ This readme documents the current (development) version of distributive.
 Distributive is a tool for running distributed health checks in datacenters.
 It was designed with Consul in mind, but is platform agnostic. It is simple
 to configure (with JSON checklists) and easy to deploy and run. It has no
-dependencies, and can be shipped as a speedy 6.3MB (yes, megabytes!) binary.
+dependencies, and can be shipped as a speedy 1.3MB (yes, megabytes!) binary.
 
 Usually, some external server will ask the host to execute this program, reading
 a checklist from a JSON file, and will record this program's exit code and
