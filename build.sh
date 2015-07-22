@@ -9,6 +9,9 @@ version="0.2.1"
 src="./src/github.com/CiscoCloud/distributive"
 bindir="./bin/"
 
+# for POSIX shell compliance: http://www.etalabs.net/sh_tricks.html
+echo () { printf %s\\n "$*" ; }
+
 # Description: Echo a can't write error and exit 1
 # Arguments: $1 - dir
 cant_write_error() {
@@ -42,6 +45,16 @@ capture_output() {
     echo "$output"
 }
 
+# Description: Check if an executable file is on the PATH (for use in if)
+# Arguments: $1 - Name of executable
+# Returns: 0 - executable is on PATH, 1 - " " not " "
+executable_exists() {
+    if command -v "$1" >/dev/null 2>&1; then # command exists
+        return 0
+    fi
+    return 1
+}
+
 #### GET DEPENDENCIES
 
 # Put them all in ./.godeps
@@ -69,13 +82,29 @@ build_output=$(go build -ldflags "-w -s -O -X main.Version $version" $src)
 executable="./distributive"
 [ -e "$executable" ] && mv "$executable" "$bindir"
 
-#### REPORT ERRORS
+#### REPORT BUILD ERRORS
 
-if [ ! -e "./bin/distributive" ]; then
+if [ ! -f "$bindir/$executable" ]; then
     echo "Looks like the build failed. Here's the output of go get ./..."
     echo "$get_output"
     echo "And here it is for the build:"
     echo "$build_output"
+fi
+
+#### COMPRESS WITH UPX
+
+if [ "$1" = "compress" ]  ; then
+    if [ ! -f "$bindir/$executable" ]; then
+        echo "Couldn't find executable to compress at $bindir/$executable"
+        exit 1
+    fi
+    if executable_exists "upx" && executable_exists "goupx"; then
+        goupx --no-upx "$bindir/$executable"
+        upx --color --ultra-brute "$bindir/$executable"
+    else
+        echo "Couldn't find either UPX or goupx"
+        exit 1
+    fi
 fi
 
 #### CLEAN UP

@@ -21,8 +21,6 @@
 Overview
 ========
 
-[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)][godoc]
-
 This readme documents the current (development) version of distributive.
 
 Distributive is a tool for running distributed health checks in datacenters.
@@ -35,8 +33,8 @@ a checklist from a JSON file, and will record this program's exit code and
 standard out. Distributive's output includes information about which checks
 in a checklist failed, and how so.
 
-The exit code meanings are defined as [Consul][consul], [Sensu][sensu], and
-[Nagios][nagios] recognize them.
+The exit code meanings are defined as [Consul][consul], [Kubernetes][kubernetes],
+[Sensu][sensu], and [Nagios][nagios] recognize them.
 
  * Exit code 0 - Checklist is passing
  * Exit code 1 - Checklist is warning
@@ -47,16 +45,20 @@ As of right now, only exit codes 0 and 1 are used, even if a checklist fails.
 Installation and Usage
 ======================
 
-Installation
-------------
+Installation/Building
+---------------------
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
  2. Build a binary with `./build.sh`
  3. Follow the "Usage" instructions below
 
-We also provide premade RPM packages on [Bintray][bintray]. The binary will
-be installed to `/bin/distributive` and the samples to
-`/etc/distributive.d/samples/`.
+We also provide premade RPM packages on [Bintray][bintray] for versioned
+releases. You can view the RPM source and build RPM snapshots at
+[distributive-rpm][distributive-rpm].
+
+To build a tiny binary, we use [UPX][upx] and [goupx][goupx]. If you have both
+of these tools installed, you can optionally use `./build.sh compress` to tell
+the build script to compress the binary once it's finished.
 
 Usage
 -----
@@ -99,9 +101,9 @@ Supported Frameworks
 --------------------
 
 Distributive attempts to be as framework-agnostic as possible. It is known to
-work well with Sensu, Consul, and Nagios, which have similar design in how they
-detect passing and failing checks. There is documentation on how to use
-Distributive with Consul on our [Github wiki][wiki].
+work well with Consul, Kubernetes, Sensu and Nagios, which have similar design
+in how they detect passing and failing checks. There is documentation on how to
+use Distributive with Consul on our [Github wiki][wiki].
 
 
 Checks
@@ -111,13 +113,18 @@ For the impatient, examples of every single implemented check are available in
 the `samples/` directory, sorted by category. There is extensive documentation
 for each check available on our [Github wiki][wiki].
 
+If you'd like to see how Distributive is used in production environments, take
+a look at the [RPM source][distributive-rpm], which includes checks used in
+[Microservices-Infrastructure][mi].
+
 
 Dependencies
 ============
 
-Distributive itself has no dependencies; it is compiled as a standalone Go
-binary. Some checks, however, rely on output from specific packages. These
-dependencies are outlined for each check on our [Github wiki][wiki].
+Distributive itself has no dependencies; it is compiled as a statically linked
+standalone Go binary. Some checks, however, rely on output from specific
+packages. These dependencies are outlined for each check on our
+[Github wiki][wiki].
 
 Comparison to Other Software
 ============================
@@ -146,7 +153,7 @@ provides many services not included in Distributive, and solves a very different
 problem.  Distributive is simple, lightweight, and easy to configure, and
 doesn't provide its own scheduling, dashboard, etc. It is designed to be used
 within frameworks such as Sensu and Consul. Luckily, Distributive conforms to
-[Nagios exit code specifications], and can be used just like any other
+[Nagios exit code specifications] [nagios], and can be used just like any other
 plugin. Its advantage over other plugins is that it is small, fast, and has no
 dependencies.
 
@@ -157,15 +164,14 @@ Contributing
 ------------
 
 Thank you for your interest in contributing! To get started, please check out
-[our wiki][wiki]
+[our wiki][wiki].
 
 Getting Help
 ------------
 
-Feature requests, documentation requests, help installing and using, pull
-requests, and other comments or questions are all always welcome. We strive to
+All comments, questions, and contributions are always welcome. We strive to
 provide expedient and detailed support for anyone using our software. Please
-submit any requests via our [Github Issues Page], where someone will
+submit any requests via our [Github Issues Page][issues], where someone will
 see it and get to work promptly.
 
 License
@@ -181,9 +187,13 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [wiki]: https://github.com/CiscoCloud/distributive/wiki
 [issues]: https://github.com/CiscoCloud/distributive/issues
 [bintray]: https://bintray.com/ciscocloud/rpm/Distributive/view#files
+[UPX]: http://sourceforge.net/projects/upx/
+[goupx]: https://github.com/pwaller/goupx
 [consul]: https://www.consul.io/docs/agent/checks.html
 [sensu]: https://sensuapp.org/docs/0.18/checks
 [nagios]: https://nagios-plugins.org/doc/guidelines.html#AEN78
+[kubernetes]: http://kubernetes.io/v1.0/docs/user-guide/walkthrough/k8s201.html#health-checking
 [gopath]: https://golang.org/doc/code.html#GOPATH
 [direnv]: https://github.com/direnv/direnv
-[godoc]: https://godoc.org/github.com/CiscoCloud/distributive/wrkutils
+[distributive-rpm]: https://github.com/CiscoCloud/distributive-rpm
+[mi]: https://github.com/CiscoCloud/microservices-infrastructure/

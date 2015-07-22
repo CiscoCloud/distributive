@@ -1,11 +1,12 @@
-# for some reason, this ignores main_test.go
-# distributive
-run.sh
-bin/
-pkg/
 .godeps/
+bin/
+package/
+# for some reason, the below line ignores main_test.go
+#distributive
+# binary can be build in src/ dir accidentally
 src/github.com/CiscoCloud/distributive/distributive
 .travis.yml
+run.sh
 *.swp
 *.rpm
 *.bak
