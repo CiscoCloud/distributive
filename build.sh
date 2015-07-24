@@ -15,8 +15,7 @@ echo () { printf %s\\n "$*" ; }
 # Description: Echo a can't write error and exit 1
 # Arguments: $1 - dir
 cant_write_error() {
-    echo "I always wished I were a better writer,"
-    echo "but I can't even write to $1"
+    echo "I always wished I were a better writer, but I can't even write to $1"
     exit 1
 }
 
@@ -32,17 +31,6 @@ assert_writable() {
         exit 1
     fi
     [ ! -w "$2" ] && cant_write_error "$2"
-}
-
-# Description: returns (echoes) all stderr and stdout from a command
-capture_output() {
-    temp_file="./.tmp"
-    assert_writable "f" "$temp_file"
-    # Redirect stdout, stderr to $temp_file, read, remove (POSIX compliant)
-    $1 >$temp_file 2>&1
-    output=$(<$temp_file)
-    rm $temp_file
-    echo "$output"
 }
 
 # Description: Check if an executable file is on the PATH (for use in if)
@@ -62,12 +50,10 @@ GOPATH="$PWD/.godeps/"
 GOBIN="$PWD/.godeps/bin"
 assert_writable "d" "$GOPATH"
 assert_writable "d" "$GOBIN"
-get_output=$(capture_output "go get ./...")
-
-# Restore env variables to what they should be to build (include ./src)
-GOPATH=$GOPATH:$PWD
-GOBIN="$GOPATH/bin:$PWD/bin"
-. "./.envrc"
+get_output=$("go get ./...")
+# Include ./src for build
+GOPATH="$PWD:$PWD/.godeps"
+GOBIN="$PWD/bin:$PWD/.godeps/bin"
 
 #### BUILD
 
