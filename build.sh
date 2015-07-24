@@ -33,6 +33,14 @@ assert_writable() {
     [ ! -w "$2" ] && cant_write_error "$2"
 }
 
+# Description: exit 1 with a message if you can't read the resource
+assert_readable() {
+    if [ ! -r "$1" ]; then
+        echo "This code is so bad it's unreadable! But really, can't read $1"
+        exit 1
+    fi
+}
+
 # Description: Check if an executable file is on the PATH (for use in if)
 # Arguments: $1 - Name of executable
 # Returns: 0 - executable is on PATH, 1 - " " not " "
@@ -50,6 +58,7 @@ GOPATH="$PWD/.godeps/"
 GOBIN="$PWD/.godeps/bin"
 assert_writable "d" "$GOPATH"
 assert_writable "d" "$GOBIN"
+assert_readable "$src"
 get_output=$("go get ./...")
 # Include ./src for build
 GOPATH="$PWD:$PWD/.godeps"
@@ -58,10 +67,7 @@ GOBIN="$PWD/bin:$PWD/.godeps/bin"
 #### BUILD
 
 assert_writable "d" "$bindir"
-if [ ! -r "$src" ]; then
-    echo "This code is so bad it's unreadable! But really, can't read $src"
-    exit 1
-fi
+assert_readable "$src"
 
 # -X sets the value of a string variable in main, others are size optimizations
 build_output=$(go build -ldflags "-w -s -O -X main.Version $version" $src)
