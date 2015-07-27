@@ -306,12 +306,14 @@ func canConnect(host string, protocol string, timeout time.Duration) bool {
 	// if a duration was specified, use it
 	if nanoseconds > 0 {
 		conn, err = net.DialTimeout(timeoutNetwork, timeoutAddress, timeout)
-		if err != nil {
-			fmt.Println(err)
+		if conn != nil {
+			defer conn.Close()
 		}
-	}
-	if conn != nil {
-		defer conn.Close()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Warn("Error while connecting to host")
+		}
 	}
 	if err == nil {
 		return true
