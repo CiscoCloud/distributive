@@ -63,15 +63,12 @@ executable_exists() {
 #### GET DEPENDENCIES
 
 # Put them all in ./.godeps
-export GOPATH="$PWD/.godeps/"
-export GOBIN="$PWD/.godeps/bin"
+export GOPATH="$PWD:$PWD/.godeps"
+export GOBIN="$PWD/bin:$PWD/.godeps/bin"
 assert_writable "d" "$GOPATH"
 assert_writable "d" "$GOBIN"
 assert_readable "$src"
 go get ./...
-# Include ./src for build
-export GOPATH="$PWD:$PWD/.godeps"
-export GOBIN="$PWD/bin:$PWD/.godeps/bin"
 
 #### BUILD
 
