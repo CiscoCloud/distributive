@@ -12,11 +12,25 @@ bindir="./bin/"
 # for POSIX shell compliance: http://www.etalabs.net/sh_tricks.html
 echo () { printf %s\\n "$*" ; }
 
+# Description: echoes the contents of the parent dir of $1, then exits 1
+error_list_parent() {
+    echo "Well, if you think you could do a better job, then here!"
+    parent=$(dirname "$1")
+    ls -alh "$parent"
+    exit 1
+}
+
+# Description: exit 1 with a message about not being about to read
+cant_read_error() {
+    echo "This code is so bad it's unreadable! But really, can't read $1"
+    error_list_parent "$1"
+}
+
 # Description: Echo a can't write error and exit 1
 # Arguments: $1 - dir
 cant_write_error() {
     echo "I always wished I were a better writer, but I can't even write to $1"
-    exit 1
+    error_list_parent "$1"
 }
 
 # Description: If the resource doesn't exist, attempt to create it.
@@ -34,12 +48,7 @@ assert_writable() {
 }
 
 # Description: exit 1 with a message if you can't read the resource
-assert_readable() {
-    if [ ! -r "$1" ]; then
-        echo "This code is so bad it's unreadable! But really, can't read $1"
-        exit 1
-    fi
-}
+assert_readable() { [ ! -r "$1" ] && cant_read_error "$1" ; }
 
 # Description: Check if an executable file is on the PATH (for use in if)
 # Arguments: $1 - Name of executable
@@ -54,15 +63,15 @@ executable_exists() {
 #### GET DEPENDENCIES
 
 # Put them all in ./.godeps
-GOPATH="$PWD/.godeps/"
-GOBIN="$PWD/.godeps/bin"
+export GOPATH="$PWD/.godeps/"
+export GOBIN="$PWD/.godeps/bin"
 assert_writable "d" "$GOPATH"
 assert_writable "d" "$GOBIN"
 assert_readable "$src"
-get_output=$("go get ./...")
+go get ./...
 # Include ./src for build
-GOPATH="$PWD:$PWD/.godeps"
-GOBIN="$PWD/bin:$PWD/.godeps/bin"
+export GOPATH="$PWD:$PWD/.godeps"
+export GOBIN="$PWD/bin:$PWD/.godeps/bin"
 
 #### BUILD
 
@@ -70,18 +79,9 @@ assert_writable "d" "$bindir"
 assert_readable "$src"
 
 # -X sets the value of a string variable in main, others are size optimizations
-build_output=$(go build -ldflags "-w -s -O -X main.Version $version" $src)
+go build -ldflags "-w -s -O -X main.Version $version" "$src"
 executable="./distributive"
 [ -e "$executable" ] && mv "$executable" "$bindir"
-
-#### REPORT BUILD ERRORS
-
-if [ ! -f "$bindir/$executable" ]; then
-    echo "Looks like the build failed. Here's the output of go get ./..."
-    echo "$get_output"
-    echo "And here it is for the build:"
-    echo "$build_output"
-fi
 
 #### COMPRESS WITH UPX
 
