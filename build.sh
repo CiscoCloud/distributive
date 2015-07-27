@@ -106,3 +106,5 @@ remove_if_exists "./bin:"
 remove_if_exists "../distributive:"
 remove_if_exists "./pkg/"
 remove_if_exists "./src/github.com/CiscoCloud/distributive/distributive"
+
+exit 0
