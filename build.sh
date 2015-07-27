@@ -98,15 +98,11 @@ fi
 
 #### CLEAN UP
 
+# Description: If $1 exists, rm -r it!
+remove_if_exists() { [ -e "$1" ] && rm -r "$1" ; }
+
 # For some reason, this weird dir gets made...
-if [ -e "./bin:/" ]; then
-    rm -r "./bin:/"
-fi
-
-if [ -d "./pkg/" ]; then
-    rm -r "./pkg/"
-fi
-
-if [ -f "./src/github.com/CiscoCloud/distributive/distributive" ]; then
-    rm "./src/github.com/CiscoCloud/distributive/distributive"
-fi
+remove_if_exists "./bin:"
+remove_if_exists "../distributive:"
+remove_if_exists "./pkg/"
+remove_if_exists "./src/github.com/CiscoCloud/distributive/distributive"
