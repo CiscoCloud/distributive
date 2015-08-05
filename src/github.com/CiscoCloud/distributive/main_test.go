@@ -18,10 +18,10 @@ func TestMakeReport(t *testing.T) {
 		Messages: []string{"msg1", "", "msg3", "", "", ""},
 		Origin:   "testing",
 	}
-	report := chklst.makeReport()
+	chklst.makeReport()
 	testStrs := []string{"Total: 6", "Passed: 3", "Failed: 3", "msg1", "msg3"}
 	for _, testStr := range testStrs {
-		if !strings.Contains(report, testStr) {
+		if !strings.Contains(chklst.Report, testStr) {
 			t.Error("Report didn't contain the string '" + testStr + "'")
 		}
 	}

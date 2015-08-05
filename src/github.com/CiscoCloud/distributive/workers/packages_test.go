@@ -9,7 +9,7 @@ import (
 func TestGetManager(t *testing.T) {
 	t.Parallel()
 	man := getManager()
-	supported := []string{"pacman", "dpkg", "yum"}
+	supported := []string{"pacman", "dpkg", "rpm"}
 	if !tabular.StrIn(man, supported) {
 		msg := "getManager returned an unsupported package manager"
 		msg += "\n\tReturned: " + man

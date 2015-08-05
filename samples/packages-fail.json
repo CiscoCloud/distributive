@@ -8,7 +8,7 @@
         },
         {
             "Check" : "repoExistsUri",
-            "Parameters" : ["apt", "failme"]
+            "Parameters" : ["dpkg", "failme"]
         },
         {
             "Check" : "repoExists",
@@ -16,7 +16,7 @@
         },
         {
             "Check": "repoExists",
-            "Parameters": ["yum", "failme"]
+            "Parameters": ["rpm", "failme"]
         },
         {
             "Check" : "pacmanIgnore",

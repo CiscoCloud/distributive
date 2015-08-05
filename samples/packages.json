@@ -7,11 +7,11 @@
         },
         {
             "Check" : "repoExistsUri",
-            "Parameters" : ["yum", "http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
+            "Parameters" : ["rpm", "http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
         },
         {
             "Check" : "repoexists",
-            "Parameters" : ["yum", "core"]
+            "Parameters" : ["rpm", "core"]
         },
         {
             "Check" : "pacmanIgnore",

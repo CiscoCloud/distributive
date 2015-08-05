@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
@@ -38,14 +37,16 @@ type Checklist struct {
 	Codes       []int
 	Messages    []string
 	Origin      string // where did it come from?
+	Report      string // printable status update
+	Failed      bool   // did any of the checks fail?
 }
 
 // makeReport returns a string used for a checklist.Report attribute, printed
 // after all the checks have been run
 // TODO transform use of makeReport into a logReport that uses logrus
-func (chklst *Checklist) makeReport() (report string) {
+func (chklst *Checklist) makeReport() {
 	if chklst == nil {
-		return ""
+		return
 	}
 	// countInt counts the occurences of int in this []int
 	countInt := func(i int, slice []int) (counter int) {
@@ -66,14 +67,13 @@ func (chklst *Checklist) makeReport() (report string) {
 	// output global stats
 	total := len(chklst.Codes)
 	passed := countInt(0, chklst.Codes)
-	failed := countInt(1, chklst.Codes)
-	report += "↴\nTotal: " + fmt.Sprint(total) // prints below logrus line
+	report := "↴\nTotal: " + fmt.Sprint(total)
 	report += "\nPassed: " + fmt.Sprint(passed)
-	report += "\nFailed: " + fmt.Sprint(failed)
+	report += "\nFailed: " + fmt.Sprint(total-passed)
 	for _, msg := range failMessages {
 		report += msg
 	}
-	return report
+	chklst.Report = report
 }
 
 // validateParameters asks whether or not this check has the correct number of
@@ -99,6 +99,7 @@ func validateParameters(chk Check) {
 			}).Fatal("Invalid check parameters")
 		}
 	}
+	// for testing this independently of main, shouldn't run outside of testing
 	if len(wrkutils.ParameterLength) < 1 {
 		workers.RegisterAll()
 	}
@@ -108,13 +109,14 @@ func validateParameters(chk Check) {
 			"check type": chk.Check,
 			"given":      len(chk.Parameters),
 			"parameters": chk.Parameters,
-		}).Fatal("No workers could be registered with ParameterLength")
+		}).Fatal("wrkutils.ParameterLength table is empty")
 	}
-	checkParameterLength(chk, wrkutils.ParameterLength[strings.ToLower(chk.Check)])
+	expected := wrkutils.ParameterLength[strings.ToLower(chk.Check)]
+	checkParameterLength(chk, expected)
 }
 
-// getworkers.Worker returns a workers.Worker based on the Check's name. It also makes sure that
-// the correct number of parameters were specified.
+// getworkers.Worker returns a workers.Worker based on the Check's name. It
+// ensures that any invalid checks are reported appropriately.
 func getWorker(chk Check) wrkutils.Worker {
 	work := wrkutils.Workers[strings.ToLower(chk.Check)]
 	if work == nil {
@@ -131,7 +133,8 @@ func getWorker(chk Check) wrkutils.Worker {
 }
 
 // checklistFromBytes takes a bytestring of utf8 encoded JSON and turns it into
-// a checklist struct. Used by all checklist constructors below.
+// a checklist struct. Used by all checklist constructors below. It validates
+// the number of parameters that each check has.
 func checklistFromBytes(data []byte) (chklst Checklist) {
 	err := json.Unmarshal(data, &chklst)
 	if err != nil {
@@ -140,32 +143,21 @@ func checklistFromBytes(data []byte) (chklst Checklist) {
 			"content": string(data),
 		}).Fatal("Couldn't parse checklist JSON.")
 	}
-	//// Go concurrent pipe - one stage to the next
-	// send all checks in checklist to the channel
+	// get workers for each check
 	out := make(chan Check)
-	go func() {
-		for _, chk := range chklst.Checklist {
-			out <- chk
-		}
-		close(out)
-	}()
-	// get workers.Workers for each check
-	out2 := make(chan Check)
-	go func() {
-		for chk := range out {
+	defer close(out)
+	for _, chk := range chklst.Checklist {
+		go func(chk Check, out chan Check) {
 			validateParameters(chk)
 			chk.Work = getWorker(chk)
-			out2 <- chk
-		}
-		close(out2)
-	}()
-	// collect data, reassign check list
-	var listOfChecks []Check
-	for chk := range out2 {
-		listOfChecks = append(listOfChecks, chk)
+			out <- chk
+		}(chk, out)
 	}
-	chklst.Checklist = listOfChecks
-	return
+	// grab all the data from the channel, mutating the checklist
+	for i := range chklst.Checklist {
+		chklst.Checklist[i] = <-out
+	}
+	return chklst
 }
 
 // checklistFromFile reads the file at the path and parses its utf8 encoded json
@@ -193,8 +185,16 @@ func checklistFromStdin() (chklst Checklist) {
 // encoded json data, turning it into a checklist struct.
 func checklistsFromDir(dirpath string) (chklsts []Checklist) {
 	paths := wrkutils.GetFilesWithExtension(dirpath, ".json")
+	// send one checklist per path to the channel
+	out := make(chan Checklist)
 	for _, path := range paths {
-		chklsts = append(chklsts, checklistFromFile(path))
+		go func(path string, out chan Checklist) {
+			out <- checklistFromFile(path)
+		}(path, out)
+	}
+	// get all values from the channel, return them
+	for _ = range paths {
+		chklsts = append(chklsts, <-out)
 	}
 	return chklsts
 }
@@ -217,12 +217,20 @@ func checklistFromURL(urlstr string) (chklst Checklist) {
 	}
 	log.Debug("Using " + remoteCheckDir + " for remote check storage")
 
-	// write out the response to a file
-	// filter these (path illegal) chars: /?%*:|<^>. \
-	// TODO use a golang loop with straight up strings, instead of regexp
-	pathRegex := regexp.MustCompile(`[\/\?%\*:\|"<\^>\.\ \\]`)
-	filename := pathRegex.ReplaceAllString(urlstr, "") + ".json"
+	// pathSanitize filters these (path illegal) chars: /?%*:|<^>. \
+	pathSanitize := func(str string) (filename string) {
+		filename = str
+		disallowed := []string{
+			`/`, `?`, `%`, `*`, `:`, `|`, `"`, `<`, `^`, `>`, `.`, `\`, ` `,
+		}
+		for _, c := range disallowed {
+			filename = strings.Replace(filename, c, "", -1)
+		}
+		return filename
+	}
+	filename := pathSanitize(urlstr) + ".json"
 	fullpath := filepath.Join(remoteCheckDir, filename)
+
 	// only create it if it doesn't exist
 	if _, err := os.Stat(fullpath); err != nil {
 		log.Info("Fetching remote checklist")
@@ -276,32 +284,43 @@ func getChecklists(file string, dir string, url string, stdin bool) (checklists 
 }
 
 // runChecks takes a checklist, performs every worker, and collects the results
-// in that checklist's Codes and Messages fields. TODO: Create concurrent pipe.
-func runChecks(chklst Checklist) Checklist {
+// in that checklist's Codes and Messages fields.
+func (chklst *Checklist) runChecks() {
+	codes := make(chan int)
+	msgs := make(chan string)
 	for _, chk := range chklst.Checklist {
-		if chk.Work == nil {
-			msg := "Nil function associated with this check."
-			msg += " Please submit a bug report with this message."
+		// concurrently execute the checklist's checks, passing their
+		go func(chk Check, codes chan int, msgs chan string) {
+			if chk.Work == nil {
+				msg := "Nil function associated with this check."
+				msg += " Please submit a bug report with this message."
+				log.WithFields(log.Fields{
+					"check":     chk.Check,
+					"check map": fmt.Sprint(wrkutils.Workers),
+				}).Fatal(msg)
+			}
+			code, msg := chk.Work(chk.Parameters)
+			// Log an informational message on the check's status
+			passed := "failed"
+			if code == 0 {
+				passed = "passed"
+			}
 			log.WithFields(log.Fields{
-				"check":     chk.Check,
-				"check map": fmt.Sprint(wrkutils.Workers),
-			}).Fatal(msg)
-		}
-		code, msg := chk.Work(chk.Parameters)
+				"name": chk.Name,
+				"type": chk.Check,
+			}).Info("Check " + passed)
+			// send back results
+			codes <- code
+			msgs <- msg
+		}(chk, codes, msgs)
+	}
+	// consume codes and messages, adding them to the Checklist struct
+	for _ = range chklst.Checklist {
+		code := <-codes
+		msg := <-msgs
 		chklst.Codes = append(chklst.Codes, code)
 		chklst.Messages = append(chklst.Messages, msg)
-		// were errors encountered?
-		passed := "failed"
-		if code == 0 {
-			passed = "passed"
-		}
-		// warn log happens later
-		log.WithFields(log.Fields{
-			"name": chk.Name,
-			"type": chk.Check,
-		}).Info("Check " + passed)
 	}
-	return chklst
 }
 
 // main reads the command line flag -f, runs the Check specified in the JSON,
@@ -312,35 +331,46 @@ func main() {
 	validateFlags(file, URL, directory)
 
 	// add workers to workers, parameterLength
+	workers.RegisterAll()
 	chklsts := getChecklists(file, directory, URL, stdin)
 	// run all checklists
-	// TODO: use concurrent pipe here
-	exitStatus := 0
+	out := make(chan Checklist)
+	defer close(out)
 	for i, chklst := range chklsts {
-		// run checks, populate error codes and messages
-		log.Info("Running checklist: " + chklsts[i].Name)
-		chklsts[i] = runChecks(chklsts[i])
-		// make a printable report
-		report := chklsts[i].makeReport()
-		failed := false
-		for _, code := range chklsts[i].Codes {
-			if code != 0 {
-				failed = true
-				exitStatus = 1
+		go func(chklst Checklist, out chan Checklist) {
+			// run checks, populate error codes and messages
+			log.Info("Running checklist: " + chklsts[i].Name)
+			chklst.runChecks()
+			chklst.makeReport()
+			// If any of the checks failed, mark this checklist as failed
+			for _, code := range chklsts[i].Codes {
+				if code != 0 {
+					chklst.Failed = true
+				}
 			}
-		}
-		if failed {
+			// send out results
+			out <- chklst
+		}(chklst, out)
+	}
+	for _ = range chklsts {
+		chklst := <-out
+		if chklst.Failed {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,
-				"report":    report,
+				"report":    chklst.Report,
 			}).Warn("Check(s) failed, printing checklist report")
 		} else {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,
-				"report":    report,
+				"report":    chklst.Report,
 			}).Info("All checks passed, printing checklist report")
 		}
 	}
 	// see if any checks failed, exit accordingly
-	os.Exit(exitStatus)
+	for _, chklst := range chklsts {
+		if chklst.Failed {
+			os.Exit(1)
+		}
+	}
+	os.Exit(0)
 }
