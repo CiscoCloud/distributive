@@ -1,3 +1,2 @@
 #!/bin/bash
-source build.sh
-sudo ./bin/distributive -d samples --verbosity="info"
+./build.sh && sudo ./bin/distributive -d samples --verbosity="debug"

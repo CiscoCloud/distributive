@@ -60,17 +60,21 @@ executable_exists() {
     return 1
 }
 
+# Description: Get go package/depedencies, put them in ./.godeps
+godep() {
+  export GOPATH="$PWD/.godeps"
+  export GOBIN="$PWD/.godeps/bin"
+  go get "$1" 2> /dev/null
+  export GOPATH="$PWD:$PWD/.godeps"
+  export GOBIN="$PWD/bin:$PWD/.godeps/bin"
+}
+
 #### GET DEPENDENCIES
 
-# Put them all in ./.godeps
-export GOPATH="$PWD/.godeps"
-export GOBIN="$PWD/.godeps/bin"
 assert_writable "d" "$GOPATH"
 assert_writable "d" "$GOBIN"
 assert_readable "$src"
-go get ./...
-export GOPATH="$PWD:$PWD/.godeps"
-export GOBIN="$PWD/bin:$PWD/.godeps/bin"
+godep ./...
 
 #### BUILD
 
@@ -108,5 +112,3 @@ remove_if_exists "./bin:"
 remove_if_exists "../distributive:"
 remove_if_exists "./pkg/"
 remove_if_exists "./src/github.com/CiscoCloud/distributive/distributive"
-
-exit 0

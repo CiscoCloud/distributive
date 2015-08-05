@@ -100,6 +100,7 @@ func validateParameters(chk Check) {
 		}
 	}
 	// for testing this independently of main, shouldn't run outside of testing
+	// TODO this isn't thread safe and crashes everything
 	if len(wrkutils.ParameterLength) < 1 {
 		workers.RegisterAll()
 	}
@@ -135,13 +136,10 @@ func getWorker(chk Check) wrkutils.Worker {
 // checklistFromBytes takes a bytestring of utf8 encoded JSON and turns it into
 // a checklist struct. Used by all checklist constructors below. It validates
 // the number of parameters that each check has.
-func checklistFromBytes(data []byte) (chklst Checklist) {
-	err := json.Unmarshal(data, &chklst)
+func checklistFromBytes(data []byte) (chklst Checklist, err error) {
+	err = json.Unmarshal(data, &chklst)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err.Error(),
-			"content": string(data),
-		}).Fatal("Couldn't parse checklist JSON.")
+		return chklst, err
 	}
 	// get workers for each check
 	out := make(chan Check)
@@ -157,18 +155,18 @@ func checklistFromBytes(data []byte) (chklst Checklist) {
 	for i := range chklst.Checklist {
 		chklst.Checklist[i] = <-out
 	}
-	return chklst
+	return chklst, nil
 }
 
 // checklistFromFile reads the file at the path and parses its utf8 encoded json
 // data, turning it into a checklist struct.
-func checklistFromFile(path string) (chklst Checklist) {
+func checklistFromFile(path string) (chklst Checklist, err error) {
 	return checklistFromBytes(wrkutils.FileToBytes(path))
 }
 
 // checklistFromStdin reads the stdin pipe and parses its utf8 encoded json
 // data, turning it into a checklist struct.
-func checklistFromStdin() (chklst Checklist) {
+func checklistFromStdin() (chklst Checklist, err error) {
 	stdinAsBytes := func() []byte {
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
@@ -183,26 +181,33 @@ func checklistFromStdin() (chklst Checklist) {
 
 // checklistsFromDir reads all of the files in the path and parses their utf8
 // encoded json data, turning it into a checklist struct.
-func checklistsFromDir(dirpath string) (chklsts []Checklist) {
+func checklistsFromDir(dirpath string) (chklsts []Checklist, err error) {
 	paths := wrkutils.GetFilesWithExtension(dirpath, ".json")
 	// send one checklist per path to the channel
 	out := make(chan Checklist)
+	errs := make(chan error)
 	for _, path := range paths {
-		go func(path string, out chan Checklist) {
-			out <- checklistFromFile(path)
-		}(path, out)
+		go func(path string, out chan Checklist, errs chan error) {
+			chklst, err := checklistFromFile(path)
+			out <- chklst
+			errs <- err
+		}(path, out, errs)
 	}
 	// get all values from the channel, return them
 	for _ = range paths {
+		err := <-errs
+		if err != nil {
+			return chklsts, err
+		}
 		chklsts = append(chklsts, <-out)
 	}
-	return chklsts
+	return chklsts, nil
 }
 
 // checklistsFromDir reads data retrieved from the URL and parses its utf8
 // encoded json data, turning it into a checklist struct. It also caches this
 // data at remoteCheckDir, currently "/var/run/distributive/"
-func checklistFromURL(urlstr string) (chklst Checklist) {
+func checklistFromURL(urlstr string) (chklst Checklist, err error) {
 	// ensure temp files dir exists
 	log.Debug("Creating/checking remote checklist dir")
 	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
@@ -247,6 +252,14 @@ func checklistFromURL(urlstr string) (chklst Checklist) {
 
 // getChecklists returns a list of checklists based on the supplied sources
 func getChecklists(file string, dir string, url string, stdin bool) (checklists []Checklist) {
+	parseError := func(src string, err error) {
+		if err != nil {
+			log.WithFields(log.Fields{
+				"origin": src,
+				"error":  err,
+			}).Fatal("Couldn't parse checklist.")
+		}
+	}
 	msg := "Creating checklist(s)..."
 	switch {
 	// checklists from file are already tagged with their origin
@@ -256,26 +269,33 @@ func getChecklists(file string, dir string, url string, stdin bool) (checklists 
 			"type": "file",
 			"path": file,
 		}).Info(msg)
-		checklists = append(checklists, checklistFromFile(file))
+		chklst, err := checklistFromFile(file)
+		parseError(file, err)
+		checklists = append(checklists, chklst)
 	case dir != "":
 		log.WithFields(log.Fields{
 			"type": "dir",
 			"path": dir,
 		}).Info(msg)
-		checklists = append(checklists, checklistsFromDir(dir)...)
+		chklsts, err := checklistsFromDir(dir)
+		parseError(dir, err)
+		checklists = append(checklists, chklsts...)
 	case url != "":
 		log.WithFields(log.Fields{
 			"type": "url",
 			"path": url,
 		}).Info(msg)
-		checklists = append(checklists, checklistFromURL(url))
+		chklst, err := checklistFromURL(url)
+		parseError(url, err)
+		checklists = append(checklists, chklst)
 	case stdin == true:
 		log.WithFields(log.Fields{
 			"type": "url",
 			"path": url,
 		}).Info(msg)
-		checklist := checklistFromStdin()
-		checklist.Origin = "stdin"
+		checklist, err := checklistFromStdin()
+		checklist.Origin = "stdin" // TODO put this in the method
+		parseError("stdin", err)
 		checklists = append(checklists, checklist)
 	default:
 		log.Fatal("Neither file, URL, directory, nor stdin specified. Try --help.")
