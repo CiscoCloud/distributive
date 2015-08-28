@@ -6,29 +6,131 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"errors"
 	"fmt"
-	"github.com/CiscoCloud/distributive/wrkutils"
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/tabular"
+	log "github.com/Sirupsen/logrus"
+	"hash"
 	"os"
+	"regexp"
 	"strings"
-	"syscall"
 )
 
-type fileTypeCheck func(path string) (bool, error)
+type fileCondition func(path string) (bool, error)
 
 // isType checks if the resource at path is of the type specified by name by
 // passing path to checker. Mostly used to abstract Directory, File, Symlink.
-func isType(name string, checker fileTypeCheck, path string) (exitCode int, message string) {
+func isType(name string, checker fileCondition, path string) (int, string, error) {
 	boo, err := checker(path)
 	if os.IsNotExist(err) {
-		return 1, "No such file or directory: " + path
+		return 1, "No such file or directory: " + path, nil
+	} else if os.IsPermission(err) {
+		return 1, "", errors.New("Insufficient Permissions to read: " + path)
+	} else if boo {
+		return errutil.Success()
 	}
-	if os.IsPermission(err) {
-		return 1, "Insufficient permissions to read: " + path
+	return 1, "Is not a " + name + ": " + path, nil
+}
+
+/*
+#### file
+Description: Does this regular file exist?
+Parameters:
+  - Path (filepath): Path to file
+Example parameters:
+  - "/var/mysoftware/config.file", "/foo/bar/baz"
+*/
+
+type File struct{ path string }
+
+func (chk File) ID() string { return "File" }
+
+func (chk File) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
 	}
-	if boo {
-		return 0, ""
+	chk.path = params[0]
+	return chk, nil
+}
+
+func (chk File) Status() (int, string, error) {
+	return isType("file", isFile, chk.path)
+}
+
+// returns true if there is a regular ol' file at path
+func isFile(path string) (bool, error) {
+	if is, _ := isSymlink(path); is {
+		return false, nil
 	}
-	return 1, "Is not a " + name + ": " + path
+	fileInfo, err := os.Stat(path)
+	if fileInfo == nil || !fileInfo.Mode().IsRegular() {
+		return false, err
+	}
+	return true, err
+}
+
+/*
+#### directory
+Description: Does this regular directory exist?
+Parameters:
+  - Path (filepath): Path to directory
+Example parameters:
+  - "/var/run/mysoftware.d/", "/foo/bar/baz/"
+*/
+
+type Directory struct{ path string }
+
+func (chk Directory) ID() string { return "Directory" }
+
+func (chk Directory) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.path = params[0]
+	return chk, nil
+}
+
+func (chk Directory) Status() (int, string, error) {
+	return isType("directory", isDirectory, chk.path)
+}
+
+// returns true if there is a regular ol' directory at path
+func isDirectory(path string) (bool, error) {
+	if is, _ := isSymlink(path); is {
+		return false, nil
+	}
+	fileInfo, err := os.Stat(path)
+	if fileInfo == nil || !fileInfo.Mode().IsDir() {
+		return false, err
+	}
+	return true, err
+}
+
+/*
+#### symlink
+Description: Does this symlink exist?
+Parameters:
+  - Path (filepath): Path to symlink
+Example parameters:
+  - "/var/run/mysoftware.d/", "/foo/bar/baz", "/bin/sh"
+*/
+
+type Symlink struct{ path string }
+
+func (chk Symlink) ID() string { return "Symlink" }
+
+func (chk Symlink) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.path = params[0]
+	return chk, nil
+}
+
+func (chk Symlink) Status() (int, string, error) {
+	return isType("symlink", isSymlink, chk.path)
 }
 
 func isSymlink(path string) (bool, error) {
@@ -39,53 +141,54 @@ func isSymlink(path string) (bool, error) {
 	return false, err
 }
 
-// file checks to see if the given path represents a normal file
-func file(parameters []string) (exitCode int, exitMessage string) {
-	// returns true if there is a regular ol' file at path
-	// TODO fails on /dev/null
-	isFile := func(path string) (bool, error) {
-		if is, _ := isSymlink(path); is {
-			return false, nil
-		}
-		fileInfo, err := os.Stat(path)
-		if fileInfo == nil || !fileInfo.Mode().IsRegular() {
-			return false, err
-		}
-		return true, err
+/*
+#### checksum
+Description: Does this file match the expected checksum when using the specified
+algorithm?
+Parameters:
+  - Algorithm (string): MD5 | SHA1 | SHA224 | SHA256 | SHA384 | SHA512
+  - Expected checksum (checksum/string)
+  - Path (filepath): Path to file to check the checksum of
+Example parameters:
+  - SHA1, SHA224, SHA256, SHA384, SHA512
+  - d41d8cd98f00b204e9800998ecf8427e, c6cf669dbd4cf2fbd59d03cc8039420a48a037fe
+  - /dev/null, /etc/config/important-file.conf
+*/
+
+type Checksum struct{ algorithm, expectedChksum, path string }
+
+func (chk Checksum) ID() string { return "checksum" }
+
+func (chk Checksum) New(params []string) (chkutil.Check, error) {
+	if len(params) != 3 {
+		return chk, errutil.ParameterLengthError{3, params}
 	}
-	return isType("file", isFile, parameters[0])
-}
-
-// directory checks to see if a directory exists at the specified path
-func directory(parameters []string) (exitCode int, exitMessage string) {
-	isDirectory := func(path string) (bool, error) {
-		if is, _ := isSymlink(path); is {
-			return false, nil
-		}
-		fileInfo, err := os.Stat(path)
-		if fileInfo == nil || !fileInfo.Mode().IsDir() {
-			return false, err
-		}
-		return true, err
+	valid := []string{"MD5", "SHA1", "SHA224", "SHA256", "SHA384", "SHA512"}
+	if !tabular.StrIn(params[0], valid) {
+		return chk, errutil.ParameterTypeError{params[0], "algorithm"}
 	}
-	return isType("directory", isDirectory, parameters[0])
+	chk.algorithm = params[0]
+	path := params[2]
+	ok, err := isFile(path)
+	if err != nil || !ok {
+		return chk, errutil.ParameterTypeError{path, "filepath"}
+	}
+	chk.path = params[2]
+	// TODO validate length of checksum string
+	chk.expectedChksum = params[1]
+	return chk, nil
 }
 
-// symlink checks to see if a symlink exists at a given path
-func symlink(parameters []string) (exitCode int, exitMessage string) {
-	// isSymlink checks to see if a symlink exists at this path.
-	return isType("symlink", isSymlink, parameters[0])
-}
-
-// checksum checks the hash of a given file using the given algorithm
-func checksum(parameters []string) (exitCode int, exitMessage string) {
+func (chk Checksum) Status() (int, string, error) {
 	// getChecksum returns the checksum of some data, using a specified
 	// algorithm
 	getChecksum := func(algorithm string, data []byte) (checksum string) {
 		algorithm = strings.ToUpper(algorithm)
 		// default
-		hasher := md5.New()
+		var hasher hash.Hash
 		switch algorithm {
+		case "MD5":
+			hasher = md5.New()
 		case "SHA1":
 			hasher = sha1.New()
 		case "SHA224":
@@ -96,6 +199,11 @@ func checksum(parameters []string) (exitCode int, exitMessage string) {
 			hasher = sha512.New384()
 		case "SHA512":
 			hasher = sha512.New()
+		default:
+			log.WithFields(log.Fields{
+				"given":    algorithm,
+				"expected": "MD5 | SHA1 | SHA224 | SHA256 | SHA384 | SHA512",
+			}).Fatal("Invalid algorithm parameter passed to getChecksum")
 		}
 		hasher.Write(data)
 		str := hex.EncodeToString(hasher.Sum(nil))
@@ -104,69 +212,103 @@ func checksum(parameters []string) (exitCode int, exitMessage string) {
 	}
 	// getFileChecksum is self-explanatory
 	getFileChecksum := func(algorithm string, path string) (checksum string) {
-		return getChecksum(algorithm, wrkutils.FileToBytes(path))
+		return getChecksum(algorithm, chkutil.FileToBytes(path))
 	}
-
-	algorithm := parameters[0]
-	checkAgainst := parameters[1]
-	path := parameters[2]
-	chksum := getFileChecksum(algorithm, path)
-	// TODO warn on unequal lengths
-	if chksum == checkAgainst {
-		return 0, ""
+	actualChksum := getFileChecksum(chk.algorithm, chk.path)
+	if actualChksum == chk.expectedChksum {
+		return errutil.Success()
 	}
-	msg := "Checksums do not match for file: " + path
-	return wrkutils.GenericError(msg, checkAgainst, []string{chksum})
+	msg := "Checksums do not match for file: " + chk.path
+	return errutil.GenericError(msg, chk.expectedChksum, []string{actualChksum})
 }
 
-// fileContains checks whether a file matches a given regex
-func fileContains(parameters []string) (exitCode int, exitMessage string) {
-	path := parameters[0]
-	regex := wrkutils.ParseUserRegex(parameters[1])
-	if regex.Match(wrkutils.FileToBytes(path)) {
-		return 0, ""
-	}
-	msg := "File does not match regexp:\n\tFile: "
-	return 1, msg + path + "\n\tRegexp" + regex.String()
+/*
+#### FileMatches
+Description: Does this file match this regexp?
+Parameters:
+  - Path (filepath): Path to file to check the contents of
+  - Regexp (regexp): Regexp to query file with
+Example parameters:
+  - /dev/null, /etc/config/important-file.conf
+  - "str", "myvalue=expected", "IP=\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}"
+*/
+
+type FileMatches struct {
+	path string
+	re   *regexp.Regexp
 }
 
-// permissions checks to see if a file's octal permissions match the given set
-func permissions(parameters []string) (exitCode int, exitMessage string) {
-	path := parameters[0]
-	givenMode := parameters[1]
-	finfo, err := os.Stat(path)
+func (chk FileMatches) ID() string { return "FileMatches" }
+
+func (chk FileMatches) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	re, err := regexp.Compile(params[1])
 	if err != nil {
-		wrkutils.CouldntReadError(path, err)
+		return chk, errutil.ParameterTypeError{params[1], "regexp"}
+	}
+	chk.re = re
+	path := params[0]
+	if _, err := os.Stat(path); err != nil {
+		return chk, errutil.ParameterTypeError{path, "filepath"}
+	}
+	chk.path = path
+	return chk, nil
+}
+
+func (chk FileMatches) Status() (int, string, error) {
+	if chk.re.Match(chkutil.FileToBytes(chk.path)) {
+		return errutil.Success()
+	}
+	msg := "File does not match regexp:"
+	msg += "\n\tFile: " + chk.path
+	msg += "\n\tRegexp: " + chk.re.String()
+	return 1, msg, nil
+}
+
+/*
+#### Permissions
+Description: Does this file have the given Permissions?
+Parameters:
+  - Path (filepath): Path to file to check the Permissions of
+  - Mode (filemode): Filemode to expect
+Example parameters:
+  - /dev/null, /etc/config/important-file.conf
+  - -rwxrwxrwx, -rw-rw---- -rw-------, -rwx-r-x-r-x
+*/
+
+type Permissions struct{ path, expectedPerms string }
+
+func (chk Permissions) ID() string { return "Permissions" }
+
+func (chk Permissions) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	if _, err := os.Stat(params[0]); err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "file"}
+	}
+	mode := params[1]
+	modeRe := `-([r-][w-][x-]){3}`
+	if len(mode) != 10 || !regexp.MustCompile(modeRe).MatchString(mode) {
+		log.Debug("Did not match regexp " + modeRe) // TODO remove
+		return chk, errutil.ParameterTypeError{mode, "filemode"}
+	}
+	chk.path = params[0]
+	chk.expectedPerms = mode
+	return chk, nil
+}
+
+func (chk Permissions) Status() (int, string, error) {
+	finfo, err := os.Stat(chk.path)
+	if err != nil {
+		errutil.CouldntReadError(chk.path, err)
 	}
 	actualMode := fmt.Sprint(finfo.Mode().Perm()) // -rwxrw-r-- format
-	if actualMode == givenMode {
-		return 0, ""
+	if actualMode == chk.expectedPerms {
+		return errutil.Success()
 	}
 	msg := "File modes did not match"
-	return wrkutils.GenericError(msg, givenMode, []string{actualMode})
-}
-
-func diskUsage(parameters []string) (exitCode int, exitMessage string) {
-	// percentFSUsed gets the percent of the filesystem that is occupied
-	percentFSUsed := func(path string) int {
-		// get FS info (*nix systems only!)
-		var stat syscall.Statfs_t
-		syscall.Statfs(path, &stat)
-
-		// blocks * size of block = available size
-		totalBytes := stat.Blocks * uint64(stat.Bsize)
-		availableBytes := stat.Bavail * uint64(stat.Bsize)
-		usedBytes := totalBytes - availableBytes
-		percentUsed := int((float64(usedBytes) / float64(totalBytes)) * 100)
-		return percentUsed
-
-	}
-	maxPercentUsed := wrkutils.ParseMyInt(parameters[1])
-	actualPercentUsed := percentFSUsed(parameters[0])
-	if actualPercentUsed < maxPercentUsed {
-		return 0, ""
-	}
-	msg := "More disk space used than expected"
-	slc := []string{fmt.Sprint(actualPercentUsed) + "%"}
-	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed)+"%", slc)
+	return errutil.GenericError(msg, chk.expectedPerms, []string{actualMode})
 }

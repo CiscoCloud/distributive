@@ -2,14 +2,16 @@ package workers
 
 import (
 	"fmt"
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
-	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
+	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -53,7 +55,7 @@ func getSwapOrMemory(status string, swapOrMem string, units string) int {
 	}
 	// execute free and return the appropriate output
 	cmd := exec.Command("free", unitsToFlag[units])
-	outStr := wrkutils.CommandOutput(cmd)
+	outStr := chkutil.CommandOutput(cmd)
 	table := tabular.ProbabalisticSplit(outStr)
 	column := tabular.GetColumnByHeader(status, table)
 	row := typeToRow[swapOrMem]
@@ -82,13 +84,13 @@ func getSwapOrMemory(status string, swapOrMem string, units string) int {
 	return int(toReturn)
 }
 
-// getSwap returns KiB of swap with a certain status: free | used | total
+// getSwap returns amount of swap with a certain status: free | used | total
 // and with a certain given unit: b | kb | mb | gb | tb
 func getSwap(status string, units string) int {
 	return getSwapOrMemory(status, "swap", units)
 }
 
-// getMemory returns KiB of swap with a certain status: free | used | total
+// getMemory returns amount of swap with a certain status: free | used | total
 // and with a certain given unit: b | kb | mb | gb | tb
 func getMemory(status string, units string) int {
 	return getSwapOrMemory(status, "memory", units)
@@ -101,72 +103,139 @@ func getUsedPercent(swapOrMem string) float32 {
 	return (float32(used) / float32(total)) * 100
 }
 
-// memoryUsage checks to see whether or not the system has a memory usage
-// percentage below a certain threshold
-func memoryUsage(parameters []string) (exitCode int, exitMessage string) {
-	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
+/*
+#### MemoryUsage
+Description: Is system memory usage below this threshold?
+Parameters:
+  - Percent (int8 percentage): Maximum acceptable percentage memory used
+Example parameters:
+  - 95%, 90%, 87%
+*/
+
+type MemoryUsage struct{ maxPercentUsed int8 }
+
+func (chk MemoryUsage) ID() string { return "MemoryUsage" }
+
+func (chk MemoryUsage) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	per, err := strconv.ParseInt(strings.Replace(params[0], "%", "", -1), 10, 8)
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "int8"}
+	}
+	chk.maxPercentUsed = int8(per)
+	return chk, nil
+}
+
+func (chk MemoryUsage) Status() (int, string, error) {
 	actualPercentUsed := getUsedPercent("memory")
-	if actualPercentUsed < float32(maxPercentUsed) {
-		return 0, ""
+	if actualPercentUsed < float32(chk.maxPercentUsed) {
+		return errutil.Success()
 	}
 	msg := "Memory usage above defined maximum"
 	slc := []string{fmt.Sprint(actualPercentUsed)}
-	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
+	return errutil.GenericError(msg, fmt.Sprint(chk.maxPercentUsed), slc)
 }
 
-// swapUsage checks to see whether or not the system has a swap usage
-// percentage below a certain threshold
-func swapUsage(parameters []string) (exitCode int, exitMessage string) {
-	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
+/*
+#### SwapUsage
+Description: Like MemoryUsage, but with swap
+*/
+
+type SwapUsage struct{ maxPercentUsed int8 }
+
+func (chk SwapUsage) ID() string { return "SwapUsage" }
+
+func (chk SwapUsage) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	per, err := strconv.ParseInt(strings.Replace(params[0], "%", "", -1), 10, 8)
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "int8"}
+	}
+	chk.maxPercentUsed = int8(per)
+	return chk, nil
+}
+
+func (chk SwapUsage) Status() (int, string, error) {
 	actualPercentUsed := getUsedPercent("swap")
-	if actualPercentUsed < float32(maxPercentUsed) {
-		return 0, ""
+	if actualPercentUsed < float32(chk.maxPercentUsed) {
+		return errutil.Success()
 	}
 	msg := "Swap usage above defined maximum"
 	slc := []string{fmt.Sprint(actualPercentUsed)}
-	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
+	return errutil.GenericError(msg, fmt.Sprint(chk.maxPercentUsed), slc)
 }
 
-// freeMemOrSwap is an abstraction of freeMemory and freeSwap, which measures
+// freeMemOrSwap is an abstraction of FreeMemory and FreeSwap, which measures
 // if the desired resource has a quantity free above the amount specified
-func freeMemOrSwap(input string, swapOrMem string) (exitCode int, exitMessage string) {
-	// get numbers and units
-	units := wrkutils.GetByteUnits(input)
-	re := regexp.MustCompile(`\d+`)
-	amountString := re.FindString(input)
-	// report errors
-	if amountString == "" {
+func freeMemOrSwap(input string, swapOrMem string) (int, string, error) {
+	amount, units, err := chkutil.SeparateByteUnits(input)
+	if err != nil {
 		log.WithFields(log.Fields{
-			"input":  input,
-			"regexp": re.String(),
-		}).Fatal("Configuration error: couldn't extract number from string")
-	} else if units == "" {
-		log.WithFields(log.Fields{
-			"input": input,
-		}).Fatal("Configuration error: couldn't extract byte units from string")
+			"err": err.Error(),
+		}).Fatal("Couldn't separate string into a scalar and units")
 	}
-	amount := wrkutils.ParseMyInt(amountString)
 	actualAmount := getSwapOrMemory("free", swapOrMem, units)
 	if actualAmount > amount {
-		return 0, ""
+		return errutil.Success()
 	}
 	msg := "Free " + swapOrMem + " lower than defined threshold"
 	actualString := fmt.Sprint(actualAmount) + units
-	return wrkutils.GenericError(msg, input, []string{actualString})
-
+	return errutil.GenericError(msg, input, []string{actualString})
 }
 
-// freeMemory checks that a given amount of memory is currently free
-func freeMemory(parameters []string) (exitCode int, exitMessage string) {
-	return freeMemOrSwap(parameters[0], "memory")
+/*
+#### FreeMemory
+Description: Is at least this amount of memory free?
+Parameters:
+  - Amount (string with byte unit): minimum acceptable amount of free memory
+Example parameters:
+  - 100mb, 1gb, 3TB, 20kib
+*/
+
+type FreeMemory struct{ amount string }
+
+func (chk FreeMemory) ID() string { return "FreeMemory" }
+
+func (chk FreeMemory) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	// TODO validate byte units, etc. here
+	chk.amount = params[0]
+	return chk, nil
 }
 
-// freeSwap checks that a given amount of swap is currently free
-func freeSwap(parameters []string) (exitCode int, exitMessage string) {
-	return freeMemOrSwap(parameters[0], "swap")
+func (chk FreeMemory) Status() (int, string, error) {
+	return freeMemOrSwap(chk.amount, "memory")
 }
 
-// getCPUSample helps cpuUsage do its thing. Taken from a stackoverflow:
+/*
+#### FreeSwap
+Description: Like FreeMemory, but with swap instead.
+*/
+
+type FreeSwap struct{ amount string }
+
+func (chk FreeSwap) ID() string { return "FreeSwap" }
+
+func (chk FreeSwap) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	// TODO validate byte units, etc. here
+	chk.amount = params[0]
+	return chk, nil
+}
+
+func (chk FreeSwap) Status() (int, string, error) {
+	return freeMemOrSwap(chk.amount, "swap")
+}
+
+// getCPUSample helps CPUUsage do its thing. Taken from a stackoverflow:
 // http://stackoverflow.com/questions/11356330/getting-cpu-usage-with-golang
 func getCPUSample() (idle, total uint64) {
 	contents, err := ioutil.ReadFile("/proc/stat")
@@ -194,8 +263,32 @@ func getCPUSample() (idle, total uint64) {
 	return
 }
 
-// cpuUsage checks to see whether or not CPU usage is below a certain %.
-func cpuUsage(parameters []string) (exitCode int, exitMessage string) {
+/*
+#### CPUUsage
+Description: Is the cpu usage below this percentage in a 3 second interval?
+Parameters:
+  - Percent (int8 percentage): Maximum acceptable percentage used
+Example parameters:
+  - 95%, 90%, 87%
+*/
+
+type CPUUsage struct{ maxPercentUsed int8 }
+
+func (chk CPUUsage) ID() string { return "CPUUsage" }
+
+func (chk CPUUsage) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	per, err := strconv.ParseInt(strings.Replace(params[0], "%", "", -1), 10, 8)
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "int8"}
+	}
+	chk.maxPercentUsed = int8(per)
+	return chk, nil
+}
+
+func (chk CPUUsage) Status() (int, string, error) {
 	// TODO check that parameters are in range 0 < x < 100
 	cpuPercentUsed := func(sampleTime time.Duration) float32 {
 		idle0, total0 := getCPUSample()
@@ -205,12 +298,68 @@ func cpuUsage(parameters []string) (exitCode int, exitMessage string) {
 		totalTicks := float32(total1 - total0)
 		return (100 * (totalTicks - idleTicks) / totalTicks)
 	}
-	maxPercentUsed := wrkutils.ParseMyInt(parameters[0])
 	actualPercentUsed := cpuPercentUsed(3 * time.Second)
-	if actualPercentUsed < float32(maxPercentUsed) {
-		return 0, ""
+	if actualPercentUsed < float32(chk.maxPercentUsed) {
+		return errutil.Success()
 	}
 	msg := "CPU usage above defined maximum"
 	slc := []string{fmt.Sprint(actualPercentUsed)}
-	return wrkutils.GenericError(msg, fmt.Sprint(maxPercentUsed), slc)
+	return errutil.GenericError(msg, fmt.Sprint(chk.maxPercentUsed), slc)
+}
+
+/*
+#### DiskUsage
+Description: Is the disk usage below this percentage?
+Parameters:
+  - Path (filepath): Path to the disk
+  - Percent (int8 percentage): Maximum acceptable percentage used
+Example parameters:
+  - /dev/sda1, /mnt/my-disk/
+  - 95%, 90%, 87%
+*/
+
+type DiskUsage struct {
+	path           string
+	maxPercentUsed int8
+}
+
+func (chk DiskUsage) ID() string { return "DiskUsage" }
+
+func (chk DiskUsage) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	} else if _, err := os.Stat(params[0]); err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "dir"}
+	}
+	per, err := strconv.ParseInt(strings.Replace(params[1], "%", "", -1), 10, 8)
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[1], "int8"}
+	}
+	chk.path = params[0]
+	chk.maxPercentUsed = int8(per)
+	return chk, nil
+}
+
+func (chk DiskUsage) Status() (int, string, error) {
+	// percentFSUsed gets the percent of the filesystem that is occupied
+	percentFSUsed := func(path string) int {
+		// get FS info (*nix systems only!)
+		var stat syscall.Statfs_t
+		syscall.Statfs(path, &stat)
+
+		// blocks * size of block = available size
+		totalBytes := stat.Blocks * uint64(stat.Bsize)
+		availableBytes := stat.Bavail * uint64(stat.Bsize)
+		usedBytes := totalBytes - availableBytes
+		percentUsed := int((float64(usedBytes) / float64(totalBytes)) * 100)
+		return percentUsed
+
+	}
+	actualPercentUsed := percentFSUsed(chk.path)
+	if actualPercentUsed < int(chk.maxPercentUsed) {
+		return errutil.Success()
+	}
+	msg := "More disk space used than expected"
+	slc := []string{fmt.Sprint(actualPercentUsed) + "%"}
+	return errutil.GenericError(msg, fmt.Sprint(chk.maxPercentUsed)+"%", slc)
 }

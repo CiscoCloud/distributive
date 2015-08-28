@@ -2,69 +2,151 @@ package workers
 
 import (
 	"fmt"
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
-	"github.com/CiscoCloud/distributive/wrkutils"
+	"os"
 	"os/exec"
 	"strings"
 )
 
 // systemctlService checks to see if a service has a givens status
 // status: active | loaded
-func systemctlService(service string, activeOrLoaded string) (exitCode int, exitMessage string) {
+func systemctlService(service string, activeOrLoaded string) (int, string, error) {
 	// cmd depends on whether we're checking active or loaded
 	cmd := exec.Command("systemctl", "show", "-p", "ActiveState", service)
 	if activeOrLoaded == "loaded" {
 		cmd = exec.Command("systemctl", "show", "-p", "LoadState", service)
 	}
-	outString := wrkutils.CommandOutput(cmd)
+	outString := chkutil.CommandOutput(cmd)
 	contained := "ActiveState=active"
 	if activeOrLoaded == "loaded" {
 		contained = "LoadState=loaded"
 	}
 	if strings.Contains(outString, contained) {
-		return 0, ""
+		return errutil.Success()
 	}
 	msg := "Service not " + activeOrLoaded
-	return wrkutils.GenericError(msg, service, []string{outString})
+	return errutil.GenericError(msg, service, []string{outString})
 }
 
-// systemctlLoaded checks to see whether or not a given service is loaded
-func systemctlLoaded(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlService(parameters[0], "loaded")
+/*
+#### SystemctlLoaded
+Description: Is systemd module loaded?
+Parameters:
+  - Service (string): Name of the service
+Example parameters:
+  - TODO
+*/
+
+type SystemctlLoaded struct{ service string }
+
+func (chk SystemctlLoaded) ID() string { return "SystemctlLoaded" }
+
+func (chk SystemctlLoaded) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.service = params[0]
+	return chk, nil
 }
 
-// systemctlActive checks to see whether or not a given service is active
-func systemctlActive(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlService(parameters[0], "active")
+func (chk SystemctlLoaded) Status() (int, string, error) {
+	return systemctlService(chk.service, "loaded")
 }
 
-// systemctlSock is an abstraction of systemctlSockPath and systemctlSockUnit,
+/*
+#### SystemctlActive
+Description: Is systemd module active?
+Parameters:
+  - Service (string): Name of the service
+Example parameters:
+  - TODO
+*/
+
+type SystemctlActive struct{ service string }
+
+func (chk SystemctlActive) ID() string { return "SystemctlActive" }
+
+func (chk SystemctlActive) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.service = params[0]
+	return chk, nil
+}
+
+func (chk SystemctlActive) Status() (int, string, error) {
+	return systemctlService(chk.service, "active")
+}
+
+// SystemctlSock is an abstraction of SystemctlSockPath and SystemctlSockUnit,
 // it reads from `systemctl list-sockets` and sees if the value is in the
 // appropriate column.
-func systemctlSock(value string, column string) (exitCode int, exitMessage string) {
-	outstr := wrkutils.CommandOutput(exec.Command("systemctl", "list-sockets"))
+func SystemctlSock(value string, column string) (int, string, error) {
+	outstr := chkutil.CommandOutput(exec.Command("systemctl", "list-sockets"))
 	lines := tabular.Lines(outstr)
 	msg := "systemctl list-sockers didn't output enough rows"
-	wrkutils.IndexError(msg, len(lines)-4, lines)
+	errutil.IndexError(msg, len(lines)-4, lines)
 	unlines := tabular.Unlines(lines[:len(lines)-4])
 	table := tabular.SeparateOnAlignment(unlines)
 	values := tabular.GetColumnByHeader(column, table)
 	if tabular.StrIn(value, values) {
-		return 0, ""
+		return errutil.Success()
 	}
-	return wrkutils.GenericError("Socket not found", value, values)
+	return errutil.GenericError("Socket not found", value, values)
 }
 
-// systemctlSock checks to see whether the sock at the given path is registered
-// within systemd using the sock's filesystem path.
-func systemctlSockPath(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlSock(parameters[0], "LISTEN")
+/*
+#### SystemctlSockListening
+Description: Is systemd socket in the LISTEN state?
+Parameters:
+  - Path (filepath): Path to socket
+Example parameters:
+  - /var/lib/docker.sock, /new/striped.sock
+*/
+
+type SystemctlSockListening struct{ path string }
+
+func (chk SystemctlSockListening) ID() string { return "SystemctlSock" }
+
+func (chk SystemctlSockListening) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	} else if _, err := os.Stat(params[0]); err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "filepath"}
+	}
+	chk.path = params[0]
+	return chk, nil
 }
 
-// systemctlSock checks to see whether the sock at the given path is registered
-// within systemd using the sock's unit name.
-func systemctlSockUnit(parameters []string) (exitCode int, exitMessage string) {
-	return systemctlSock(parameters[0], "UNIT")
+func (chk SystemctlSockListening) Status() (int, string, error) {
+	return SystemctlSock(chk.path, "LISTEN")
+}
+
+/*
+#### SystemctlSockUnit
+Description: Is a socket registered with this unit?
+Parameters:
+  - Unit (string): Name of systemd unit
+Example parameters:
+  - TODO
+*/
+
+type SystemctlSockUnit struct{ path, unit string }
+
+func (chk SystemctlSockUnit) ID() string { return "SystemctlSockUnit" }
+
+func (chk SystemctlSockUnit) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.unit = params[0]
+	return chk, nil
+}
+
+func (chk SystemctlSockUnit) Status() (int, string, error) {
+	return SystemctlSock(chk.unit, "UNIT")
 }
 
 // getTimers returns of all the timers under the UNIT column of
@@ -76,65 +158,124 @@ func getTimers(all bool) []string {
 	}
 	out, err := cmd.CombinedOutput()
 	outstr := string(out)
-	wrkutils.ExecError(cmd, outstr, err)
+	errutil.ExecError(cmd, outstr, err)
 	// last three lines are junk
 	lines := tabular.Lines(outstr)
 	msg := fmt.Sprint(cmd.Args) + " didn't output enough lines"
-	wrkutils.IndexError(msg, 3, lines)
+	errutil.IndexError(msg, 3, lines)
 	table := tabular.SeparateOnAlignment(tabular.Unlines(lines[:len(lines)-3]))
 	column := tabular.GetColumnByHeader("UNIT", table)
 	return column
 }
 
-// timers(exitCode int, exitMessage string) is pure DRY for systemctlTimer and systemctlTimerLoaded
-func timersWorker(unit string, all bool) (exitCode int, exitMessage string) {
+// timerCheck is pure DRY for SystemctlTimer and SystemctlTimerLoaded
+func timerCheck(unit string, all bool) (int, string, error) {
 	timers := getTimers(all)
 	if tabular.StrIn(unit, timers) {
-		return 0, ""
+		return errutil.Success()
 	}
-	return wrkutils.GenericError("Timer not found", unit, timers)
+	return errutil.GenericError("Timer not found", unit, timers)
 }
 
-// systemctlTimer reports whether a given timer is running (by unit).
-func systemctlTimer(parameters []string) (exitCode int, exitMessage string) {
-	return timersWorker(parameters[0], false)
+/*
+#### SystemctlTimer
+Description: Is a timer by this name running?
+Parameters:
+  - Unit (string): Name of systemd unit
+Example parameters:
+  - TODO
+*/
+
+type SystemctlTimer struct{ unit string }
+
+func (chk SystemctlTimer) ID() string { return "SystemctlTimer" }
+
+func (chk SystemctlTimer) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.unit = params[0]
+	return chk, nil
 }
 
-// systemctlTimerLoaded checks to see if a timer is loaded, even if it might
-// not be active
-func systemctlTimerLoaded(parameters []string) (exitCode int, exitMessage string) {
-	return timersWorker(parameters[0], true)
+func (chk SystemctlTimer) Status() (int, string, error) {
+	return timerCheck(chk.unit, false)
 }
 
-// systemctlUnitFileStatus checks whether or not the given unit file has the
-// given status: static | enabled | disabled
-func systemctlUnitFileStatus(parameters []string) (exitCode int, exitMessage string) {
+/*
+#### SystemctlTimerLoaded
+Description: Is a timer by this name loaded?
+Parameters:
+  - Unit (string): Name of systemd unit
+Example parameters:
+  - TODO
+*/
+
+type SystemctlTimerLoaded struct{ unit string }
+
+func (chk SystemctlTimerLoaded) ID() string { return "SystemctlTimerLoaded" }
+
+func (chk SystemctlTimerLoaded) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.unit = params[0]
+	return chk, nil
+}
+
+func (chk SystemctlTimerLoaded) Status() (int, string, error) {
+	return timerCheck(chk.unit, true)
+}
+
+/*
+#### SystemctlUnitFileStatus
+Description: Does this unit file have this status?
+Parameters:
+  - Unit (string): Name of systemd unit
+  - Status (string): "static" | "enabled" | "disabled"
+Example parameters:
+  - TODO
+  - "static", "enabled", "disabled"
+*/
+
+type SystemctlUnitFileStatus struct{ unit, status string }
+
+func (chk SystemctlUnitFileStatus) ID() string { return "SystemctlUnitFileStatus" }
+
+func (chk SystemctlUnitFileStatus) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	chk.unit = params[0]
+	chk.status = params[1]
+	return chk, nil
+}
+
+func (chk SystemctlUnitFileStatus) Status() (int, string, error) {
 	// getUnitFilesWithStatuses returns a pair of string slices that hold
 	// the name of unit files with their current statuses.
 	getUnitFilesWithStatuses := func() (units []string, statuses []string) {
 		cmd := exec.Command("systemctl", "--no-pager", "list-unit-files")
-		units = wrkutils.CommandColumnNoHeader(0, cmd)
+		units = chkutil.CommandColumnNoHeader(0, cmd)
 		cmd = exec.Command("systemctl", "--no-pager", "list-unit-files")
-		statuses = wrkutils.CommandColumnNoHeader(1, cmd)
+		statuses = chkutil.CommandColumnNoHeader(1, cmd)
 		// last two are empty line and junk statistics we don't care about
 		msg := fmt.Sprint(cmd.Args) + " didn't output enough lines"
-		wrkutils.IndexError(msg, 2, units)
-		wrkutils.IndexError(msg, 2, statuses)
+		errutil.IndexError(msg, 2, units)
+		errutil.IndexError(msg, 2, statuses)
 		return units[:len(units)-2], statuses[:len(statuses)-2]
 	}
-	unit := parameters[0]
-	status := parameters[1]
 	units, statuses := getUnitFilesWithStatuses()
 	var actualStatus string
 	// TODO check if unit could be found at all
 	for i, un := range units {
-		if un == unit {
+		if un == chk.unit {
 			actualStatus = statuses[i]
-			if actualStatus == status {
-				return 0, ""
+			if actualStatus == chk.status {
+				return errutil.Success()
 			}
 		}
 	}
 	msg := "Unit didn't have status"
-	return wrkutils.GenericError(msg, status, []string{actualStatus})
+	return errutil.GenericError(msg, chk.status, []string{actualStatus})
 }

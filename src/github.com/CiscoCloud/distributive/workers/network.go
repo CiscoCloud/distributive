@@ -2,117 +2,122 @@ package workers
 
 import (
 	"fmt"
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/netutil"
 	"github.com/CiscoCloud/distributive/tabular"
-	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
 	"net"
 	"os/exec"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
-// port parses /proc/net/tcp to determine if a given port is in an open state
-// and returns an error if it is not.
-func port(parameters []string) (exitCode int, exitMessage string) {
-	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
-	getHexPorts := func() (ports []string) {
-		path := "/proc/net/tcp"
-		data := wrkutils.FileToString(path)
-		table := tabular.ProbabalisticSplit(data)
-		// TODO by header isn't working
-		//localAddresses := tabular.GetColumnByHeader("local_address", table)
-		localAddresses := tabular.GetColumnNoHeader(1, table)
-		portRe := regexp.MustCompile(`([0-9A-F]{8}):([0-9A-F]{4})`)
-		for _, address := range localAddresses {
-			port := portRe.FindString(address)
-			if port != "" {
-				if len(port) < 10 {
-					log.WithFields(log.Fields{
-						"port":   port,
-						"length": len(port),
-					}).Fatal("Couldn't parse port number in " + path)
-				}
-				portString := string(port[9:])
-				ports = append(ports, portString)
-			}
-		}
-		return ports
-	}
+var noTime, _ = time.ParseDuration("0μs")
 
-	// strHexToDecimal converts from string containing hex number to int
-	strHexToDecimal := func(hex string) int {
-		portInt, err := strconv.ParseInt(hex, 16, 64)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"number": hex,
-				"error":  err.Error(),
-			}).Fatal("Couldn't parse hex number")
-		}
-		return int(portInt)
-	}
+/*
+#### port
+Description: Is this port open?
+Parameters:
+  - Number (uint16): Port number (decimal)
+Example parameters:
+  - 80, 8080, 8500, 5050
+Dependencies:
+  - /proc/net/tcp
+*/
 
-	// getOpenPorts gets a list of open/listening ports as integers
-	getOpenPorts := func() (ports []int) {
-		for _, port := range getHexPorts() {
-			ports = append(ports, strHexToDecimal(port))
-		}
-		return ports
-	}
+type Port struct{ port uint16 }
 
-	// TODO check if it is in a valid range
-	port := wrkutils.ParseMyInt(parameters[0])
-	open := getOpenPorts()
-	for _, p := range open {
-		if p == port {
-			return 0, ""
-		}
+func (chk Port) ID() string { return "port" }
+
+func (chk Port) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
 	}
-	// convert ports to string to send to wrkutils.GenericError
+	portInt, err := strconv.ParseUint(params[0], 10, 16)
+	if err != nil || portInt < 0 || portInt > 65535 {
+		return chk, errutil.ParameterTypeError{params[0], "uint16"}
+	}
+	chk.port = uint16(portInt)
+	return chk, nil
+}
+
+func (chk Port) Status() (int, string, error) {
+	if netutil.PortOpen(chk.port) {
+		return errutil.Success()
+	}
+	// convert ports to string to send to errutil.GenericError
 	var strPorts []string
-	for _, port := range open {
+	for _, port := range netutil.OpenPorts() {
 		strPorts = append(strPorts, fmt.Sprint(port))
 	}
-	return wrkutils.GenericError("Port not open", fmt.Sprint(port), strPorts)
+	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
 }
 
-// getInterfaces returns a list of network interfaces and handles any associated
-// error. Just for DRY.
-func getInterfaces() []net.Interface {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Fatal("Could not read network interfaces")
+/*
+#### InterfaceExists
+Description: Does this interface exist?
+Parameters:
+  - Name (string): name of the interface
+Example parameters:
+  - lo, wlp1s0, docker0
+*/
+
+type InterfaceExists struct{ name string }
+
+func (chk InterfaceExists) ID() string { return "InterfaceExists" }
+
+func (chk InterfaceExists) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
 	}
-	return ifaces
+	chk.name = params[0]
+	return chk, nil
 }
 
-// interfaceExists detects if a network interface exists,
-func interfaceExists(parameters []string) (exitCode int, exitMessage string) {
+func (chk InterfaceExists) Status() (int, string, error) {
 	// getInterfaceNames returns the names of all network interfaces
 	getInterfaceNames := func() (interfaces []string) {
-		for _, iface := range getInterfaces() {
+		for _, iface := range netutil.GetInterfaces() {
 			interfaces = append(interfaces, iface.Name)
 		}
 		return
 	}
-	name := parameters[0]
 	interfaces := getInterfaceNames()
 	for _, iface := range interfaces {
-		if iface == name {
-			return 0, ""
+		if iface == chk.name {
+			return errutil.Success()
 		}
 	}
-	return wrkutils.GenericError("Interface does not exist", name, interfaces)
+	return errutil.GenericError("Interface does not exist", chk.name, interfaces)
 }
 
-// up determines if a network interface is up and running or not
-func up(parameters []string) (exitCode int, exitMessage string) {
+/*
+#### up
+Description: Is this interface up?
+Parameters:
+  - Name (string): name of the interface
+Example parameters:
+  - lo, wlp1s0, docker0
+*/
+
+type Up struct{ name string }
+
+func (chk Up) ID() string { return "up" }
+
+func (chk Up) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.name = params[0]
+	return chk, nil
+}
+
+func (chk Up) Status() (int, string, error) {
 	// getUpInterfaces returns all the names of the interfaces that are up
 	getUpInterfaces := func() (interfaceNames []string) {
-		for _, iface := range getInterfaces() {
+		for _, iface := range netutil.GetInterfaces() {
 			if iface.Flags&net.FlagUp != 0 {
 				interfaceNames = append(interfaceNames, iface.Name)
 			}
@@ -120,79 +125,119 @@ func up(parameters []string) (exitCode int, exitMessage string) {
 		return interfaceNames
 
 	}
-	name := parameters[0]
 	upInterfaces := getUpInterfaces()
-	if tabular.StrIn(name, upInterfaces) {
-		return 0, ""
+	if tabular.StrIn(chk.name, upInterfaces) {
+		return errutil.Success()
 	}
-	return wrkutils.GenericError("Interface is not up", name, upInterfaces)
+	return errutil.GenericError("Interface is not up", chk.name, upInterfaces)
 }
 
-// getInterface IPs gets all the associated IP addresses of a given interface
-// as a slice of strings, with a given IP protocol version (4|6)
-func getInterfaceIPs(name string, version int) (ifaceAddresses []string) {
-	// ensure valid IP version
-	if version != 4 && version != 6 {
-		log.WithFields(log.Fields{
-			"version":  version,
-			"expected": "4 | 6",
-		}).Fatal("Probable configuration error: Unsupported IP version")
-	}
-	for _, iface := range getInterfaces() {
-		if iface.Name == name {
-			addresses, err := iface.Addrs()
-			if err != nil {
-				log.WithFields(log.Fields{
-					"interface": iface.Name,
-					"error":     err.Error(),
-				}).Fatal("Could not get network addressed from interface")
-			}
-			for _, addr := range addresses {
-				var ip net.IP
-				switch v := addr.(type) {
-				case *net.IPNet:
-					ip = v.IP
-				case *net.IPAddr:
-					ip = v.IP
-				}
-				switch version {
-				case 4:
-					ifaceAddresses = append(ifaceAddresses, ip.To4().String())
-				case 6:
-					ifaceAddresses = append(ifaceAddresses, ip.To16().String())
-				}
-			}
-			return ifaceAddresses
-
+// ipCheck(int, string, error) is an abstraction of IP4 and
+// IP6
+func ipCheck(name string, address *net.IP, version int) (int, string, error) {
+	ips := netutil.InterfaceIPs(name)
+	for _, ip := range ips {
+		if ip.Equal(*address) {
+			return errutil.Success()
 		}
-	} // will only reach this line if the interface didn't exist
-	return ifaceAddresses // will be empty
-}
-
-// getIPWorker(exitCode int, exitMessage string) is an abstraction of Ip4 and Ip6
-func getIPWorker(name string, address string, version int) (exitCode int, exitMessage string) {
-	ips := getInterfaceIPs(name, version)
-	if tabular.StrIn(address, ips) {
-		return 0, ""
 	}
-	return wrkutils.GenericError("Interface does not have IP", address, ips)
+	return errutil.GenericError("Interface does not have IP", address, ips)
 }
 
-// ip4 checks to see if this network interface has this ipv4 address
-func ip4(parameters []string) (exitCode int, exitMessage string) {
-	return getIPWorker(parameters[0], parameters[1], 4)
+/*
+#### IP4
+Description: Does this interface have this IPV4 address?
+Parameters:
+  - Interface name (string)
+  - Address (IP address)
+Example parameters:
+  - lo, wlp1s0, docker0
+  - 192.168.0.21, 222.111.0.22
+*/
+
+type IP4 struct {
+	name string
+	ip   net.IP
 }
 
-// ip6 checks to see if this network interface has this ipv6 address
-func ip6(parameters []string) (exitCode int, exitMessage string) {
-	return getIPWorker(parameters[0], parameters[1], 6)
+func (chk IP4) ID() string { return "IP4" }
+
+func (chk IP4) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	} else if !netutil.ValidIP(params[1]) {
+		return chk, errutil.ParameterTypeError{params[1], "IP"}
+	}
+	chk.name = params[0]
+	chk.ip = net.ParseIP(params[1])
+	return chk, nil
 }
 
-// gateway checks to see that the default gateway has a certain IP
-func gateway(parameters []string) (exitCode int, exitMessage string) {
-	// getGatewayAddress filters all gateway IPs for a non-zero value
+func (chk IP4) Status() (int, string, error) {
+	// TODO figure out IP pointer situation
+	return ipCheck(chk.name, &chk.ip, 4)
+}
+
+/*
+#### IP6
+Description: Does this interface have this IPV6 address?
+Parameters:
+  - Interface name (string)
+  - IP (IP address)
+Example parameters:
+  - lo, wlp1s0, docker0
+  - FE80:0000:0000:0000:0202:B3FF:FE1E:8329, 2001:db8:0:1:1:1:1:1
+*/
+
+type IP6 struct {
+	name string
+	ip   net.IP
+}
+
+func (chk IP6) ID() string { return "IP6" }
+
+func (chk IP6) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	} else if !netutil.ValidIP(params[1]) {
+		return chk, errutil.ParameterTypeError{params[1], "IP"}
+	}
+	chk.name = params[0]
+	chk.ip = net.ParseIP(params[1])
+	return chk, nil
+}
+
+func (chk IP6) Status() (int, string, error) {
+	return ipCheck(chk.name, &chk.ip, 6)
+}
+
+/*
+#### Gateway
+Description: Does the default Gateway have this IP?
+Parameters:
+  - IP (IP address)
+Example parameters:
+  - 192.168.0.21, 222.111.0.22
+*/
+
+type Gateway struct{ ip net.IP }
+
+func (chk Gateway) ID() string { return "Gateway" }
+
+func (chk Gateway) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	} else if !netutil.ValidIP(params[0]) {
+		return chk, errutil.ParameterTypeError{params[0], "IP"}
+	}
+	chk.ip = net.ParseIP(params[0])
+	return chk, nil
+}
+
+func (chk Gateway) Status() (int, string, error) {
+	// getGatewayAddress filters all Gateway IPs for a non-zero value
 	getGatewayAddress := func() (addr string) {
-		ips := routingTableColumn("Gateway")
+		ips := RoutingTableColumn("Gateway")
 		for _, ip := range ips {
 			if ip != "0.0.0.0" {
 				return ip
@@ -200,167 +245,207 @@ func gateway(parameters []string) (exitCode int, exitMessage string) {
 		}
 		return "0.0.0.0"
 	}
-	address := parameters[0]
-	gatewayIP := getGatewayAddress()
-	if address == gatewayIP {
-		return 0, ""
+	GatewayIP := getGatewayAddress()
+	if chk.ip.String() == GatewayIP {
+		return errutil.Success()
 	}
 	msg := "Gateway does not have address"
-	return wrkutils.GenericError(msg, address, []string{gatewayIP})
+	return errutil.GenericError(msg, chk.ip.String(), []string{GatewayIP})
 }
 
-// gatewayInterface checks that the default gateway is using a specified interface
-func gatewayInterface(parameters []string) (exitCode int, exitMessage string) {
-	// getGatewayInterface returns the interface that the default gateway is
+/*
+#### GatewayInterface
+Description: Is the default Gateway is using a specified interface?
+Parameters:
+  - Name (string)
+Example parameters:
+  - lo, wlp1s0, docker0
+*/
+
+type GatewayInterface struct{ name string }
+
+func (chk GatewayInterface) ID() string { return "GatewayInterface" }
+
+func (chk GatewayInterface) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.name = params[0]
+	return chk, nil
+}
+
+func (chk GatewayInterface) Status() (int, string, error) {
+	// getGatewayInterface returns the interface that the default Gateway is
 	// operating on
 	getGatewayInterface := func() (iface string) {
-		ips := routingTableColumn("Gateway")
-		names := routingTableColumn("Iface")
+		ips := RoutingTableColumn("Gateway")
+		names := RoutingTableColumn("Iface")
 		for i, ip := range ips {
 			if ip != "0.0.0.0" {
 				msg := "Fewer names in kernel routing table than IPs"
-				wrkutils.IndexError(msg, i, names)
+				errutil.IndexError(msg, i, names)
 				return names[i] // interface name
 			}
 		}
 		return ""
 	}
-	name := parameters[0]
 	iface := getGatewayInterface()
-	if name == iface {
-		return 0, ""
+	if chk.name == iface {
+		return errutil.Success()
 	}
-	msg := "Default gateway does not operate on interface"
-	return wrkutils.GenericError(msg, name, []string{iface})
+	msg := "Default Gateway does not operate on interface"
+	return errutil.GenericError(msg, chk.name, []string{iface})
 }
 
-// host checks if a given host can be resolved.
-func host(parameters []string) (exitCode int, exitMessage string) {
-	// resolvable  determines whether a given host can be reached
-	resolvable := func(name string) bool {
-		_, err := net.LookupHost(name)
-		if err == nil {
-			return true
-		}
-		return false
+/*
+#### Host
+Description: Host checks if a given host can be resolved
+Parameters:
+Example parameters:
+*/
+
+type Host struct{ hostname string }
+
+func (chk Host) ID() string { return "Host" }
+
+func (chk Host) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
 	}
-	host := parameters[0]
-	if resolvable(host) {
-		return 0, ""
-	}
-	return 1, "Host cannot be resolved: " + host
+	chk.hostname = params[0]
+	return chk, nil
 }
 
-func validHost(host string) bool {
-	_, err := net.ResolveTCPAddr("tcp", host)
-	if err != nil && strings.Contains(err.Error(), "no such host") {
-		return false
+func (chk Host) Status() (int, string, error) {
+	if netutil.Resolvable(chk.hostname) {
+		return errutil.Success()
 	}
-	_, err = net.ResolveUDPAddr("udp", host)
-	if err != nil && strings.Contains(err.Error(), "no such host") {
-		return false
-	}
-	return true
+	return 1, "Host cannot be resolved: " + chk.hostname, nil
 }
 
-// canConnect tests whether a connection can be made to a given host on its
-// given port using protocol ("TCP"|"UDP")
-func canConnect(host string, protocol string, timeout time.Duration) bool {
-	if !validHost(host) {
-		return false
+// TODO improve/fix
+// getConnection(int, string, error) is an abstraction of TCP and UDP
+func connectionCheck(host string, protocol string, timeout time.Duration) (int, string, error) {
+	if netutil.CanConnect(host, protocol, timeout) {
+		return errutil.Success()
 	}
-	resolveError := func(err error) {
-		if err != nil {
-			log.WithFields(log.Fields{
-				"protocol": protocol,
-				"address":  host,
-				"error":    err.Error(),
-			}).Fatal("Couldn't parse network address")
-		}
-	}
-	var conn net.Conn
-	var err error
-	var timeoutNetwork = "tcp"
-	var timeoutAddress string
-	nanoseconds := timeout.Nanoseconds()
-	switch protocol {
-	case "TCP":
-		tcpaddr, err := net.ResolveTCPAddr("tcp", host)
-		resolveError(err)
-		timeoutAddress = tcpaddr.String()
-		if nanoseconds <= 0 {
-			conn, err = net.DialTCP(timeoutNetwork, nil, tcpaddr)
-		}
-	case "UDP":
-		timeoutNetwork = "udp"
-		udpaddr, err := net.ResolveUDPAddr("udp", host)
-		resolveError(err)
-		timeoutAddress = udpaddr.String()
-		if nanoseconds <= 0 {
-			conn, err = net.DialUDP("udp", nil, udpaddr)
-		}
-	default:
-		msg := "Probable configuration error: Unsupported protocol"
-		log.WithField("protocol", protocol).Fatal(msg)
-	}
-	// if a duration was specified, use it
-	if nanoseconds > 0 {
-		conn, err = net.DialTimeout(timeoutNetwork, timeoutAddress, timeout)
-		if conn != nil {
-			defer conn.Close()
-		}
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Warn("Error while connecting to host")
-		}
-	}
-	if err == nil {
-		return true
-	}
-	return false
+	return 1, "Could not connect over " + protocol + " to host: " + host, nil
 }
 
-// getConnection(exitCode int, exitMessage string) is an abstraction of TCP and UDP
-func getConnectionWorker(host string, protocol string, timeoutstr string) (exitCode int, exitMessage string) {
-	dur, err := time.ParseDuration(timeoutstr)
+/*
+#### TCP
+Description: Can a given IP/port can be reached with a TCP connection
+Parameters:
+Example parameters:
+  - 192.168.0.21, 222.111.0.22
+*/
+
+type TCP struct{ name string }
+
+func (chk TCP) ID() string { return "TCP" }
+
+func (chk TCP) New(params []string) (chkutil.Check, error) {
+	// TODO add default port of :80 if none is provided
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.name = params[0]
+	return chk, nil
+}
+
+func (chk TCP) Status() (int, string, error) {
+	return connectionCheck(chk.name, "TCP", noTime)
+}
+
+/*
+#### UDP
+Description: Like TCP but with UDP instead.
+*/
+
+type UDP struct{ name string }
+
+func (chk UDP) ID() string { return "UDP" }
+
+func (chk UDP) New(params []string) (chkutil.Check, error) {
+	// TODO add default port of :80 if none is provided
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.name = params[0]
+	return chk, nil
+}
+
+func (chk UDP) Status() (int, string, error) {
+	return connectionCheck(chk.name, "UDP", noTime)
+}
+
+/*
+#### TCPTimeout
+Description: Like TCP, but with a second parameter of a timeout
+Example parameters:
+  - 5s, 7μs, 12m, 5h, 3d
+*/
+
+type TCPTimeout struct {
+	name    string
+	timeout time.Duration
+}
+
+func (chk TCPTimeout) ID() string { return "TCPTimeout" }
+
+func (chk TCPTimeout) New(params []string) (chkutil.Check, error) {
+	// TODO add default port of :80 if none is provided
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	chk.name = params[0]
+	duration, err := time.ParseDuration(params[1])
 	if err != nil {
-		log.WithFields(log.Fields{
-			"duration": timeoutstr,
-			"error":    err.Error(),
-		}).Fatal("Probable configuration error: Could not parse duration")
+		return chk, errutil.ParameterTypeError{params[1], "time.Duration"}
 	}
-	if canConnect(host, protocol, dur) {
-		return 0, ""
+	chk.timeout = duration
+	return chk, nil
+}
+
+func (chk TCPTimeout) Status() (int, string, error) {
+	return connectionCheck(chk.name, "TCP", chk.timeout)
+}
+
+/*
+#### UDPTimeout
+Description: Like TCPTimeout, but with UDP
+*/
+
+type UDPTimeout struct {
+	name    string
+	timeout time.Duration
+}
+
+func (chk UDPTimeout) ID() string { return "UDPTimeout" }
+
+func (chk UDPTimeout) New(params []string) (chkutil.Check, error) {
+	// TODO add default port of :80 if none is provided
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
 	}
-	return 1, "Could not connect over " + protocol + " to host: " + host
+	chk.name = params[0]
+	duration, err := time.ParseDuration(params[1])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[1], "time.Duration"}
+	}
+	chk.timeout = duration
+	return chk, nil
 }
 
-// TODO add default port of :80 if none is provided
-// tcp sees if a given IP/port can be reached with a TCP connection
-func tcp(parameters []string) (exitCode int, exitMessage string) {
-	return getConnectionWorker(parameters[0], "TCP", "0ns")
-}
-
-// udp is like TCP but with UDP instead.
-func udp(parameters []string) (exitCode int, exitMessage string) {
-	return getConnectionWorker(parameters[0], "UDP", "0ns")
-}
-
-// tcpTimeout is like TCP, but with a timeout parameter
-func tcpTimeout(parameters []string) (exitCode int, exitMessage string) {
-	return getConnectionWorker(parameters[0], "TCP", parameters[1])
-}
-
-// udpTimeout is like tcpTimeout but with UDP instead.
-func udpTimeout(parameters []string) (exitCode int, exitMessage string) {
-	return getConnectionWorker(parameters[0], "UDP", parameters[1])
+func (chk UDPTimeout) Status() (int, string, error) {
+	return connectionCheck(chk.name, "UDP", chk.timeout)
 }
 
 // returns a column of the routing table as a slice of strings
-func routingTableColumn(name string) []string {
+// TODO read from /proc/net/route instead
+func RoutingTableColumn(name string) []string {
 	cmd := exec.Command("route", "-n")
-	out := wrkutils.CommandOutput(cmd)
+	out := chkutil.CommandOutput(cmd)
 	table := tabular.ProbabalisticSplit(out)
 	if len(table) < 1 {
 		log.WithFields(log.Fields{
@@ -372,56 +457,172 @@ func routingTableColumn(name string) []string {
 	return tabular.GetColumnByHeader(name, finalTable)
 }
 
-// routingTableMatch(exitCode int, exitMessage string) constructs a Worker that returns whether or not the
-// given string was found in the given column of the routing table. It is an
-// astraction of routingTableDestination, routingTableInterface, and
-// routingTableGateway
-func routingTableMatch(col string, str string) (exitCode int, exitMessage string) {
-	column := routingTableColumn(col)
+// RoutingTableMatch asks: Is this value in this column of the routing table?
+func RoutingTableMatch(col string, str string) (int, string, error) {
+	column := RoutingTableColumn(col)
 	if tabular.StrIn(str, column) {
-		return 0, ""
+		return errutil.Success()
 	}
-	return wrkutils.GenericError("Not found in routing table", str, column)
+	return errutil.GenericError("Not found in routing table", str, column)
 }
 
-// routingTableDestination checks if an IP address is a destination in the
+/*
+#### RoutingTableDestination
+Description: Is this IP address in the kernel's IP routing table?
+Parameters:
+  - IP (IP address)
+Example parameters:
+  - 192.168.0.21, 222.111.0.22
+Dependencies:
+  - `route -n`
+*/
+
+type RoutingTableDestination struct{ ip net.IP }
+
+func (chk RoutingTableDestination) ID() string { return "RoutingTableDestination" }
+
+func (chk RoutingTableDestination) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	if !netutil.ValidIP(params[0]) {
+		return chk, errutil.ParameterTypeError{params[0], "IP address"}
+	}
+	chk.ip = net.ParseIP(params[0])
+	return chk, nil
+}
+
+func (chk RoutingTableDestination) Status() (int, string, error) {
+	return RoutingTableMatch("Destination", chk.ip.To4().String())
+}
+
+/*
+#### RoutingTableInterface
+Description: Is this interface in the kernel's IP routing table?
+Parameters:
+  - Name (string)
+Example parameters:
+  - lo, wlp1s0, docker0
+Dependencies:
+  - `route -n`
+*/
+
+type RoutingTableInterface struct{ name string }
+
+func (chk RoutingTableInterface) ID() string { return "RoutingTableInterface" }
+
+func (chk RoutingTableInterface) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.name = params[0]
+	return chk, nil
+}
+
+func (chk RoutingTableInterface) Status() (int, string, error) {
+	return RoutingTableMatch("Iface", chk.name)
+}
+
+/*
+#### RoutingTableGateway
+Description: Is this the Gateway's IP address, as listed in the routing table?
+Parameters:
+  - IP (IP address)
+Example parameters:
+  - 192.168.0.21, 222.111.0.22
+*/
+
+// routeTableGateway checks if an IP address is a Gateway's IP in the
 // kernel's IP routing table, as accessed by `route -n`.
-func routingTableDestination(parameters []string) (exitCode int, exitMessage string) {
-	return routingTableMatch("Destination", parameters[0])
+type RoutingTableGateway struct{ name string }
+
+func (chk RoutingTableGateway) ID() string { return "RoutingTableDestination" }
+
+func (chk RoutingTableGateway) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.name = params[0]
+	return chk, nil
 }
 
-// routingTableInterface checks if a given name is an interface in the
-// kernel's IP routing table, as accessed by `route -n`.
-func routingTableInterface(parameters []string) (exitCode int, exitMessage string) {
-	return routingTableMatch("Iface", parameters[0])
+func (chk RoutingTableGateway) Status() (int, string, error) {
+	return RoutingTableMatch("Gateway", chk.name)
 }
 
-// routeTableGateway checks if an IP address is a gateway's IP in the
-// kernel's IP routing table, as accessed by `route -n`.
-func routingTableGateway(parameters []string) (exitCode int, exitMessage string) {
-	return routingTableMatch("Gateway", parameters[0])
-}
-
-// responseMatchesGeneral is an abstraction of responseMatches and
-// responseMatchesInsecure that simply varies in the security of the connection
-func responseMatchesGeneral(parameters []string, secure bool) (exitCode int, exitMessage string) {
-	urlstr := parameters[0]
-	re := wrkutils.ParseUserRegex(parameters[1])
-	body := wrkutils.URLToBytes(urlstr, secure)
+// ResponseMatchesGeneral is an abstraction of ResponseMatches and
+// ResponseMatchesInsecure that simply varies in the security of the connection
+func ResponseMatchesGeneral(urlstr string, re *regexp.Regexp, secure bool) (int, string, error) {
+	body := chkutil.URLToBytes(urlstr, secure)
 	if re.Match(body) {
-		return 0, ""
+		return errutil.Success()
 	}
 	msg := "Response didn't match regexp"
-	return wrkutils.GenericError(msg, re.String(), []string{string(body)})
+	return errutil.GenericError(msg, re.String(), []string{string(body)})
 }
 
-// responseMatches asks: does the response from this URL match this regexp?
-func responseMatches(parameters []string) (exitCode int, exitMessage string) {
-	return responseMatchesGeneral(parameters, true)
+/*
+#### ResponseMatches
+Description: Does the response from this URL match this regexp?
+Parameters:
+  - URL (URL string)
+  - Regexp (regexp)
+Example parameters:
+  - http://my-server.example.com, http://eff.org
+  - "40[0-9]", "my welome message!", "key:value"
+*/
+
+type ResponseMatches struct {
+	urlstr string
+	re     *regexp.Regexp
 }
 
-// responseMatchesInsecure is just like responseMatches, but it doesn't verify
-// the SSL cert on the other end.
-func responseMatchesInsecure(parameters []string) (exitCode int, exitMessage string) {
-	return responseMatchesGeneral(parameters, false)
+func (chk ResponseMatches) ID() string { return "RoutingTableDestination" }
+
+func (chk ResponseMatches) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	// TODO validate URL
+	chk.urlstr = params[0]
+	re, err := regexp.Compile(params[1])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[1], "regexp"}
+	}
+	chk.re = re
+	return chk, nil
+}
+
+func (chk ResponseMatches) Status() (int, string, error) {
+	return ResponseMatchesGeneral(chk.urlstr, chk.re, true)
+}
+
+/*
+#### ResponseMatchesInsecure
+Description: Like ResponseMatches, but without SSL certificate validation
+*/
+
+type ResponseMatchesInsecure struct {
+	urlstr string
+	re     *regexp.Regexp
+}
+
+func (chk ResponseMatchesInsecure) ID() string { return "RoutingTableDestination" }
+
+func (chk ResponseMatchesInsecure) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	// TODO validate URL
+	chk.urlstr = params[0]
+	re, err := regexp.Compile(params[1])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[1], "regexp"}
+	}
+	chk.re = re
+	return chk, nil
+}
+
+func (chk ResponseMatchesInsecure) Status() (int, string, error) {
+	return ResponseMatchesGeneral(chk.urlstr, chk.re, false)
 }

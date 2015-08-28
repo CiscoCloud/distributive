@@ -9,8 +9,15 @@ func TestDockerImage(t *testing.T) {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
 		t.Parallel()
-		losers := []parameters{[]string{"failme"}, []string{""}}
-		testInputs(t, dockerImage, []parameters{}, losers)
+		validInputs := names
+		invalidInputs := notLengthOne
+		// inputs that should lead to success
+		goodEggs := [][]string{}
+		// inputs that should lead to failure
+		badEggs := [][]string{[]string{"lkjbdakjsd"}, []string{"failme"}}
+		badEggs = append(badEggs, names...)
+		testParameters(validInputs, invalidInputs, DockerImage{}, t)
+		testCheck(goodEggs, badEggs, DockerImage{}, t)
 	}
 }
 
@@ -19,8 +26,17 @@ func TestDockerImageRegexp(t *testing.T) {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
 		t.Parallel()
-		losers := []parameters{[]string{"failme"}, []string{"regexp"}}
-		testInputs(t, dockerImageRegexp, []parameters{}, losers)
+		validInputs := [][]string{
+			[]string{"name"}, []string{"test*"}, []string{`win\d{1}`},
+		}
+		validInputs = append(validInputs, names...)
+		// TODO invalid regexps
+		invalidInputs := notLengthOne
+		goodEggs := [][]string{}
+		badEggs := [][]string{[]string{"lkjbdakjsd{3}"}, []string{"failme+"}}
+		badEggs = append(badEggs, names...)
+		testParameters(validInputs, invalidInputs, DockerImageRegexp{}, t)
+		testCheck(goodEggs, badEggs, DockerImageRegexp{}, t)
 	}
 }
 
@@ -29,8 +45,13 @@ func TestDockerRunning(t *testing.T) {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
 		t.Parallel()
-		losers := []parameters{[]string{"failme"}, []string{""}}
-		testInputs(t, dockerRunning, []parameters{}, losers)
+		validInputs := names
+		invalidInputs := notLengthOne
+		goodEggs := [][]string{}
+		badEggs := [][]string{[]string{"lkjbdakjsd{3}"}, []string{"failme+"}}
+		badEggs = append(badEggs, names...)
+		testParameters(validInputs, invalidInputs, DockerRunning{}, t)
+		testCheck(goodEggs, badEggs, DockerRunning{}, t)
 	}
 }
 
@@ -39,9 +60,21 @@ func TestDockerRunningAPI(t *testing.T) {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
 		t.Parallel()
-		path := "/var/run/docker.sock"
-		losers := []parameters{[]string{path, "failme"}, []string{path, ""}}
-		testInputs(t, dockerRunningAPI, []parameters{}, losers)
+		validInputs := [][]string{
+			[]string{"/proc/cpuinfo", "name"},
+			[]string{"/proc/cpuinfo", "test"},
+			[]string{"/proc/cpuinfo", "win"},
+		}
+		invalidInputs := notLengthOne
+		invalidInputs = append(invalidInputs, names...)
+		goodEggs := [][]string{}
+		badEggs := [][]string{
+			[]string{"/var/run/docker.sock", "failme"},
+			[]string{"/var/run/docker.sock", "fail"},
+			[]string{"/var/run/docker.sock", "loser"},
+		}
+		testParameters(validInputs, invalidInputs, DockerRunningAPI{}, t)
+		testCheck(goodEggs, badEggs, DockerRunningAPI{}, t)
 	}
 }
 
@@ -50,7 +83,14 @@ func TestDockerRunningRegexp(t *testing.T) {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
 		t.Parallel()
-		losers := []parameters{[]string{"failme"}, []string{""}}
-		testInputs(t, dockerRunningRegexp, []parameters{}, losers)
+		t.Parallel()
+		validInputs := names
+		// TODO invalid regexps
+		invalidInputs := notLengthOne
+		goodEggs := [][]string{}
+		badEggs := [][]string{[]string{"lkjbdakjsd{3}"}, []string{"failme+"}}
+		badEggs = append(badEggs, names...)
+		testParameters(validInputs, invalidInputs, DockerRunning{}, t)
+		testCheck(goodEggs, badEggs, DockerRunning{}, t)
 	}
 }

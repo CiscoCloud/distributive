@@ -2,35 +2,35 @@
     "Name": "Filesystem checks",
     "Checklist" : [
         {
-            "Check" : "file",
+            "ID" : "file",
             "Parameters" : ["/swapfile"]
         },
         {
-            "Check" : "directory",
+            "ID" : "directory",
             "Parameters" : ["/proc"]
         },
         {
-            "Check" : "symlink",
+            "ID" : "symlink",
             "Parameters" : ["/home/lb/Dropbox/workspace/www"]
         },
         {
-            "Check" : "checksum",
-            "Parameters" : ["MD5", "d41d8cd98f00b204e9800998ecf8427e", "/dev/null"]
+            "ID" : "checksum",
+            "Parameters" : ["MD5", "d41d8cd98f00b204e9800998ecf8427e", "/proc/cpuinfo"]
         },
         {
-            "Check" : "checksum",
-            "Parameters" : ["SHA1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/dev/null"]
+            "ID" : "checksum",
+            "Parameters" : ["SHA1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/proc/cpuinfo"]
         },
         {
-            "Check" : "fileContains",
+            "ID" : "fileMatches",
             "Parameters" : ["/proc/net/tcp","\\d{8}"]
         },
         {
-            "Check" : "permissions",
-            "Parameters" : ["/dev/null", "-rw-rw-rw-"]
+            "ID" : "permissions",
+            "Parameters" : ["/proc/cpuinfo", "-rw-rw-rw-"]
         },
         {
-            "Check": "diskUsage",
+            "ID": "diskUsage",
             "Parameters": ["/", "90"]
         }
     ]

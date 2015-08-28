@@ -2,39 +2,39 @@
     "Name": "Group checks",
     "Checklist" : [
         {
-            "Check" : "groupExists",
+            "ID" : "groupExists",
             "Parameters" : ["wheel"]
         },
         {
-            "Check" : "userInGroup",
+            "ID" : "userInGroup",
             "Parameters" : ["root", "wheel"]
         },
         {
-            "Check" : "groupExists",
+            "ID" : "groupExists",
             "Parameters" : ["bin"]
         },
         {
-            "Check" : "groupId",
+            "ID" : "groupId",
             "Parameters" : ["root", "0"]
         },
         {
-            "Check" : "userExists",
+            "ID" : "userExists",
             "Parameters" : ["root"]
         },
         {
-            "Check" : "userHasUID",
+            "ID" : "userHasUID",
             "Parameters" : ["root", "0"]
         },
         {
-            "Check" : "userHasGID",
+            "ID" : "userHasGID",
             "Parameters" : ["lb", "100"]
         },
         {
-            "Check" : "UserHasHomeDir",
+            "ID" : "UserHasHomeDir",
             "Parameters" : ["root", "/root"]
         },
         {
-            "Check" : "UserHasHomeDir",
+            "ID" : "UserHasHomeDir",
             "Parameters" : ["lb", "/home/lb"]
         }
     ]

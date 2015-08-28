@@ -1,45 +1,87 @@
 package workers
 
 import (
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
-	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
+	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
 // getDockerImages returns a list of all downloaded Docker images
 func getDockerImages() (images []string) {
 	cmd := exec.Command("docker", "images")
-	return wrkutils.CommandColumnNoHeader(0, cmd)
+	return chkutil.CommandColumnNoHeader(0, cmd)
 }
 
-// dockerImage checks to see that the specified Docker image (e.g. "user/image",
-// "ubuntu", etc.) is downloaded (pulled) on the host
-func dockerImage(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
-	images := getDockerImages()
-	if tabular.StrIn(name, images) {
-		return 0, ""
+/*
+#### DockerImage
+Description: Is this Docker image present?
+Parameters:
+  - Name (string):  Name of the image
+Example parameters:
+  - "user/image", "ubuntu"
+*/
+
+type DockerImage struct{ name string }
+
+func (chk DockerImage) ID() string { return "DockerImage" }
+
+func (chk DockerImage) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
 	}
-	return wrkutils.GenericError("Docker image was not found", name, images)
+	chk.name = params[0]
+	return chk, nil
 }
 
-// dockerImageRegexp is like dockerImage, but with a regexp match instead
-func dockerImageRegexp(parameters []string) (exitCode int, exitMessage string) {
-	re := wrkutils.ParseUserRegex(parameters[0])
+func (chk DockerImage) Status() (int, string, error) {
 	images := getDockerImages()
-	if tabular.ReIn(re, images) {
-		return 0, ""
+	if tabular.StrIn(chk.name, images) {
+		return errutil.Success()
 	}
-	return wrkutils.GenericError("Docker image was not found", re.String(), images)
+	return errutil.GenericError("Docker image was not found", chk.name, images)
+}
+
+/*
+#### DockerImageRegexp
+Description: Works like DockerImage, but matches via a regexp, rather than a
+string.
+*/
+
+type DockerImageRegexp struct{ re *regexp.Regexp }
+
+func (chk DockerImageRegexp) ID() string { return "DockerImageRegexp" }
+
+func (chk DockerImageRegexp) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	re, err := regexp.Compile(params[0])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "regexp"}
+	}
+	chk.re = re
+	return chk, nil
+}
+
+func (chk DockerImageRegexp) Status() (int, string, error) {
+	images := getDockerImages()
+	if tabular.ReIn(chk.re, images) {
+		return errutil.Success()
+	}
+	msg := "Docker image was not found."
+	return errutil.GenericError(msg, chk.re.String(), images)
 }
 
 // getRunningContainers returns a list of names of running docker containers
 func getRunningContainers() (containers []string) {
 	cmd := exec.Command("docker", "ps", "-a")
-	outstr := wrkutils.CommandOutput(cmd)
+	outstr := chkutil.CommandOutput(cmd)
 	// the output of `docker ps -a` has spaces in columns, but each column
 	// is separated by 2 or more spaces. Just what Probabalistic was made for!
 	lines := tabular.ProbabalisticSplit(outstr)
@@ -55,6 +97,36 @@ func getRunningContainers() (containers []string) {
 		}
 	}
 	return containers
+}
+
+/*
+#### DockerRunning
+Description: Is this Docker container running?
+Parameters:
+  - Name (string):  Name of the container
+Example parameters:
+  - "user/container", "user/container:latest"
+*/
+
+type DockerRunning struct{ name string }
+
+func (chk DockerRunning) ID() string { return "DockerRunning" }
+
+func (chk DockerRunning) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.name = params[0]
+	return chk, nil
+}
+
+func (chk DockerRunning) Status() (int, string, error) {
+	running := getRunningContainers()
+	if tabular.StrContainedIn(chk.name, running) {
+		return errutil.Success()
+	}
+	msg := "Docker container not runnning"
+	return errutil.GenericError(msg, chk.name, running)
 }
 
 // getRunningContainersAPI is like getRunningContainers, but uses an external
@@ -81,35 +153,74 @@ func getRunningContainersAPI(endpoint string) (containers []string) {
 	return containers
 }
 
-// dockerRunning checks to see if a specified docker container is running
-// (e.g. "user/container")
-func dockerRunning(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[0]
-	running := getRunningContainers()
-	if tabular.StrContainedIn(name, running) {
-		return 0, ""
+/*
+#### DockerRunningAPI
+Description: Works like DockerRunning, but fetches information from the Docker
+API endpoint instead.
+Parameters:
+  - Path (filepath): Path to Docker socket
+  - Name (string): Name of the container
+Example parameters:
+  - "/var/run/docker.sock", "/path/to/docker.sock"
+  - "user/container", "user/container:latest"
+*/
+
+type DockerRunningAPI struct{ path, name string }
+
+func (chk DockerRunningAPI) ID() string { return "DockerRunningAPI" }
+
+func (chk DockerRunningAPI) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
 	}
-	return wrkutils.GenericError("Docker container not runnning", name, running)
+	path := params[0]
+	if _, err := os.Stat(path); err != nil {
+		return chk, errutil.ParameterTypeError{path, "filepath"}
+	}
+	chk.path = path
+	chk.name = params[1]
+	return chk, nil
 }
 
-// dockerRunningAPI is like dockerRunning, but fetches its information from
-// getRunningContainersAPI.
-func dockerRunningAPI(parameters []string) (exitCode int, exitMessage string) {
-	name := parameters[1]
-	running := getRunningContainersAPI(parameters[0])
-	if tabular.StrContainedIn(name, running) {
-		return 0, ""
-	}
-	return wrkutils.GenericError("Docker container not runnning", name, running)
-}
-
-// dockerRunningRegexp is like dockerRunning, but with a regexp match instead
-func dockerRunningRegexp(parameters []string) (exitCode int, exitMessage string) {
-	re := wrkutils.ParseUserRegex(parameters[0])
-	running := getRunningContainers()
-	if tabular.ReIn(re, running) {
-		return 0, ""
+func (chk DockerRunningAPI) Status() (int, string, error) {
+	running := getRunningContainersAPI(chk.path)
+	if tabular.StrContainedIn(chk.name, running) {
+		return errutil.Success()
 	}
 	msg := "Docker container not runnning"
-	return wrkutils.GenericError(msg, re.String(), running)
+	return errutil.GenericError(msg, chk.name, running)
+}
+
+/*
+#### DockerRunningRegexp
+Description: Works like DockerRunning, but matches with a regexp instead of a
+string.
+Parameters:
+  - Regexp (regexp): Regexp to match names with
+Example parameters:
+  - "user/.+", "user/[cC](o){2,3}[nta]tai\w{2}r"
+*/
+type DockerRunningRegexp struct{ re *regexp.Regexp }
+
+func (chk DockerRunningRegexp) ID() string { return "DockerRunningRegexp" }
+
+func (chk DockerRunningRegexp) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	re, err := regexp.Compile(params[0])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "regexp"}
+	}
+	chk.re = re
+	return chk, nil
+}
+
+func (chk DockerRunningRegexp) Status() (int, string, error) {
+	running := getRunningContainers()
+	if tabular.ReIn(chk.re, running) {
+		return errutil.Success()
+	}
+	msg := "Docker container not runnning"
+	return errutil.GenericError(msg, chk.re.String(), running)
 }

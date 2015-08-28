@@ -2,23 +2,23 @@
     "Name": "Usage measurement checks",
     "Checklist" : [
         {
-            "Check": "memoryUsage",
+            "ID": "memoryUsage",
             "Parameters": ["90"]
         },
         {
-            "Check": "swapUsage",
+            "ID": "swapUsage",
             "Parameters": ["90"]
         },
         {
-            "Check": "cpuUsage",
+            "ID": "cpuUsage",
             "Parameters": ["95"]
         },
         {
-            "Check": "freeMemory",
+            "ID": "freeMemory",
             "Parameters": ["10mb"]
         },
         {
-            "Check": "freeSwap",
+            "ID": "freeSwap",
             "Parameters": ["1kb"]
         }
     ]

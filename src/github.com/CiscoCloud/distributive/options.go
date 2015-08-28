@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/CiscoCloud/distributive/wrkutils"
+	"github.com/CiscoCloud/distributive/errutil"
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"net/url"
@@ -18,7 +18,7 @@ func validateFlags(file string, URL string, directory string) {
 	// validatePath ensures that something is at a given path
 	validatePath := func(path string) {
 		if _, err := os.Stat(path); err != nil {
-			wrkutils.CouldntReadError(path, err)
+			errutil.CouldntReadError(path, err)
 		}
 	}
 	// validateURL ensures that the given URL is valid, or logs an error
@@ -42,7 +42,7 @@ func validateFlags(file string, URL string, directory string) {
 }
 
 // initializeLogrus sets the logrus log level according to the specified
-// verbosity level, both for packages main and wrkutils
+// verbosity level, both for packages main and chkutils
 func initializeLogrus(verbosity string) {
 	lvls := "info | debug | fatal | panic | warn"
 	var logLevel log.Level
@@ -70,7 +70,6 @@ func initializeLogrus(verbosity string) {
 	log.WithFields(log.Fields{
 		"verbosity": verbosity,
 	}).Debug("Verbosity level specified")
-	wrkutils.InitializeLogrus(logLevel)
 }
 
 // getFlags validates and returns command line options
@@ -143,6 +142,6 @@ func getFlags() (f string, u string, d string, s bool) {
 		verbosity = "warn"
 	}
 	app.Run(os.Args)            // parse the arguments, execute app.Action
-	initializeLogrus(verbosity) // set logLevel appropriately for wrkutils
+	initializeLogrus(verbosity) // set logLevel appropriately for chkutils
 	return file, URL, directory, stdin
 }
