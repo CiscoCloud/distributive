@@ -3,7 +3,7 @@ package workers
 import "testing"
 
 func TestCommand(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := [][]string{
 		[]string{"sleep 0.00000001"},
 		[]string{"echo this works"},
@@ -23,7 +23,7 @@ func TestCommand(t *testing.T) {
 }
 
 func TestCommandOutputMatches(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := [][]string{
 		[]string{"echo siddhartha", "sid"},
 		[]string{"cp --help", "cp"},
@@ -41,7 +41,7 @@ func TestCommandOutputMatches(t *testing.T) {
 }
 
 func TestRunning(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := [][]string{
 		[]string{"proc"}, []string{"nginx"}, []string{"anything"},
 		[]string{"worker"}, []string{"distributive"},
@@ -55,7 +55,7 @@ func TestRunning(t *testing.T) {
 }
 
 func TestTemp(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := ints
 	invalidInputs := append(append(names, notInts...), notLengthOne...)
 	goodEggs := [][]string{
@@ -73,7 +73,7 @@ func TestTemp(t *testing.T) {
 }
 
 func TestModule(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := names
 	invalidInputs := notLengthOne
 	goodEggs := [][]string{}
@@ -96,7 +96,7 @@ func TestKernelParameter(t *testing.T) {
 }
 
 func TestPHPConfig(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := appendParameter(names, "dummy-value")
 	invalidInputs := notLengthTwo
 	goodEggs := [][]string{}

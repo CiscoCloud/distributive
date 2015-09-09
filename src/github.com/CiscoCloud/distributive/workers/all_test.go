@@ -3,6 +3,7 @@ package workers
 import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
+	log "github.com/Sirupsen/logrus"
 	"testing"
 )
 
@@ -55,7 +56,7 @@ var notLengthTwo = append(names,
 	[]string{}, []string{""}, []string{"", "", ""}, []string{"one"},
 )
 
-// TODO invalid regexps
+// TODO invalid regexp parameters
 
 // function for manipulating parameters
 type paramAlt func(param []string, str string) []string
@@ -101,12 +102,12 @@ func testParameters(goodEggs [][]string, badEggs [][]string, chk chkutil.Check, 
 		newChk, err := chk.New(goodEgg)
 		if err != nil {
 			msg := "Supposedly valid parameters were invalid"
-			msg = "\n\tParameters: " + fmt.Sprint(goodEgg)
-			msg = "\n\tError: " + err.Error()
+			msg += "\n\tParameters: " + fmt.Sprint(goodEgg)
+			msg += "\n\tError: " + err.Error()
 			t.Error(msg)
 		} else if newChk == nil {
 			msg := "chk.New returned nil!"
-			msg = "\n\tParameters: " + fmt.Sprint(goodEgg)
+			msg += "\n\tParameters: " + fmt.Sprint(goodEgg)
 			t.Error(msg)
 		}
 	}
@@ -114,7 +115,7 @@ func testParameters(goodEggs [][]string, badEggs [][]string, chk chkutil.Check, 
 		_, err := chk.New(badEgg)
 		if err == nil {
 			msg := "Supposedly invalid parameters were valid"
-			msg = "\n\tParameters: " + fmt.Sprint(badEgg)
+			msg += "\n\tParameters: " + fmt.Sprint(badEgg)
 			t.Error(msg)
 		}
 	}
@@ -125,17 +126,23 @@ func testCheck(goodEggs [][]string, badEggs [][]string, chk chkutil.Check, t *te
 		newChk, err := chk.New(params)
 		if err != nil {
 			msg := "Supposedly valid parameters were invalid in testCheck"
-			msg = "\n\tParameters: " + fmt.Sprint(params)
-			msg = "\n\tError: " + err.Error()
+			msg += "\n\tParameters: " + fmt.Sprint(params)
+			msg += "\n\tError: " + err.Error()
 			t.Error(msg)
 		} else if newChk == nil {
 			msg := "chk.New returned nil!"
-			msg = "\n\tParameters: " + fmt.Sprint(params)
+			msg += "\n\tParameters: " + fmt.Sprint(params)
 			t.Error(msg)
 		}
 		return newChk
 	}
 	for _, goodEgg := range goodEggs {
+		// TODO delete
+		log.WithFields(log.Fields{
+			"chk":    chk.ID(),
+			"params": goodEgg,
+		}).Info("Testing check")
+
 		newChk := getNewChk(chk, goodEgg, t)
 		code, exitMsg, err := newChk.Status()
 		if err != nil {
@@ -157,6 +164,12 @@ func testCheck(goodEggs [][]string, badEggs [][]string, chk chkutil.Check, t *te
 		}
 	}
 	for _, badEgg := range badEggs {
+		// TODO delete
+		log.WithFields(log.Fields{
+			"chk":    chk.ID(),
+			"params": badEgg,
+		}).Info("Testing check")
+
 		newChk := getNewChk(chk, badEgg, t)
 		code, exitMsg, err := newChk.Status()
 		if err != nil {

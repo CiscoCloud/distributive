@@ -173,7 +173,7 @@ func (chk Checksum) New(params []string) (chkutil.Check, error) {
 	if err != nil || !ok {
 		return chk, errutil.ParameterTypeError{path, "filepath"}
 	}
-	chk.path = params[2]
+	chk.path = path
 	// TODO validate length of checksum string
 	chk.expectedChksum = params[1]
 	return chk, nil
@@ -212,6 +212,13 @@ func (chk Checksum) Status() (int, string, error) {
 	}
 	// getFileChecksum is self-explanatory
 	getFileChecksum := func(algorithm string, path string) (checksum string) {
+		if path == "" {
+			log.Fatal("getFileChecksum got a blank path")
+		} else if _, err := os.Stat(chk.path); err != nil {
+			log.WithFields(log.Fields{
+				"path": chk.path,
+			}).Fatal("getFileChecksum got an invalid path")
+		}
 		return getChecksum(algorithm, chkutil.FileToBytes(path))
 	}
 	actualChksum := getFileChecksum(chk.algorithm, chk.path)

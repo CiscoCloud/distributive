@@ -11,19 +11,19 @@ var activeServices = [][]string{
 }
 
 func TestSystemctlLoaded(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, SystemctlLoaded{}, t)
 	testCheck(activeServices, names, SystemctlLoaded{}, t)
 }
 
 func TestSystemctlActive(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, SystemctlActive{}, t)
 	testCheck(activeServices, names, SystemctlLoaded{}, t)
 }
 
 func TestSystemctlSockPath(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	goodEggs := [][]string{
 		[]string{"/run/dbus/system_bus_socket"},
 		[]string{"/run/systemd/journal/socket"},
@@ -35,7 +35,7 @@ func TestSystemctlSockPath(t *testing.T) {
 }
 
 func TestSystemctlSockUnit(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	goodEggs := [][]string{
 		[]string{"dbus.socket"},
 		[]string{"systemd-journald.socket"},
@@ -46,19 +46,19 @@ func TestSystemctlSockUnit(t *testing.T) {
 }
 
 func TestSystemctlTimer(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, SystemctlTimer{}, t)
 	testCheck([][]string{}, names, SystemctlTimer{}, t)
 }
 
 func TestSystemctlTimerLoaded(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, SystemctlTimerLoaded{}, t)
 	testCheck([][]string{}, names, SystemctlTimerLoaded{}, t)
 }
 
 func TestSystemctlUnitFileStatus(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	goodEggs := [][]string{
 		[]string{"dbus.service", "static"},
 		[]string{"polkit.service", "static"},

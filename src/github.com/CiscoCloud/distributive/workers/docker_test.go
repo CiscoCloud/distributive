@@ -8,7 +8,7 @@ func TestDockerImage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
+		//t.Parallel()
 		validInputs := names
 		invalidInputs := notLengthOne
 		// inputs that should lead to success
@@ -25,7 +25,7 @@ func TestDockerImageRegexp(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
+		//t.Parallel()
 		validInputs := [][]string{
 			[]string{"name"}, []string{"test*"}, []string{`win\d{1}`},
 		}
@@ -44,7 +44,7 @@ func TestDockerRunning(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
+		//t.Parallel()
 		validInputs := names
 		invalidInputs := notLengthOne
 		goodEggs := [][]string{}
@@ -59,7 +59,7 @@ func TestDockerRunningAPI(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
+		//t.Parallel()
 		validInputs := [][]string{
 			[]string{"/proc/cpuinfo", "name"},
 			[]string{"/proc/cpuinfo", "test"},
@@ -82,8 +82,7 @@ func TestDockerRunningRegexp(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
-		t.Parallel()
+		//t.Parallel()
 		validInputs := names
 		// TODO invalid regexps
 		invalidInputs := notLengthOne

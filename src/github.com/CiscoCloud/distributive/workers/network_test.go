@@ -22,7 +22,7 @@ var validHostsWithPort = suffixParameter(validHosts, ":80")
 var invalidHostsWithPort = suffixParameter(invalidHosts, ":80")
 
 func TestPort(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := ints
 	invalidInputs := notInts
 	goodEggs := [][]string{}
@@ -37,7 +37,7 @@ func TestPort(t *testing.T) {
 }
 
 func TestInterfaceExists(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := names
 	invalidInputs := notLengthOne
 	goodEggs := [][]string{}
@@ -47,7 +47,7 @@ func TestInterfaceExists(t *testing.T) {
 }
 
 func TestUp(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := names
 	invalidInputs := notLengthOne
 	goodEggs := [][]string{}
@@ -57,7 +57,7 @@ func TestUp(t *testing.T) {
 }
 
 func TestIP4(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := appendParameter(names, "0000:000:0000:000:0000:0000:000:0000")
 	invalidInputs := notLengthTwo
 	goodEggs := [][]string{}
@@ -67,7 +67,7 @@ func TestIP4(t *testing.T) {
 }
 
 func TestIP6(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := appendParameter(names, "0000:000:0000:000:0000:0000:000:0000")
 	invalidInputs := notLengthTwo
 	goodEggs := [][]string{}
@@ -77,13 +77,13 @@ func TestIP6(t *testing.T) {
 }
 
 func TestGatewayInterface(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, IP6{}, t)
 	testCheck([][]string{}, names, IP6{}, t)
 }
 
 func TestHost(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	validInputs := names
 	invalidInputs := notLengthOne
 	goodEggs := validHosts
@@ -93,19 +93,19 @@ func TestHost(t *testing.T) {
 }
 
 func TestTCP(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, TCP{}, t)
 	testCheck(validHostsWithPort, invalidHostsWithPort, TCP{}, t)
 }
 
 func TestUDP(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, UDP{}, t)
 	testCheck(validHostsWithPort, invalidHostsWithPort, UDP{}, t)
 }
 
 func TestTCPTimeout(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	goodEggs := appendParameter(validHostsWithPort, "5s")
 	badEggs := appendParameter(validHostsWithPort, "1µs")
 	testParameters(names, notLengthOne, TCPTimeout{}, t)
@@ -113,7 +113,7 @@ func TestTCPTimeout(t *testing.T) {
 }
 
 func TestUDPTimeout(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	goodEggs := appendParameter(validHostsWithPort, "5s")
 	badEggs := appendParameter(validHostsWithPort, "1µs")
 	testParameters(names, notLengthOne, UDPTimeout{}, t)
@@ -121,25 +121,25 @@ func TestUDPTimeout(t *testing.T) {
 }
 
 func TestRoutingTableDestination(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, RoutingTableDestination{}, t)
 	testCheck([][]string{}, names, RoutingTableDestination{}, t)
 }
 
 func TestRoutingTableInterface(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, RoutingTableInterface{}, t)
 	testCheck([][]string{}, names, RoutingTableInterface{}, t)
 }
 
 func TestRoutingTableGateway(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	testParameters(names, notLengthOne, RoutingTableGateway{}, t)
 	testCheck([][]string{}, names, RoutingTableGateway{}, t)
 }
 
 func TestReponseMatches(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping tests that query remote servers in short mode")
 	} else {
@@ -153,7 +153,7 @@ func TestReponseMatches(t *testing.T) {
 }
 
 func TestReponseMatchesInsecure(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping tests that query remote servers in short mode")
 	} else {

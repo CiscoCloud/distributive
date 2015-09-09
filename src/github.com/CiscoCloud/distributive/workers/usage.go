@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -56,11 +57,15 @@ func getSwapOrMemory(status string, swapOrMem string, units string) int {
 	// execute free and return the appropriate output
 	cmd := exec.Command("free", unitsToFlag[units])
 	outStr := chkutil.CommandOutput(cmd)
-	table := tabular.ProbabalisticSplit(outStr)
+	// TODO probabalisticsplit isn't handling this appropriately
+	//table := tabular.ProbabalisticSplit(outStr)
+	colSep := regexp.MustCompile(`\s{2,}`)
+	rowSep := regexp.MustCompile(`\n+`)
+	table := tabular.SeparateString(rowSep, colSep, outStr)
 	column := tabular.GetColumnByHeader(status, table)
 	row := typeToRow[swapOrMem]
 	// check for errors in output of `free`
-	if column == nil {
+	if column == nil || len(column) < 1 {
 		log.WithFields(log.Fields{
 			"header": status,
 			"table":  "\n" + tabular.ToString(table),

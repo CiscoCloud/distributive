@@ -263,6 +263,9 @@ func (chk UserExists) ID() string { return "UserExists" }
 
 func (chk UserExists) New(params []string) (chkutil.Check, error) {
 	// TODO validate usernameOrUID
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
 	chk.usernameOrUID = params[0]
 	return chk, nil
 }
@@ -293,6 +296,9 @@ type UserHasUID struct {
 func (chk UserHasUID) ID() string { return "UserHasUID" }
 
 func (chk UserHasUID) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
 	uidInt, err := strconv.ParseInt(params[1], 10, 32)
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "int32"}
@@ -326,6 +332,9 @@ type UserHasGID struct {
 func (chk UserHasGID) ID() string { return "UserHasGID" }
 
 func (chk UserHasGID) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
 	uidInt, err := strconv.ParseInt(params[1], 10, 32)
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "int32"}
@@ -356,6 +365,9 @@ type UserHasUsername struct{ usernameOrUID, expectedUsername string }
 func (chk UserHasUsername) ID() string { return "UserHasUsername" }
 
 func (chk UserHasUsername) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
 	chk.usernameOrUID = params[0]
 	chk.expectedUsername = params[1]
 	return chk, nil
@@ -381,6 +393,9 @@ type UserHasName struct{ usernameOrUID, expectedName string }
 func (chk UserHasName) ID() string { return "UserHasName" }
 
 func (chk UserHasName) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
 	// TODO validate username
 	chk.usernameOrUID = params[0]
 	chk.expectedName = params[1]
@@ -407,6 +422,9 @@ type UserHasHomeDir struct{ usernameOrUID, expectedHomeDir string }
 func (chk UserHasHomeDir) ID() string { return "UserHasHomeDir" }
 
 func (chk UserHasHomeDir) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
 	// TODO validate username
 	chk.usernameOrUID = params[0]
 	// TODO validate path
