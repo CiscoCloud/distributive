@@ -117,6 +117,7 @@ Example parameters:
   - 95%, 90%, 87%
 */
 
+// TODO use a uint
 type MemoryUsage struct{ maxPercentUsed int8 }
 
 func (chk MemoryUsage) ID() string { return "MemoryUsage" }
@@ -128,6 +129,9 @@ func (chk MemoryUsage) New(params []string) (chkutil.Check, error) {
 	per, err := strconv.ParseInt(strings.Replace(params[0], "%", "", -1), 10, 8)
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[0], "int8"}
+	}
+	if per < 0 {
+		return chk, errutil.ParameterTypeError{params[0], "positive int8"}
 	}
 	chk.maxPercentUsed = int8(per)
 	return chk, nil
@@ -148,6 +152,7 @@ func (chk MemoryUsage) Status() (int, string, error) {
 Description: Like MemoryUsage, but with swap
 */
 
+// TODO use a uint
 type SwapUsage struct{ maxPercentUsed int8 }
 
 func (chk SwapUsage) ID() string { return "SwapUsage" }
@@ -158,7 +163,10 @@ func (chk SwapUsage) New(params []string) (chkutil.Check, error) {
 	}
 	per, err := strconv.ParseInt(strings.Replace(params[0], "%", "", -1), 10, 8)
 	if err != nil {
-		return chk, errutil.ParameterTypeError{params[0], "int8"}
+		return chk, errutil.ParameterTypeError{params[0], "positive int8"}
+	}
+	if per < 0 {
+		return chk, errutil.ParameterTypeError{params[0], "positive int8"}
 	}
 	chk.maxPercentUsed = int8(per)
 	return chk, nil
@@ -209,7 +217,10 @@ func (chk FreeMemory) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
 	}
-	// TODO validate byte units, etc. here
+	_, _, err := chkutil.SeparateByteUnits(params[0])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "amount"}
+	}
 	chk.amount = params[0]
 	return chk, nil
 }
@@ -231,7 +242,10 @@ func (chk FreeSwap) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
 	}
-	// TODO validate byte units, etc. here
+	_, _, err := chkutil.SeparateByteUnits(params[0])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[0], "amount"}
+	}
 	chk.amount = params[0]
 	return chk, nil
 }
@@ -277,6 +291,7 @@ Example parameters:
   - 95%, 90%, 87%
 */
 
+// TODO use a uint
 type CPUUsage struct{ maxPercentUsed int8 }
 
 func (chk CPUUsage) ID() string { return "CPUUsage" }
@@ -323,6 +338,7 @@ Example parameters:
   - 95%, 90%, 87%
 */
 
+// TODO use a uint
 type DiskUsage struct {
 	path           string
 	maxPercentUsed int8

@@ -5,12 +5,14 @@ checking.
 package netutil
 
 import (
+	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
 	"net"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -127,7 +129,9 @@ func Resolvable(host string) bool {
 // CanConnect tests whether a connection can be made to a given host on its
 // given port using protocol ("TCP"|"UDP")
 func CanConnect(host string, protocol string, timeout time.Duration) bool {
+	// TODO resolvable always fails
 	if !Resolvable(host) {
+		fmt.Println("Couldn't resolve host")
 		return false
 	}
 	resolveError := func(err error) {
@@ -144,8 +148,9 @@ func CanConnect(host string, protocol string, timeout time.Duration) bool {
 	var timeoutNetwork = "tcp"
 	var timeoutAddress string
 	nanoseconds := timeout.Nanoseconds()
-	switch protocol {
+	switch strings.ToUpper(protocol) {
 	case "TCP":
+		fmt.Println("in TCP")
 		tcpaddr, err := net.ResolveTCPAddr("tcp", host)
 		resolveError(err)
 		timeoutAddress = tcpaddr.String()
@@ -153,11 +158,13 @@ func CanConnect(host string, protocol string, timeout time.Duration) bool {
 			conn, err = net.DialTCP(timeoutNetwork, nil, tcpaddr)
 		}
 	case "UDP":
+		fmt.Println("in UDP")
 		timeoutNetwork = "udp"
 		udpaddr, err := net.ResolveUDPAddr("udp", host)
 		resolveError(err)
 		timeoutAddress = udpaddr.String()
 		if nanoseconds <= 0 {
+			// TODO why the inconsistency here?
 			conn, err = net.DialUDP("udp", nil, udpaddr)
 		}
 	default:

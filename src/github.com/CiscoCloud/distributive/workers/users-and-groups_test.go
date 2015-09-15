@@ -31,12 +31,7 @@ func TestGroupExists(t *testing.T) {
 	validInputs := names
 	invalidInputs := notLengthOne
 	goodEggs := [][]string{
-		[]string{"root"},
-		[]string{"bin"},
-		[]string{"daemon"},
-		[]string{"sys"},
-		[]string{"adm"},
-		[]string{"tty"},
+		{"root"}, {"bin"}, {"daemon"}, {"sys"}, {"adm"}, {"tty"},
 	}
 	badEggs := names
 	testParameters(validInputs, invalidInputs, GroupExists{}, t)
@@ -48,12 +43,12 @@ func TestGroupID(t *testing.T) {
 	validInputs := appendParameter(names, "0")
 	invalidInputs := append(notLengthTwo, appendParameter(names, "notint")...)
 	goodEggs := [][]string{
-		[]string{"root", "0"},
-		[]string{"bin", "1"},
-		[]string{"daemon", "2"},
-		[]string{"sys", "3"},
-		[]string{"adm", "4"},
-		[]string{"tty", "5"},
+		{"root", "0"},
+		{"bin", "1"},
+		{"daemon", "2"},
+		{"sys", "3"},
+		{"adm", "4"},
+		{"tty", "5"},
 	}
 	badEggs := appendParameter(names, "17389")
 	testParameters(validInputs, invalidInputs, GroupID{}, t)
@@ -78,12 +73,8 @@ func TestLookupUser(t *testing.T) {
 
 func TestUserExists(t *testing.T) {
 	//t.Parallel()
-	validInputs := validUsernamesOrUIDs
-	invalidInputs := append(notLengthOne, reallyBigInts...)
-	goodEggs := [][]string{[]string{"root"}}
-	badEggs := names
-	testParameters(validInputs, invalidInputs, UserExists{}, t)
-	testCheck(goodEggs, badEggs, UserExists{}, t)
+	testParameters(validUsernamesOrUIDs, notLengthOne, UserExists{}, t)
+	testCheck([][]string{{"root"}}, names, UserExists{}, t)
 }
 
 func TestUserHasUID(t *testing.T) {
@@ -109,7 +100,7 @@ func TestUserHasGID(t *testing.T) {
 func TestUserHasUsername(t *testing.T) {
 	//t.Parallel()
 	validInputs := reverseAppendParameter(names, "0")
-	invalidInputs := append(notLengthTwo, reverseAppendParameter(names, "int")...)
+	invalidInputs := notLengthTwo
 	goodEggs := [][]string{[]string{"0", "root"}} // not always true
 	badEggs := appendParameter(names, "nonsense")
 	testParameters(validInputs, invalidInputs, UserHasUsername{}, t)
@@ -119,9 +110,8 @@ func TestUserHasUsername(t *testing.T) {
 func TestUserHasHomeDir(t *testing.T) {
 	//t.Parallel()
 	validInputs := appendParameter(names, "/home/")
-	invalidInputs := append(notLengthTwo, appendParameter(names, "notdir")...)
 	goodEggs := [][]string{[]string{"0", "/root"}} // not always true
 	badEggs := appendParameter(names, "/proc")
-	testParameters(validInputs, invalidInputs, UserHasHomeDir{}, t)
+	testParameters(validInputs, notLengthTwo, UserHasHomeDir{}, t)
 	testCheck(goodEggs, badEggs, UserHasHomeDir{}, t)
 }

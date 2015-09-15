@@ -6,26 +6,12 @@ import (
 	"testing"
 )
 
-var smallInts = [][]string{
-	[]string{"0"},
-	[]string{"1"},
-	[]string{"2"},
-}
+var smallInts = [][]string{{"0"}, {"1"}, {"2"}}
 
-var bigIntsUnder100 = [][]string{
-	[]string{"100"},
-	[]string{"99"},
-	[]string{"98"},
-}
+var bigIntsUnder100 = [][]string{{"100"}, {"99"}, {"98"}}
 
 var reallyBigInts = [][]string{
-	[]string{"999999999999999999"},
-	[]string{"888888888888888888"},
-	[]string{"777777777777777777"},
-}
-
-var negativeInts = [][]string{
-	[]string{"-1"}, []string{"-1209182341098"}, []string{"-17"},
+	{"999999999999999999"}, {"888888888888888888"}, {"777777777777777777"},
 }
 
 // Some of these will fail if the resource usage is below 3%, above 98%, etc.
@@ -110,11 +96,9 @@ func TestFreeSwap(t *testing.T) {
 func TestDiskUsage(t *testing.T) {
 	//t.Parallel()
 	validInputs := appendParameter(dirParameters, "95")
-	invalid1 := appendParameter(fileParameters, "95")
-	invalid2 := [][]string{
-		[]string{"", ""}, []string{}, []string{"/", "garble"},
-	}
-	invalidInputs := append(invalid1, invalid2...)
+	invalidInputs := append(notLengthTwo,
+		[][]string{{"", ""}, {}, {"/", "garble"}}...,
+	)
 	goodEggs := [][]string{[]string{"/", "99"}}
 	badEggs := [][]string{[]string{"/", "1"}}
 	testParameters(validInputs, invalidInputs, DiskUsage{}, t)

@@ -37,9 +37,7 @@ func TestRepoExists(t *testing.T) {
 	validInputs := reverseAppendParameter(names, getManager())
 	invalidInputs := reverseAppendParameter(names, "nonsense")
 	goodEggs := [][]string{}
-	badEggs := reverseAppendParameter([][]string{
-		[]string{"notrepo"}, []string{"arepo"}, []string{"antirepo"},
-	}, getManager())
+	badEggs := reverseAppendParameter(names, getManager())
 	invalidInputs = append(invalidInputs, notLengthTwo...)
 	testParameters(validInputs, invalidInputs, RepoExists{}, t)
 	testCheck(goodEggs, badEggs, RepoExists{}, t)
@@ -51,9 +49,7 @@ func TestRepoExistsURI(t *testing.T) {
 	invalidInputs := reverseAppendParameter(names, "nonsense")
 	invalidInputs = append(invalidInputs, notLengthTwo...)
 	goodEggs := [][]string{}
-	badEggs := reverseAppendParameter([][]string{
-		[]string{"notrepo"}, []string{"arepo"}, []string{"antirepo"},
-	}, getManager())
+	badEggs := reverseAppendParameter(names, getManager())
 	testParameters(validInputs, invalidInputs, RepoExistsURI{}, t)
 	testCheck(goodEggs, badEggs, RepoExistsURI{}, t)
 }

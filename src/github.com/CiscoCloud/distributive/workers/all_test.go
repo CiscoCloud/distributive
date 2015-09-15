@@ -3,54 +3,52 @@ package workers
 import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
-	log "github.com/Sirupsen/logrus"
+	//log "github.com/Sirupsen/logrus"
 	"testing"
 )
 
 // names is a dummy set of parameters for tests to fail on
 var names = [][]string{
 	// infinite jest
-	[]string{"incandenza"},
-	[]string{"van dyne"},
-	[]string{"pemulis"},
-	[]string{"Lenz"},
-	[]string{"Stice"},
-	[]string{"Schitt"},
+	{"incandenza"}, {"van dyne"}, {"pemulis"}, {"Lenz"}, {"Stice"}, {"Schitt"},
 	// glass bead game
-	[]string{"Knecht"},
-	[]string{"Designori"},
-	[]string{"Tegularius"},
-	[]string{"Jacobus"},
+	{"Knecht"}, {"Designori"}, {"Tegularius"}, {"Jacobus"},
 	// steppenwolf
-	[]string{"harry haller"},
-	[]string{"loering"},
-	[]string{"hermine"},
+	{"harry haller"}, {"loering"}, {"hermine"},
 }
 
-var ints = [][]string{
-	[]string{"0"},
-	[]string{"-1"},
-	[]string{"1000"},
-	[]string{"17"},
-	[]string{"-23"},
-	[]string{"127"},
-	[]string{"314"},
-	[]string{"2147483647"},
-	[]string{"-2147483648"},
+var positiveInts = [][]string{
+	{"1"},
+	{"17"},
+	{"23"},
+	{"127"},
+	{"314"},
+	{"1000"},
+	{"2147483647"},
 }
+
+var negativeInts = [][]string{
+	{"-1"},
+	{"-17"},
+	{"-23"},
+	{"-127"},
+	{"-314"},
+	{"-1000"},
+	{"-2147483647"},
+}
+
+var ints = append(positiveInts, negativeInts...)
 
 var notInts = [][]string{
-	[]string{"1/2"},
-	[]string{"-999999999999999999999999999999999999"},
-	[]string{"999999999999999999999999999999999999"},
-	[]string{"0/0"},
-	[]string{"0+0"},
-	[]string{"12hi31"},
+	{"1/2"},
+	{"-999999999999999999999999999999999999"},
+	{"999999999999999999999999999999999999"},
+	{"0/0"},
+	{"0+0"},
+	{"12hi31"},
 }
 
-var notLengthOne = [][]string{
-	[]string{}, []string{"", ""}, []string{"", "", ""}, []string{"one", "two"},
-}
+var notLengthOne = [][]string{{}, {"", ""}, {"", "", ""}, {"one", "two"}}
 
 var notLengthTwo = append(names,
 	[]string{}, []string{""}, []string{"", "", ""}, []string{"one"},
@@ -137,11 +135,13 @@ func testCheck(goodEggs [][]string, badEggs [][]string, chk chkutil.Check, t *te
 		return newChk
 	}
 	for _, goodEgg := range goodEggs {
-		// TODO delete
-		log.WithFields(log.Fields{
-			"chk":    chk.ID(),
-			"params": goodEgg,
-		}).Info("Testing check")
+		/*
+			// TODO delete
+			log.WithFields(log.Fields{
+				"chk":    chk.ID(),
+				"params": goodEgg,
+			}).Info("Testing check")
+		*/
 
 		newChk := getNewChk(chk, goodEgg, t)
 		code, exitMsg, err := newChk.Status()
@@ -164,11 +164,13 @@ func testCheck(goodEggs [][]string, badEggs [][]string, chk chkutil.Check, t *te
 		}
 	}
 	for _, badEgg := range badEggs {
-		// TODO delete
-		log.WithFields(log.Fields{
-			"chk":    chk.ID(),
-			"params": badEgg,
-		}).Info("Testing check")
+		/*
+			// TODO delete
+			log.WithFields(log.Fields{
+				"chk":    chk.ID(),
+				"params": badEgg,
+			}).Info("Testing check")
+		*/
 
 		newChk := getNewChk(chk, badEgg, t)
 		code, exitMsg, err := newChk.Status()

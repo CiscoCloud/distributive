@@ -5,24 +5,24 @@ import (
 )
 
 var fileParameters = [][]string{
-	[]string{"/proc/net/tcp"},
-	[]string{"/bin/bash"},
-	[]string{"/proc/filesystems"},
-	[]string{"/proc/uptime"},
-	[]string{"/proc/cpuinfo"},
+	{"/proc/net/tcp"},
+	{"/bin/bash"},
+	{"/proc/filesystems"},
+	{"/proc/uptime"},
+	{"/proc/cpuinfo"},
 }
 
 var dirParameters = [][]string{
-	[]string{"/dev"},
-	[]string{"/var"},
-	[]string{"/tmp"},
-	[]string{"/opt"},
-	[]string{"/usr"},
-	[]string{"/usr/bin"},
+	{"/dev"},
+	{"/var"},
+	{"/tmp"},
+	{"/opt"},
+	{"/usr"},
+	{"/usr/bin"},
 }
 
 var symlinkParameters = [][]string{
-	[]string{"/bin/sh"},
+	{"/bin/sh"},
 }
 
 var notPaths = append(notLengthOne,
@@ -67,15 +67,14 @@ func TestSymlink(t *testing.T) {
 func TestChecksum(t *testing.T) {
 	//t.Parallel()
 	validInputs := [][]string{
-		[]string{"md5", "d41d8cd98f00b204e9800998ecf8427e", "/dev/null"},
-		[]string{"sha1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/dev/null"},
-		[]string{"sha256", "chksum", "/proc/cpuinfo"},
-		[]string{"sha512", "chksum", "/proc/cpuinfo"},
+		{"md5", "d41d8cd98f00b204e9800998ecf8427e", "/dev/null"},
+		{"sha1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/dev/null"},
+		{"sha256", "chksum", "/proc/cpuinfo"},
+		{"sha512", "chksum", "/proc/cpuinfo"},
 	}
 	// generate losers from all files - none of them have that checksum
 	invalidInputs := [][]string{
-		[]string{}, []string{"", "", ""}, []string{"", ""},
-		[]string{"sha256", "chksum", "/invalid/path"},
+		{}, {"", "", ""}, {"", ""}, {"sha256", "chksum", "/invalid/path"},
 	}
 	invalidInputs = append(invalidInputs, names...)
 	// TODO this fails when testing
@@ -88,14 +87,12 @@ func TestChecksum(t *testing.T) {
 func TestFileMatches(t *testing.T) {
 	//t.Parallel()
 	validInputs := appendParameter(fileParameters, "")
-	invalidInputs := [][]string{
-		[]string{"", ""}, []string{}, []string{"/notfile", "notmatch"},
-	}
-	invalidInputs = append(invalidInputs, names...)
+	invalidInputs := append(names,
+		[][]string{{"", ""}, {}, {"/notfile", "notmatch"}}...)
+	invalidInputs = append(notLengthTwo, names...)
 	goodEggs := validInputs
 	badEggs := [][]string{
-		[]string{"/dev/null", "something"},
-		[]string{"/proc/cpuinfo", "siddharthist"},
+		{"/dev/null", "something"}, {"/proc/cpuinfo", "siddharthist"},
 	}
 	testParameters(validInputs, invalidInputs, FileMatches{}, t)
 	testCheck(goodEggs, badEggs, FileMatches{}, t)
@@ -114,9 +111,9 @@ func TestPermissions(t *testing.T) {
 	invalidInputs := append(append(invalid1, invalid2...), invalid3...)
 	invalidInputs = append(invalidInputs, names...)
 	goodEggs := [][]string{
-		[]string{"/dev/null", "-rw-rw-rw-"},
-		[]string{"/proc/", "-r-xr-xr-x"},
-		[]string{"/bin/", "-rwxr-xr-x"},
+		{"/dev/null", "-rw-rw-rw-"},
+		{"/proc/", "-r-xr-xr-x"},
+		{"/bin/", "-rwxr-xr-x"},
 	}
 	badEggs := appendParameter(fileParameters, "----------")
 	testParameters(validInputs, invalidInputs, Permissions{}, t)

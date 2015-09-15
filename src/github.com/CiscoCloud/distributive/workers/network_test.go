@@ -5,15 +5,13 @@ import (
 )
 
 var validHosts = [][]string{
-	[]string{"eff.org"},
-	[]string{"mozilla.org"},
-	[]string{"golang.org"},
+	{"eff.org"}, {"mozilla.org"}, {"golang.org"},
 }
 
 var invalidHosts = [][]string{
-	[]string{"asldkjahserbapsidpuflnaskjdcasd.com"},
-	[]string{"aspoiqpweroiqewruqpwioepbpasdfb.net"},
-	[]string{"lkjqhwelrjblrjbbrbbbnnzasdflbaj.org"},
+	{"asldkjahserbapsidpuflnaskjdcasd.com"},
+	{"aspoiqpweroiqewruqpwioepbpasdfb.net"},
+	{"lkjqhwelrjblrjbbrbbbnnzasdflbaj.org"},
 }
 
 var validURLs = prefixParameter(validHosts, "http://")
@@ -23,14 +21,14 @@ var invalidHostsWithPort = suffixParameter(invalidHosts, ":80")
 
 func TestPort(t *testing.T) {
 	//t.Parallel()
-	validInputs := ints
-	invalidInputs := notInts
+	validInputs := positiveInts
+	invalidInputs := append(notInts, negativeInts...)
 	goodEggs := [][]string{}
 	badEggs := [][]string{
-		[]string{"49151"}, // reserved
-		[]string{"5310"},  // Outlaws (1997 video game)
-		[]string{"0"},     // reserved
-		[]string{"2302"},  // Halo: Combat Evolved multiplayer
+		{"49151"}, // reserved
+		{"5310"},  // Outlaws (1997 video game)
+		{"0"},     // reserved
+		{"2302"},  // Halo: Combat Evolved multiplayer
 	}
 	testParameters(validInputs, invalidInputs, Port{}, t)
 	testCheck(goodEggs, badEggs, Port{}, t)
@@ -78,7 +76,8 @@ func TestIP6(t *testing.T) {
 
 func TestGatewayInterface(t *testing.T) {
 	//t.Parallel()
-	testParameters(names, notLengthOne, IP6{}, t)
+	// TODO this expects length two parameters
+	testParameters(names, notLengthTwo, IP6{}, t)
 	testCheck([][]string{}, names, IP6{}, t)
 }
 
@@ -108,7 +107,8 @@ func TestTCPTimeout(t *testing.T) {
 	//t.Parallel()
 	goodEggs := appendParameter(validHostsWithPort, "5s")
 	badEggs := appendParameter(validHostsWithPort, "1µs")
-	testParameters(names, notLengthOne, TCPTimeout{}, t)
+	validInputs := appendParameter(names, "5s")
+	testParameters(validInputs, notLengthTwo, TCPTimeout{}, t)
 	testCheck(goodEggs, badEggs, TCPTimeout{}, t)
 }
 
@@ -116,14 +116,17 @@ func TestUDPTimeout(t *testing.T) {
 	//t.Parallel()
 	goodEggs := appendParameter(validHostsWithPort, "5s")
 	badEggs := appendParameter(validHostsWithPort, "1µs")
-	testParameters(names, notLengthOne, UDPTimeout{}, t)
+	validInputs := appendParameter(names, "5s")
+	testParameters(validInputs, notLengthTwo, UDPTimeout{}, t)
 	testCheck(goodEggs, badEggs, UDPTimeout{}, t)
 }
 
 func TestRoutingTableDestination(t *testing.T) {
 	//t.Parallel()
-	testParameters(names, notLengthOne, RoutingTableDestination{}, t)
-	testCheck([][]string{}, names, RoutingTableDestination{}, t)
+	// TODO get a list of valid IP addresses for these valid params
+	invalidInputs := append(names, notLengthOne...)
+	testParameters([][]string{}, invalidInputs, RoutingTableDestination{}, t)
+	//testCheck([][]string{}, [][]string{}, RoutingTableDestination{}, t)
 }
 
 func TestRoutingTableInterface(t *testing.T) {

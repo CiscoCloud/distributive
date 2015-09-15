@@ -2,6 +2,7 @@ package netutil
 
 import (
 	"testing"
+	"time"
 )
 
 // http://sqa.fyicenter.com/Online_Test_Tools/IP_Address_Format_Validator.php
@@ -77,5 +78,14 @@ func TestResolvable(t *testing.T) {
 
 func TestCanConnect(t *testing.T) {
 	t.Parallel()
-	// TODO
+	goodHosts := []string{"eff.org:80", "google.com:80", "bing.com:80"}
+	for _, host := range goodHosts {
+		duration, err := time.ParseDuration("20s")
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if !CanConnect(host, "TCP", duration) {
+			t.Error("Couldn't connect to host " + host)
+		}
+	}
 }

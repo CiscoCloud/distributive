@@ -218,7 +218,7 @@ func lookupUser(usernameOrUID string) (*user.User, error) {
 // userHasField checks to see if the user of a given username or UID's struct
 // field "fieldName" matches the given value. An abstraction of hasUID, hasGID,
 // hasName, hasHomeDir, and userExists
-func userHasField(usernameOrUID string, fieldName string, givenValue string) (bool, error) {
+func userHasField(usernameOrUID string, fieldName string, expected string) (bool, error) {
 	// get user to look at their info
 	user, err := lookupUser(usernameOrUID)
 	if err != nil || user == nil {
@@ -230,7 +230,7 @@ func userHasField(usernameOrUID string, fieldName string, givenValue string) (bo
 	// check to see if the field is a string
 	errutil.ReflectError(fieldVal, reflect.Struct, "userHasField")
 	actualValue := fieldVal.String()
-	return actualValue == givenValue, nil
+	return actualValue == expected, nil
 }
 
 // genericUserField constructs (int, string, error)s that check if a given field of a User
@@ -290,7 +290,7 @@ Example parameters:
 
 type UserHasUID struct {
 	usernameOrUID string
-	desiredUID    int32
+	desiredUID    string
 }
 
 func (chk UserHasUID) ID() string { return "UserHasUID" }
@@ -299,18 +299,20 @@ func (chk UserHasUID) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
-	uidInt, err := strconv.ParseInt(params[1], 10, 32)
+	// simply check that it is an integer, no need to store it as such
+	// since it is converted back to a string in the comparison
+	_, err := strconv.ParseInt(params[1], 10, 32)
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "int32"}
 	}
-	chk.desiredUID = int32(uidInt)
+	chk.desiredUID = params[1]
 	// TODO validate usernameOrUID
 	chk.usernameOrUID = params[0]
 	return chk, nil
 }
 
 func (chk UserHasUID) Status() (int, string, error) {
-	return genericUserField(chk.usernameOrUID, "Uid", string(chk.desiredUID))
+	return genericUserField(chk.usernameOrUID, "Uid", chk.desiredUID)
 }
 
 /*
@@ -326,7 +328,7 @@ Example parameters:
 
 type UserHasGID struct {
 	usernameOrUID string
-	desiredGID    int32
+	desiredGID    string
 }
 
 func (chk UserHasGID) ID() string { return "UserHasGID" }
@@ -335,11 +337,12 @@ func (chk UserHasGID) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
-	uidInt, err := strconv.ParseInt(params[1], 10, 32)
+	// store it as a string for comparison
+	_, err := strconv.ParseInt(params[1], 10, 32)
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "int32"}
 	}
-	chk.desiredGID = int32(uidInt)
+	chk.desiredGID = params[1]
 	// TODO validate usernameOrUID
 	chk.usernameOrUID = params[0]
 	return chk, nil
@@ -427,7 +430,6 @@ func (chk UserHasHomeDir) New(params []string) (chkutil.Check, error) {
 	}
 	// TODO validate username
 	chk.usernameOrUID = params[0]
-	// TODO validate path
 	chk.expectedHomeDir = params[1]
 	return chk, nil
 }

@@ -5,9 +5,7 @@ import (
 )
 
 var activeServices = [][]string{
-	[]string{"dev-mqueue.mount"},
-	[]string{"tmp.mount"},
-	[]string{"dbus.service"},
+	{"dev-mqueue.mount"}, {"tmp.mount"}, {"dbus.service"},
 }
 
 func TestSystemctlLoaded(t *testing.T) {
@@ -25,9 +23,9 @@ func TestSystemctlActive(t *testing.T) {
 func TestSystemctlSockPath(t *testing.T) {
 	//t.Parallel()
 	goodEggs := [][]string{
-		[]string{"/run/dbus/system_bus_socket"},
-		[]string{"/run/systemd/journal/socket"},
-		[]string{"/run/dmeventd-client"},
+		{"/run/dbus/system_bus_socket"},
+		{"/run/systemd/journal/socket"},
+		{"/run/dmeventd-client"},
 	}
 	invalidInputs := append(notLengthOne, names...)
 	testParameters(fileParameters, invalidInputs, SystemctlSockListening{}, t)
@@ -37,9 +35,7 @@ func TestSystemctlSockPath(t *testing.T) {
 func TestSystemctlSockUnit(t *testing.T) {
 	//t.Parallel()
 	goodEggs := [][]string{
-		[]string{"dbus.socket"},
-		[]string{"systemd-journald.socket"},
-		[]string{"dm-event.socket"},
+		{"dbus.socket"}, {"systemd-journald.socket"}, {"dm-event.socket"},
 	}
 	testParameters(names, notLengthOne, SystemctlSockUnit{}, t)
 	testCheck(goodEggs, names, SystemctlSockUnit{}, t)
@@ -60,9 +56,9 @@ func TestSystemctlTimerLoaded(t *testing.T) {
 func TestSystemctlUnitFileStatus(t *testing.T) {
 	//t.Parallel()
 	goodEggs := [][]string{
-		[]string{"dbus.service", "static"},
-		[]string{"polkit.service", "static"},
-		[]string{"systemd-initctl.service", "static"},
+		{"dbus.service", "static"},
+		{"polkit.service", "static"},
+		{"systemd-initctl.service", "static"},
 	}
 	validInputs := appendParameter(names, "static")
 	testParameters(validInputs, notLengthTwo, SystemctlUnitFileStatus{}, t)
