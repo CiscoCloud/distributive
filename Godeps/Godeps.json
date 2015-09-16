@@ -1,0 +1,23 @@
+{
+	"ImportPath": "github.com/CiscoCloud/distributive",
+	"GoVersion": "go1.5",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.2-12-g2a0a9a1",
+			"Rev": "2a0a9a12ae2892ccfa9ab59c1222e9dcd29f9367"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-137-gbca61c4",
+			"Rev": "bca61c476e3c752594983e4c9bcd5f62fb09f157"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Rev": "c9ad0ce23f68428421adfc6ced9e6123f54788a5"
+		}
+	]
+}
