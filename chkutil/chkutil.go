@@ -95,18 +95,10 @@ func SeparateByteUnits(str string) (int, string, error) {
 	// Warn the user upon failure, but should be shut down later
 	unit, err := getByteUnits(str)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"str": str,
-			"err": err.Error(),
-		}).Warn("Couldn't extract byte unit from string")
 		return 0, "", err
 	}
 	scalar, err := integerFromString(str)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"str": str,
-			"err": err.Error(),
-		}).Warn("Couldn't extract scalar integer from string")
 		return 0, "", err
 	}
 	return scalar, unit, nil

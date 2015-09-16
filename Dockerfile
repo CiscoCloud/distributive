@@ -15,6 +15,6 @@ RUN apk update && apk add go git && rm -rf /var/cache/apk/*
 WORKDIR /distributive
 ENV PATH $PATH:/distributive/bin
 ADD . /distributive
-RUN sh build.sh
+RUN go build .
 
 CMD ["distributive", "-f", "/distributive/samples/filesystem.json", "-d", "", "--verbosity", "info"]
