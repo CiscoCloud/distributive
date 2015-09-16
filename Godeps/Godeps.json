@@ -7,13 +7,13 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.2-12-g2a0a9a1",
-			"Rev": "2a0a9a12ae2892ccfa9ab59c1222e9dcd29f9367"
+			"Comment": "v0.8.7",
+			"Rev": "418b41d23a1bf978c06faea5313ba194650ac088"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-137-gbca61c4",
-			"Rev": "bca61c476e3c752594983e4c9bcd5f62fb09f157"
+			"Comment": "1.2.0-143-ga65b733",
+			"Rev": "a65b733b303f0055f8d324d805f393cd3e7a7904"
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
