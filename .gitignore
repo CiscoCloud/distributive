@@ -1,2 +1,6 @@
 distributive
 Godeps/**/.travis.yml
+
+# hammer
+out
+logs

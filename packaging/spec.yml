@@ -1,0 +1,19 @@
+---
+name: distributive
+version: 0.2.1
+iteration: 1
+license: ASL 2.0
+description: Distributive is a tool for running distributed health checks in datacenters.
+url: https://github.com/CiscoCloud/distributive
+type: rpm
+
+targets:
+  - src: "{{.BuildRoot}}/distributive"
+    dest: /usr/bin/distributive
+  - src: "{{empty}}"
+    dest: /etc/distributive.d/
+
+scripts:
+  build: |
+    cd {{.SpecRoot}}/..
+    godep go build -o {{.BuildRoot}}/distributive .
