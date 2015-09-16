@@ -1,9 +1,9 @@
-<!-- markdown-toc start -->
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
 
 - [Overview](#overview)
 - [Installation and Usage](#installation-and-usage)
-    - [Installation](#installation)
+    - [Installation/Building](#installationbuilding)
     - [Usage](#usage)
     - [Supported Frameworks](#supported-frameworks)
 - [Checks](#checks)
