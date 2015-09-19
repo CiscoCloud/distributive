@@ -49,9 +49,10 @@ Installation/Building
 ---------------------
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
- 2. Get some dependancies: `go get github.com/CiscoCloud/distributive/workers && go get github.com/CiscoCloud/distributive/wrkutils`.
- 3. `go build`
- 4. Follow the "Usage" instructions below
+ 2. Install godep: `go get github.com/tools/godep`
+ 3. Get some dependancies: `go get github.com/CiscoCloud/distributive/workers && go get github.com/CiscoCloud/distributive/wrkutils`.
+ 4. Build it with: `go build`
+ 5. Follow the "Usage" instructions below
 
 We also provide premade RPM packages on [Bintray][bintray] for versioned
 releases. You can view the RPM source and build RPM snapshots at
