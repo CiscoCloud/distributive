@@ -12,9 +12,14 @@ MAINTAINER Langston Barrett <langston@aster.is> (@siddharthist)
 
 RUN apk update && apk add go git && rm -rf /var/cache/apk/*
 
-WORKDIR /distributive
-ENV PATH $PATH:/distributive/bin
-ADD . /distributive
-RUN sh build.sh
+WORKDIR /gopath/src/github.com/CiscoCloud/distributive
+RUN mkdir -p /gopath/{bin,src}
+ENV GOPATH /gopath
+ENV GOBIN /gopath/bin
+ENV PATH $PATH:/gopath/bin
+RUN go get github.com/tools/godep
+ADD . /gopath/src/github.com/CiscoCloud/distributive
+RUN go get .
+RUN go build .
 
-CMD ["distributive", "-f", "/distributive/samples/filesystem.json", "-d", "", "--verbosity", "info"]
+CMD ["distributive", "-f", "/gopath/src/github.com/CiscoCloud/distributive/samples/filesystem.json", "-d", "", "--verbosity", "info"]
