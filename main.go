@@ -301,14 +301,18 @@ func (chklst *Checklist) runChecks() {
 			}
 			code, msg := chk.Work(chk.Parameters)
 			// Log an informational message on the check's status
-			passed := "failed"
 			if code == 0 {
-				passed = "passed"
+				log.WithFields(log.Fields{
+					"name": chk.Name,
+					"type": chk.Check,
+				}).Info("Check passed")
+			} else {
+				log.WithFields(log.Fields{
+					"name": chk.Name,
+					"type": chk.Check,
+				}).Warn("Check failed")
+				chklst.Failed = true
 			}
-			log.WithFields(log.Fields{
-				"name": chk.Name,
-				"type": chk.Check,
-			}).Info("Check " + passed)
 			// send back results
 			codes <- code
 			msgs <- msg
@@ -352,6 +356,7 @@ func main() {
 			out <- chklst
 		}(chklst, out)
 	}
+	failed := false
 	for _ = range chklsts {
 		chklst := <-out
 		if chklst.Failed {
@@ -359,6 +364,7 @@ func main() {
 				"checklist": chklst.Name,
 				"report":    chklst.Report,
 			}).Warn("Check(s) failed, printing checklist report")
+			failed = true
 		} else {
 			log.WithFields(log.Fields{
 				"checklist": chklst.Name,
@@ -367,10 +373,8 @@ func main() {
 		}
 	}
 	// see if any checks failed, exit accordingly
-	for _, chklst := range chklsts {
-		if chklst.Failed {
-			os.Exit(1)
-		}
+	if failed {
+		os.Exit(1)
 	}
 	os.Exit(0)
 }
