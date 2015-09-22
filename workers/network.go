@@ -18,24 +18,26 @@ import (
 func port(parameters []string) (exitCode int, exitMessage string) {
 	// getHexPorts gets all open ports as hex strings from /proc/net/tcp
 	getHexPorts := func() (ports []string) {
-		path := "/proc/net/tcp"
-		data := wrkutils.FileToString(path)
-		table := tabular.ProbabalisticSplit(data)
-		// TODO by header isn't working
-		//localAddresses := tabular.GetColumnByHeader("local_address", table)
-		localAddresses := tabular.GetColumnNoHeader(1, table)
-		portRe := regexp.MustCompile(`([0-9A-F]{8}):([0-9A-F]{4})`)
-		for _, address := range localAddresses {
-			port := portRe.FindString(address)
-			if port != "" {
-				if len(port) < 10 {
-					log.WithFields(log.Fields{
-						"port":   port,
-						"length": len(port),
-					}).Fatal("Couldn't parse port number in " + path)
+		paths := [2]string{"/proc/net/tcp","/proc/net/udp"}
+		for _,path := range paths {
+			data := wrkutils.FileToString(path)
+			table := tabular.ProbabalisticSplit(data)
+			// TODO by header isn't working
+			//localAddresses := tabular.GetColumnByHeader("local_address", table)
+			localAddresses := tabular.GetColumnNoHeader(1, table)
+			portRe := regexp.MustCompile(`([0-9A-F]{8}):([0-9A-F]{4})`)
+			for _, address := range localAddresses {
+				port := portRe.FindString(address)
+				if port != "" {
+					if len(port) < 10 {
+						log.WithFields(log.Fields{
+							"port":   port,
+							"length": len(port),
+						}).Fatal("Couldn't parse port number in " + path)
+					}
+					portString := string(port[9:])
+					ports = append(ports, portString)
 				}
-				portString := string(port[9:])
-				ports = append(ports, portString)
 			}
 		}
 		return ports
