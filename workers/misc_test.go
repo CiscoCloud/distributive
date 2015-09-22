@@ -35,11 +35,10 @@ func TestCommandOutputMatches(t *testing.T) {
 
 func TestRunning(t *testing.T) {
 	//t.Parallel()
-	validInputs := [][]string{
+	validInputs := append(names, [][]string{
 		{"proc"}, {"nginx"}, {"anything"}, {"worker"}, {"distributive"},
-	}
+	}...)
 	invalidInputs := notLengthOne
-	invalidInputs = append(invalidInputs, names...)
 	goodEggs := [][]string{}
 	badEggs := dirParameters
 	testParameters(validInputs, invalidInputs, Running{}, t)
@@ -48,7 +47,7 @@ func TestRunning(t *testing.T) {
 
 func TestTemp(t *testing.T) {
 	//t.Parallel()
-	validInputs := ints
+	validInputs := positiveInts[:len(positiveInts)-2] // only small ints
 	invalidInputs := append(append(names, notInts...), notLengthOne...)
 	goodEggs := [][]string{
 		{"1414"}, // melting temp. of silicon

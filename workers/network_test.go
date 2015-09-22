@@ -9,9 +9,9 @@ var validHosts = [][]string{
 }
 
 var invalidHosts = [][]string{
-	{"asldkjahserbapsidpuflnaskjdcasd.com"},
-	{"aspoiqpweroiqewruqpwioepbpasdfb.net"},
-	{"lkjqhwelrjblrjbbrbbbnnzasdflbaj.org"},
+	{"serbapsidpuflnaskjdcasd.com"},
+	{"eroiqewruqpwioepbpasdfb.net"},
+	{"rjblrjbbrbbbnnzasdflbaj.org"},
 }
 
 var validURLs = prefixParameter(validHosts, "http://")
@@ -21,7 +21,8 @@ var invalidHostsWithPort = suffixParameter(invalidHosts, ":80")
 
 func TestPort(t *testing.T) {
 	//t.Parallel()
-	validInputs := positiveInts
+	// only take smaller ones
+	validInputs := positiveInts[:len(positiveInts)-2]
 	invalidInputs := append(notInts, negativeInts...)
 	goodEggs := [][]string{}
 	badEggs := [][]string{
@@ -76,9 +77,10 @@ func TestIP6(t *testing.T) {
 
 func TestGatewayInterface(t *testing.T) {
 	//t.Parallel()
-	// TODO this expects length two parameters
-	testParameters(names, notLengthTwo, IP6{}, t)
-	testCheck([][]string{}, names, IP6{}, t)
+	validInputs := appendParameter(names, "0000:000:0000:000:0000:0000:000:0000")
+	validInputs = append(validInputs, appendParameter(names, "192.168.0.1")...)
+	testParameters(validInputs, notLengthTwo, IP6{}, t)
+	testCheck([][]string{}, validInputs, IP6{}, t)
 }
 
 func TestHost(t *testing.T) {

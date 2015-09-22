@@ -5,7 +5,6 @@ checking.
 package netutil
 
 import (
-	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
@@ -129,20 +128,6 @@ func Resolvable(host string) bool {
 // CanConnect tests whether a connection can be made to a given host on its
 // given port using protocol ("TCP"|"UDP")
 func CanConnect(host string, protocol string, timeout time.Duration) bool {
-	// TODO resolvable always fails
-	if !Resolvable(host) {
-		fmt.Println("Couldn't resolve host")
-		return false
-	}
-	resolveError := func(err error) {
-		if err != nil {
-			log.WithFields(log.Fields{
-				"protocol": protocol,
-				"address":  host,
-				"error":    err.Error(),
-			}).Fatal("Couldn't parse network address")
-		}
-	}
 	var conn net.Conn
 	var err error
 	var timeoutNetwork = "tcp"
@@ -150,18 +135,20 @@ func CanConnect(host string, protocol string, timeout time.Duration) bool {
 	nanoseconds := timeout.Nanoseconds()
 	switch strings.ToUpper(protocol) {
 	case "TCP":
-		fmt.Println("in TCP")
 		tcpaddr, err := net.ResolveTCPAddr("tcp", host)
-		resolveError(err)
+		if err != nil {
+			return false
+		}
 		timeoutAddress = tcpaddr.String()
 		if nanoseconds <= 0 {
 			conn, err = net.DialTCP(timeoutNetwork, nil, tcpaddr)
 		}
 	case "UDP":
-		fmt.Println("in UDP")
 		timeoutNetwork = "udp"
 		udpaddr, err := net.ResolveUDPAddr("udp", host)
-		resolveError(err)
+		if err != nil {
+			return false
+		}
 		timeoutAddress = udpaddr.String()
 		if nanoseconds <= 0 {
 			// TODO why the inconsistency here?

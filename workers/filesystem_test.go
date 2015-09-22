@@ -34,7 +34,7 @@ func TestFile(t *testing.T) {
 	//t.Parallel()
 	validInputs := append(fileParameters, dirParameters...)
 	validInputs = append(validInputs, symlinkParameters...)
-	invalidInputs := append(notPaths, names...)
+	invalidInputs := notLengthOne
 	goodEggs := fileParameters
 	badEggs := append(dirParameters, symlinkParameters...)
 	testParameters(validInputs, invalidInputs, File{}, t)
@@ -45,7 +45,7 @@ func TestDirectory(t *testing.T) {
 	//t.Parallel()
 	validInputs := append(fileParameters, dirParameters...)
 	validInputs = append(validInputs, symlinkParameters...)
-	invalidInputs := append(notPaths, names...)
+	invalidInputs := notLengthOne
 	goodEggs := dirParameters
 	badEggs := append(fileParameters, symlinkParameters...)
 	testParameters(validInputs, invalidInputs, Directory{}, t)
@@ -56,8 +56,8 @@ func TestSymlink(t *testing.T) {
 	//t.Parallel()
 	validInputs := append(fileParameters, dirParameters...)
 	validInputs = append(validInputs, symlinkParameters...)
-	invalidInputs := append(notPaths, names...)
-	goodEggs := dirParameters
+	invalidInputs := notLengthOne
+	goodEggs := symlinkParameters
 	badEggs := append(dirParameters, fileParameters...)
 	testParameters(validInputs, invalidInputs, Symlink{}, t)
 	testCheck(goodEggs, badEggs, Symlink{}, t)

@@ -164,13 +164,12 @@ func (chk Checksum) New(params []string) (chkutil.Check, error) {
 		return chk, errutil.ParameterLengthError{3, params}
 	}
 	valid := []string{"MD5", "SHA1", "SHA224", "SHA256", "SHA384", "SHA512"}
-	if !tabular.StrIn(params[0], valid) {
+	if !tabular.StrIn(strings.ToUpper(params[0]), valid) {
 		return chk, errutil.ParameterTypeError{params[0], "algorithm"}
 	}
 	chk.algorithm = params[0]
 	path := params[2]
-	ok, err := isFile(path)
-	if err != nil || !ok {
+	if _, err := os.Stat(path); err != nil {
 		return chk, errutil.ParameterTypeError{path, "filepath"}
 	}
 	chk.path = path
