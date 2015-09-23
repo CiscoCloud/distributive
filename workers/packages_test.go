@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetManager(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	man := getManager()
 	supported := []string{"pacman", "dpkg", "rpm"}
 	if !tabular.StrIn(man, supported) {
@@ -19,7 +19,7 @@ func TestGetManager(t *testing.T) {
 }
 
 func TestGetRepos(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	man := getManager()
 	repos := getRepos(man)
 	if len(repos) < 1 {
@@ -33,7 +33,7 @@ func TestGetRepos(t *testing.T) {
 // can't make any assumptions about the system these tests are being run on.
 
 func TestRepoExists(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := reverseAppendParameter(names, getManager())
 	invalidInputs := reverseAppendParameter(names, "nonsense")
 	goodEggs := [][]string{}
@@ -44,7 +44,7 @@ func TestRepoExists(t *testing.T) {
 }
 
 func TestRepoExistsURI(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := reverseAppendParameter(names, getManager())
 	invalidInputs := reverseAppendParameter(names, "nonsense")
 	invalidInputs = append(invalidInputs, notLengthTwo...)
@@ -55,7 +55,7 @@ func TestRepoExistsURI(t *testing.T) {
 }
 
 func TestPacmanIgnore(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	testParameters(names, notLengthOne, PacmanIgnore{}, t)
 	if getManager() == "pacman" {
 		testCheck([][]string{}, names, PacmanIgnore{}, t)
@@ -63,7 +63,7 @@ func TestPacmanIgnore(t *testing.T) {
 }
 
 func TestInstalled(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	testParameters(names, notLengthOne, Installed{}, t)
 	testCheck([][]string{}, names, Installed{}, t)
 }

@@ -27,7 +27,7 @@ type Checklist struct {
 
 // MakeReport runs all checks concurrently, and produces a user-facing string
 // summary of their run.
-func (chklst *Checklist) MakeReport() (report string) {
+func (chklst *Checklist) MakeReport() (anyFailed bool, report string) {
 	if chklst == nil { // pointers can always be nil
 		log.Warn("Nil checklist passed to makeReport. Please report this bug.")
 		return
@@ -81,7 +81,7 @@ func (chklst *Checklist) MakeReport() (report string) {
 		}
 	}
 	close(msgs)
-	return report
+	return (failed > 0), report
 }
 
 /***************** Checklist JSON structs *****************/

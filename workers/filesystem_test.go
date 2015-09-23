@@ -31,7 +31,7 @@ var notPaths = append(notLengthOne,
 )
 
 func TestFile(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := append(fileParameters, dirParameters...)
 	validInputs = append(validInputs, symlinkParameters...)
 	invalidInputs := notLengthOne
@@ -42,7 +42,7 @@ func TestFile(t *testing.T) {
 }
 
 func TestDirectory(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := append(fileParameters, dirParameters...)
 	validInputs = append(validInputs, symlinkParameters...)
 	invalidInputs := notLengthOne
@@ -53,7 +53,7 @@ func TestDirectory(t *testing.T) {
 }
 
 func TestSymlink(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := append(fileParameters, dirParameters...)
 	validInputs = append(validInputs, symlinkParameters...)
 	invalidInputs := notLengthOne
@@ -65,7 +65,7 @@ func TestSymlink(t *testing.T) {
 
 // $1 - algorithm, $2 - check against, $3 - path
 func TestChecksum(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := [][]string{
 		{"md5", "d41d8cd98f00b204e9800998ecf8427e", "/dev/null"},
 		{"sha1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/dev/null"},
@@ -85,7 +85,7 @@ func TestChecksum(t *testing.T) {
 }
 
 func TestFileMatches(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := appendParameter(fileParameters, "")
 	invalidInputs := append(names,
 		[][]string{{"", ""}, {}, {"/notfile", "notmatch"}}...)
@@ -100,7 +100,7 @@ func TestFileMatches(t *testing.T) {
 
 // $1 - path, $2 - givenMode (-rwxrwxrwx)
 func TestPermissions(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	valid1 := appendParameter(fileParameters, "----------")
 	valid2 := appendParameter(dirParameters, "-rwxrwxrwx")
 	valid3 := appendParameter(symlinkParameters, "-r--r--r--")

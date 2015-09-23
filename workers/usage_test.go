@@ -19,7 +19,7 @@ var reallyBigInts = [][]string{
 // this takes the place of individual tests for getSwap, getMemory, etc.
 /*
 func TestGetSwapOrMemory(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	for _, status := range []string{"total", "used", "free"} {
 		for _, swapOrMem := range []string{"swap", "memory"} {
 			for _, units := range []string{"b", "kb", "mb", "gb", "tb"} {
@@ -39,7 +39,7 @@ func TestGetSwapOrMemory(t *testing.T) {
 */
 
 func TestGetUsedPercent(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	for _, swapOrMem := range []string{"swap", "memory"} {
 		used := getUsedPercent(swapOrMem)
 		if used < 0 {
@@ -50,7 +50,7 @@ func TestGetUsedPercent(t *testing.T) {
 }
 
 func TestMemoryUsage(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := append(smallInts, bigIntsUnder100...)
 	invalidInputs := append(append(reallyBigInts, notInts...), negativeInts...)
 	testParameters(validInputs, invalidInputs, MemoryUsage{}, t)
@@ -58,7 +58,7 @@ func TestMemoryUsage(t *testing.T) {
 }
 
 func TestSwapUsage(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := append(smallInts, bigIntsUnder100...)
 	invalidInputs := append(append(notLengthOne, notInts...), negativeInts...)
 	testParameters(validInputs, invalidInputs, SwapUsage{}, t)
@@ -83,18 +83,18 @@ func testFreeMemoryOrSwap(t *testing.T, chk chkutil.Check) {
 }
 
 func TestFreeMemory(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	testFreeMemoryOrSwap(t, FreeMemory{})
 }
 
 func TestFreeSwap(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	testFreeMemoryOrSwap(t, FreeSwap{})
 }
 
 // $1 - path, $2 maxpercent
 func TestDiskUsage(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := appendParameter(dirParameters, "95")
 	invalidInputs := append(notLengthTwo,
 		[][]string{{"", ""}, {}, {"/", "garble"}}...,

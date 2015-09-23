@@ -1,6 +1,7 @@
 package netutil
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -34,7 +35,7 @@ func TestPortOpen(t *testing.T) {
 	t.Parallel()
 	for _, port := range OpenPorts() {
 		if !PortOpen(port) {
-			t.Errorf("PortOpen and OpenPorts reported differently for %s", port)
+			t.Errorf("PortOpen and OpenPorts reported differently for " + fmt.Sprint(port))
 		}
 	}
 	// TODO test all other ports in valid range

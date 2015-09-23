@@ -8,7 +8,7 @@ import (
 var validUsernamesOrUIDs = append(append(names, smallInts...), bigIntsUnder100...)
 
 func TestGetGroups(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	groups := getGroups()
 	if len(groups) < 1 {
 		t.Error("Couldn't find any groups in /etc/group")
@@ -16,7 +16,7 @@ func TestGetGroups(t *testing.T) {
 }
 
 func TestGroupNotFound(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	code, message, _ := groupNotFound("dummyGroup")
 	if code <= 0 || message == "" {
 		msg := "groupNotFound isn't properly reporting errors as such"
@@ -27,7 +27,7 @@ func TestGroupNotFound(t *testing.T) {
 }
 
 func TestGroupExists(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := names
 	invalidInputs := notLengthOne
 	goodEggs := [][]string{
@@ -39,7 +39,7 @@ func TestGroupExists(t *testing.T) {
 }
 
 func TestGroupID(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := appendParameter(names, "0")
 	invalidInputs := append(notLengthTwo, appendParameter(names, "notint")...)
 	goodEggs := [][]string{
@@ -56,7 +56,7 @@ func TestGroupID(t *testing.T) {
 }
 
 func TestLookupUser(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	user, err := lookupUser("root")
 	user2, err2 := lookupUser("0")
 	msg := "Couldn't successfully lookup root user"
@@ -72,13 +72,13 @@ func TestLookupUser(t *testing.T) {
 }
 
 func TestUserExists(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	testParameters(validUsernamesOrUIDs, notLengthOne, UserExists{}, t)
 	testCheck([][]string{{"root"}}, names, UserExists{}, t)
 }
 
 func TestUserHasUID(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := appendParameter(names, "0")
 	invalidInputs := append(notLengthTwo, appendParameter(names, "notint")...)
 	goodEggs := [][]string{[]string{"root", "0"}} // not always true
@@ -88,7 +88,7 @@ func TestUserHasUID(t *testing.T) {
 }
 
 func TestUserHasGID(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := appendParameter(names, "0")
 	invalidInputs := append(notLengthTwo, appendParameter(names, "notint")...)
 	goodEggs := [][]string{[]string{"0", "0"}}
@@ -98,7 +98,7 @@ func TestUserHasGID(t *testing.T) {
 }
 
 func TestUserHasUsername(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := reverseAppendParameter(names, "0")
 	invalidInputs := notLengthTwo
 	goodEggs := [][]string{[]string{"0", "root"}} // not always true
@@ -108,7 +108,7 @@ func TestUserHasUsername(t *testing.T) {
 }
 
 func TestUserHasHomeDir(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	validInputs := appendParameter(names, "/home/")
 	goodEggs := [][]string{[]string{"0", "/root"}} // not always true
 	badEggs := appendParameter(names, "/proc")

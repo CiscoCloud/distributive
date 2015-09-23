@@ -6,7 +6,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/CiscoCloud/distributive/checklists"
 	log "github.com/Sirupsen/logrus"
 	"os"
@@ -68,8 +67,6 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 // main reads the command line flag -f, runs the Check specified in the JSON,
 // and exits with the appropriate message and exit code.
 func main() {
-	fmt.Println("Welcome!")
-	log.Debug("Welcome!")
 	// Set up and parse flags
 	log.Debug("Parsing flags")
 	file, URL, directory, stdin := getFlags()
@@ -77,11 +74,16 @@ func main() {
 	validateFlags(file, URL, directory)
 	// add workers to workers, parameterLength
 	log.Debug("Running checklists")
+	exitCode := 0
 	for _, chklst := range getChecklists(file, directory, URL, stdin) {
+		anyFailed, report := chklst.MakeReport()
+		if anyFailed {
+			exitCode = 1
+		}
 		log.WithFields(log.Fields{
 			"checklist": chklst.Name,
-			"report":    chklst.MakeReport(),
+			"report":    report,
 		}).Info("Report from checklist")
 	}
-	os.Exit(0)
+	os.Exit(exitCode)
 }
