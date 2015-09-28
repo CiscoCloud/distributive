@@ -263,6 +263,19 @@ func GetColumnNoHeader(col int, tab Table) Column {
 	return column[1:]
 }
 
+
+// GetAllNoHeader safely removes the header
+func GetAllNoHeader(tab Table) (column Column) {
+	for _,line := range tab {
+		str_line := ""
+		for _,inside_line := range line {
+			str_line = str_line + inside_line
+		}
+		column = append(column, str_line)
+	}
+	return column[1:]
+}
+
 // GetColumnByHeader returns the body of a column with a header that is equal
 // to name (ignoring case differences). It is for developer ease and
 // future-proofing, as it doesn't rely on an index.

@@ -24,7 +24,7 @@ func port(parameters []string) (exitCode int, exitMessage string) {
 			table := tabular.ProbabalisticSplit(data)
 			// TODO by header isn't working
 			//localAddresses := tabular.GetColumnByHeader("local_address", table)
-			localAddresses := tabular.GetColumnNoHeader(1, table)
+			localAddresses := tabular.GetAllNoHeader(table)
 			portRe := regexp.MustCompile(`([0-9A-F]{8}):([0-9A-F]{4})`)
 			for _, address := range localAddresses {
 				port := portRe.FindString(address)
