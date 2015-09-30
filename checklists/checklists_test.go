@@ -46,8 +46,6 @@ func partiallyValid(chklst Checklist) bool {
 	switch {
 	case len(chklst.Checks) != 0:
 		return true
-	case chklst.MakeReport() != "":
-		return true
 	case chklst.Name != "":
 		return true
 	case chklst.Notes != "":
