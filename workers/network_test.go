@@ -19,20 +19,38 @@ var invalidURLs = prefixParameter(invalidHosts, "http://")
 var validHostsWithPort = suffixParameter(validHosts, ":80")
 var invalidHostsWithPort = suffixParameter(invalidHosts, ":80")
 
+var closedPorts = [][]string{
+	{"49151"}, // reserved
+	{"5310"},  // Outlaws (1997 video game)
+	{"0"},     // reserved
+	{"2302"},  // Halo: Combat Evolved multiplayer
+}
+
 func TestPort(t *testing.T) {
 	t.Parallel()
 	// only take smaller ones
 	validInputs := positiveInts[:len(positiveInts)-2]
 	invalidInputs := append(notInts, negativeInts...)
-	goodEggs := [][]string{}
-	badEggs := [][]string{
-		{"49151"}, // reserved
-		{"5310"},  // Outlaws (1997 video game)
-		{"0"},     // reserved
-		{"2302"},  // Halo: Combat Evolved multiplayer
-	}
 	testParameters(validInputs, invalidInputs, Port{}, t)
-	testCheck(goodEggs, badEggs, Port{}, t)
+	testCheck([][]string{}, closedPorts, Port{}, t)
+}
+
+func TestPortTCP(t *testing.T) {
+	t.Parallel()
+	// only take smaller ones
+	validInputs := positiveInts[:len(positiveInts)-2]
+	invalidInputs := append(notInts, negativeInts...)
+	testParameters(validInputs, invalidInputs, PortTCP{}, t)
+	testCheck([][]string{}, closedPorts, PortTCP{}, t)
+}
+
+func TestPortUDP(t *testing.T) {
+	t.Parallel()
+	// only take smaller ones
+	validInputs := positiveInts[:len(positiveInts)-2]
+	invalidInputs := append(notInts, negativeInts...)
+	testParameters(validInputs, invalidInputs, PortUDP{}, t)
+	testCheck([][]string{}, closedPorts, PortUDP{}, t)
 }
 
 func TestInterfaceExists(t *testing.T) {
