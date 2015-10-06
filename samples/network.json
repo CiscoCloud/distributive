@@ -2,87 +2,87 @@
     "Name": "Network checks",
     "Checklist" : [
         {
-            "Check": "port",
+            "ID": "port",
             "Parameters": ["41483"]
         },
         {
-            "Check" : "interface",
+            "ID" : "interfaceExists",
             "Parameters" : ["docker0"]
         },
         {
-            "Check" : "interface",
+            "ID" : "interfaceExists",
             "Parameters" : ["wlp1s0"]
         },
         {
-            "Check" : "interface",
+            "ID" : "interfaceExists",
             "Parameters" : ["lo"]
         },
         {
-            "Check" : "up",
+            "ID" : "up",
             "Parameters": ["wlp1s0"]
         },
         {
-            "Check" : "ip4",
+            "ID" : "ip4",
             "Parameters" : ["wlp1s0", "10.60.91.12"]
         },
         {
-            "Check" : "ip6",
+            "ID" : "ip6",
             "Parameters" : ["wlp1s0", "fe80::59bf:babe:f7bb:a327"]
         },
         {
-            "Check" : "gateway",
+            "ID" : "gateway",
             "Parameters" : ["192.168.0.1"]
         },
         {
-            "Check" : "gatewayInterface",
+            "ID" : "gatewayInterface",
             "Parameters" : ["wlp1s0"]
         },
         {
-            "Check" : "gatewayInterface",
+            "ID" : "gatewayInterface",
             "Parameters" : ["docker0"]
         },
         {
-            "Check" : "host",
+            "ID" : "host",
             "Parameters" : ["google.com"]
         },
         {
-            "Check" : "TCP",
+            "ID" : "TCP",
             "Parameters" : ["google.com:80"]
         },
         {
-            "Check" : "UDP",
+            "ID" : "UDP",
             "Parameters" : ["google.com:80"]
         },
         {
-            "Check" : "UDP",
+            "ID" : "UDP",
             "Parameters" : ["yahoo.com:80"]
         },
         {
-            "Check" : "routingTableDestination",
+            "ID" : "routingTableDestination",
             "Parameters" : ["192.168.0.0"]
         },
         {
-            "Check" : "routingTableInterface",
+            "ID" : "routingTableInterface",
             "Parameters" : ["docker0"]
         },
         {
-            "Check" : "routingTableGateway",
+            "ID" : "routingTableGateway",
             "Parameters" : ["192.168.0.1"]
         },
         {
-            "Check" : "tcpTimeout",
+            "ID" : "tcpTimeout",
             "Parameters" : ["google.com:80", "20s"]
         },
         {
-            "Check" : "udpTimeout",
+            "ID" : "udpTimeout",
             "Parameters" : ["google.com:80", "20s"]
         },
         {
-            "Check": "responseMatches",
+            "ID": "responseMatches",
             "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "[hHl]\\w[^eiwa]+s[^7ga]"]
         },
         {
-            "Check": "responseMatchesInsecure",
+            "ID": "responseMatchesInsecure",
             "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "[hHl]\\w[^eiwa]+s[^7ga]"]
         }
     ]

@@ -1,13 +1,17 @@
 package workers
 
 import (
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
-	"github.com/CiscoCloud/distributive/wrkutils"
 	log "github.com/Sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strings"
 )
+
+// TODO implement package managers as interfaces
+// with fields getRepos, getInstalledPackages, queryInstalled
 
 // getKeys returns the string keys from a string -> string map
 func getKeys(m map[string]string) []string {
@@ -31,6 +35,7 @@ var keys = getKeys(managers)
 // getManager returns package manager as a string
 func getManager() string {
 	for _, program := range keys {
+		// TODO replace with golang cmd in path
 		cmd := exec.Command(program, "--version")
 		err := cmd.Start()
 		// as long as the command was found, return that manager
@@ -48,11 +53,11 @@ func getManager() string {
 	return "" // never reaches this return
 }
 
-// repo is a unified interface for pacman, apt, and yum repos
+// repo is a unified interface for pacman, dpkg, and rpm repos
 type repo struct {
 	ID     string
-	Name   string // yum
-	URL    string // apt, pacman
+	Name   string // rpm
+	URL    string // dpkg, pacman
 	Status string
 }
 
@@ -74,7 +79,7 @@ func getYumRepos() (repos []repo) {
 		defer func() {
 			if err := recover(); err != nil {
 				msg := "safeAccess: Please report this error"
-				wrkutils.IndexError(msg, index, slc)
+				errutil.IndexError(msg, index, slc)
 			}
 		}() // invoke inside defer
 		if len(slc) > index {
@@ -85,11 +90,11 @@ func getYumRepos() (repos []repo) {
 
 	// get and parse output of `yum repolist`
 	cmd := exec.Command("yum", "repolist")
-	outstr := wrkutils.CommandOutput(cmd)
+	outstr := chkutil.CommandOutput(cmd)
 	slc := tabular.ProbabalisticSplit(outstr)
 
 	ids := tabular.GetColumnNoHeader(0, slc) // TODO use columnbyheader here
-	wrkutils.IndexError("getYumRepos", 2, ids)
+	errutil.IndexError("getYumRepos", 2, ids)
 	ids = ids[:len(ids)-2]
 
 	names := tabular.GetColumnNoHeader(1, slc)    // TODO and here
@@ -118,10 +123,10 @@ func getAptRepos() (repos []repo) {
 	// getAptSources returns all the urls of all apt sources (including source
 	// code repositories
 	getAptSources := func() (urls []string) {
-		otherLists := wrkutils.GetFilesWithExtension("/etc/apt/sources.list.d", ".list")
+		otherLists := chkutil.GetFilesWithExtension("/etc/apt/sources.list.d", ".list")
 		sourceLists := append([]string{"/etc/apt/sources.list"}, otherLists...)
 		for _, f := range sourceLists {
-			split := tabular.ProbabalisticSplit(wrkutils.FileToString(f))
+			split := tabular.ProbabalisticSplit(chkutil.FileToString(f))
 			// filter out comments
 			commentRegex := regexp.MustCompile(`^\s*#`)
 			for _, line := range split {
@@ -141,7 +146,7 @@ func getAptRepos() (repos []repo) {
 // getPacmanRepos constructs repos from the pacman.conf file at path. Gives
 // non-zero Names and URLs
 func getPacmanRepos(path string) (repos []repo) {
-	data := wrkutils.FileToLines(path)
+	data := chkutil.FileToLines(path)
 	// match words and dashes in brackets without comments
 	nameRegex := regexp.MustCompile(`[^#]\[(\w|\-)+\]`)
 	// match lines that start with Include= or Server= and anything after that
@@ -194,7 +199,7 @@ func getRepos(manager string) (repos []repo) {
 // It takes a struct field name to check, and an expected value. If the expected
 // value is found in the field of a repo, it returns 0, "" else an error message.
 // Valid choices for prop: "URL" | "Name" | "Name"
-func existsRepoWithProperty(prop string, val *regexp.Regexp, manager string) (int, string) {
+func existsRepoWithProperty(prop string, val *regexp.Regexp, manager string) (int, string, error) {
 	var properties []string
 	for _, repo := range getRepos(manager) {
 		switch prop {
@@ -211,65 +216,168 @@ func existsRepoWithProperty(prop string, val *regexp.Regexp, manager string) (in
 		}
 	}
 	if tabular.ReIn(val, properties) {
-		return 0, ""
+		return errutil.Success()
 	}
 	msg := "Repo with given " + prop + " not found"
-	return wrkutils.GenericError(msg, val.String(), properties)
+	return errutil.GenericError(msg, val.String(), properties)
 }
 
-// repoExists checks to see that a given repo is listed in the appropriate
-// configuration file
-func repoExists(parameters []string) (exitCode int, exitMessage string) {
-	re := wrkutils.ParseUserRegex(parameters[1])
-	return existsRepoWithProperty("Name", re, parameters[0])
+/*
+#### RepoExists
+Description: Is this repo present?
+Parameters:
+  - Pakage manager: rpm | dpkg | pacman
+  - Regexp (regexp): Regexp to match the name of the repo
+Example parameters:
+  - "base", "firefox-[nN]ightly"
+*/
+
+type RepoExists struct {
+	manager string
+	re      *regexp.Regexp
 }
 
-// repoExistsURI checks to see if the repo with the given URI is listed in the
-// appropriate configuration file
-func repoExistsURI(parameters []string) (exitCode int, exitMessage string) {
-	re := wrkutils.ParseUserRegex(parameters[1])
-	return existsRepoWithProperty("URL", re, parameters[0])
+func (chk RepoExists) ID() string { return "RepoExists" }
+
+func (chk RepoExists) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	re, err := regexp.Compile(params[1])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[1], "regexp"}
+	}
+	chk.re = re
+	if !tabular.StrIn(params[0], keys) {
+		return chk, errutil.ParameterTypeError{params[0], "package manager"}
+	}
+	chk.manager = params[0]
+	return chk, nil
 }
 
-// pacmanIgnore checks to see whether a given package is in /etc/pacman.conf's
-// IgnorePkg setting
-func pacmanIgnore(parameters []string) (exitCode int, exitMessage string) {
-	pkg := parameters[0]
+func (chk RepoExists) Status() (int, string, error) {
+	return existsRepoWithProperty("Name", chk.re, chk.manager)
+}
+
+/*
+#### RepoExistsURI
+Description: Is a repo with this URI present?
+Parameters:
+  - Pakage manager: rpm | dpkg | pacman
+  - Regexp (regexp): Regexp to match the URI of the repo
+Example parameters:
+  - "http://my-repo.example.com", "/path/to/repo"
+Depedencies:
+  - dpkg | pacman
+*/
+
+type RepoExistsURI struct {
+	manager string
+	re      *regexp.Regexp
+}
+
+func (chk RepoExistsURI) ID() string { return "RepoExistsURI" }
+
+func (chk RepoExistsURI) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	re, err := regexp.Compile(params[1])
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[1], "regexp"}
+	}
+	chk.re = re
+	if !tabular.StrIn(params[0], keys) {
+		return chk, errutil.ParameterTypeError{params[0], "package manager"}
+	}
+	chk.manager = params[0]
+	return chk, nil
+}
+
+func (chk RepoExistsURI) Status() (int, string, error) {
+	return existsRepoWithProperty("URL", chk.re, chk.manager)
+}
+
+/*
+#### PacmanIgnore
+Description: Are upgrades to this package ignored by pacman?
+Parameters:
+  - Package (string): Name of the package
+Example parameters:
+  - node, python, etcd
+Depedencies:
+  - pacman, specifically /etc/pacman.conf
+*/
+
+type PacmanIgnore struct{ pkg string }
+
+func (chk PacmanIgnore) ID() string { return "PacmanIgnore" }
+
+func (chk PacmanIgnore) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.pkg = params[0]
+	return chk, nil
+}
+
+func (chk PacmanIgnore) Status() (int, string, error) {
 	path := "/etc/pacman.conf"
-	data := wrkutils.FileToString(path)
+	data := chkutil.FileToString(path)
 	re := regexp.MustCompile(`[^#]IgnorePkg\s+=\s+.+`)
 	find := re.FindString(data)
 	var packages []string
 	if find != "" {
 		spl := strings.Split(find, " ")
-		wrkutils.IndexError("Not enough lines in "+path, 2, spl)
+		errutil.IndexError("Not enough lines in "+path, 2, spl)
 		packages = spl[2:] // first two are "IgnorePkg" and "="
-		if tabular.StrIn(pkg, packages) {
-			return 0, ""
+		if tabular.StrIn(chk.pkg, packages) {
+			return errutil.Success()
 		}
 	}
 	msg := "Couldn't find package in IgnorePkg"
-	return wrkutils.GenericError(msg, pkg, packages)
+	return errutil.GenericError(msg, chk.pkg, packages)
 }
 
-// installed detects whether the OS is using dpkg, rpm, or pacman, queries
-// a package accoringly, and returns an error if it is not installed.
-func installed(parameters []string) (exitCode int, exitMessage string) {
-	pkg := parameters[0]
+/*
+#### Installed
+Description: Is this package Installed?
+Parameters:
+  - Package (string): Name of the package
+Example parameters:
+  - node, python, etcd
+Depedencies:
+  - pacman | dpkg | rpm
+*/
+
+type Installed struct{ pkg string }
+
+func (chk Installed) ID() string { return "Installed" }
+
+func (chk Installed) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	}
+	chk.pkg = params[0]
+	return chk, nil
+}
+
+func (chk Installed) Status() (int, string, error) {
 	name := getManager()
 	options := managers[name]
-	cmd := exec.Command(name, options, pkg)
+	cmd := exec.Command(name, options, chk.pkg)
 	out, err := cmd.CombinedOutput()
 	outstr := string(out)
-	if strings.Contains(outstr, pkg) {
-		return 0, ""
+	if strings.Contains(outstr, chk.pkg) {
+		return errutil.Success()
 	} else if outstr != "" && err != nil {
 		// pacman - outstr == "", and exit code of 1 if it can't find the pkg
-		wrkutils.ExecError(cmd, outstr, err)
+		errutil.ExecError(cmd, outstr, err)
 	}
 	msg := "Package was not found:"
-	msg += "\n\tPackage name: " + pkg
+	msg += "\n\tPackage name: " + chk.pkg
 	msg += "\n\tPackage manager: " + name
 	msg += "\n\tCommand output: " + outstr
-	return 1, msg
+	return 1, msg, nil
+
 }

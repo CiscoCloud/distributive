@@ -3,36 +3,36 @@
     "Checklist" : [
         {
             "Name": "CPU temperature threshold",
-            "Check": "temp",
+            "ID": "temp",
             "Parameters": ["80"]
         },
         {
             "Name": "/sbin/init check",
-            "Check" : "running",
+            "ID" : "running",
             "Parameters": ["/sbin/init"]
         },
         {
-            "Check" : "installed",
+            "ID" : "installed",
             "Parameters" : ["urxvt"]
         },
         {
-            "Check" : "module",
+            "ID" : "module",
             "Parameters" : ["ext4"]
         },
         {
-            "Check" : "kernelParameter",
+            "ID" : "kernelParameter",
             "Parameters" : ["kernel.ctrl-alt-del"]
         },
         {
-            "Check" : "phpConfig",
+            "ID" : "phpConfig",
             "Parameters" : ["default_mimetype", "text/html"]
         },
         {
-            "Check" : "command",
+            "ID" : "command",
             "Parameters" : ["sleep .00001"]
         },
         {
-            "Check" : "commandOutputMatches",
+            "ID" : "commandOutputMatches",
             "Parameters" : ["echo works", "\\w[aeiou]+(y)*r[kl]s"]
         }
     ]

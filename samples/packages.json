@@ -2,19 +2,19 @@
     "Name": "Package checks",
     "Checklist" : [
         {
-            "Check" : "installed",
+            "ID" : "installed",
             "Parameters" : ["urxvt"]
         },
         {
-            "Check" : "repoExistsUri",
+            "ID" : "repoExistsUri",
             "Parameters" : ["rpm", "http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
         },
         {
-            "Check" : "repoexists",
+            "ID" : "repoexists",
             "Parameters" : ["rpm", "core"]
         },
         {
-            "Check" : "pacmanIgnore",
+            "ID" : "pacmanIgnore",
             "Parameters" : ["pulseaudio"]
         }
     ]

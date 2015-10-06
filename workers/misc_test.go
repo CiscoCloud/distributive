@@ -4,87 +4,90 @@ import "testing"
 
 func TestCommand(t *testing.T) {
 	t.Parallel()
-	winners := []parameters{
-		[]string{"sleep 0.00000001"},
-		[]string{"echo this works"},
-		[]string{"cd"},
-		[]string{"mv --help"},
+	validInputs := [][]string{
+		{"sleep 0.00000001"}, {"echo this works"}, {"cd"}, {"mv --help"},
 	}
-	losers := []parameters{
-		[]string{"sleep fail"},
-		[]string{"cd /steppenwolf"},
-		[]string{"mv /glass /bead-game"},
+	invalidInputs := notLengthOne
+	goodEggs := validInputs
+	badEggs := [][]string{
+		{"sleep fail"}, {"cd /steppenwolf"}, {"mv /glass /bead-game"},
 	}
-	testInputs(t, command, winners, losers)
+	badEggs = append(badEggs, names...)
+	testParameters(validInputs, invalidInputs, Command{}, t)
+	testCheck(goodEggs, badEggs, Command{}, t)
 }
 
 func TestCommandOutputMatches(t *testing.T) {
 	t.Parallel()
-	winners := []parameters{
-		[]string{"echo siddhartha", "sid"},
-		[]string{"cp --help", "cp"},
-		[]string{"echo euler", "eu"},
+	validInputs := [][]string{
+		{"echo siddhartha", "sid"}, {"cp --help", "cp"}, {"echo euler", "eu"},
 	}
-	losers := []parameters{
-		[]string{"echo siddhartha", "fail"},
-		[]string{"cp --help", "asdfalkjsdhldjfk"},
-		[]string{"echo haskell", "curry"},
+	invalidInputs := notLengthTwo
+	goodEggs := validInputs
+	badEggs := [][]string{
+		{"echo siddhartha", "fail"},
+		{"cp --help", "asdfalkjsdhldjfk"},
+		{"echo haskell", "curry"},
 	}
-	testInputs(t, commandOutputMatches, winners, losers)
+	testParameters(validInputs, invalidInputs, CommandOutputMatches{}, t)
+	testCheck(goodEggs, badEggs, CommandOutputMatches{}, t)
 }
 
 func TestRunning(t *testing.T) {
 	t.Parallel()
-	//winners := []parameters{[]string{"/sbin/init"}}
-	testInputs(t, running, []parameters{}, names)
+	validInputs := append(names, [][]string{
+		{"proc"}, {"nginx"}, {"anything"}, {"worker"}, {"distributive"},
+	}...)
+	invalidInputs := notLengthOne
+	goodEggs := [][]string{}
+	badEggs := dirParameters
+	testParameters(validInputs, invalidInputs, Running{}, t)
+	testCheck(goodEggs, badEggs, Running{}, t)
 }
 
 func TestTemp(t *testing.T) {
 	t.Parallel()
-	winners := []parameters{
-		[]string{"1414"}, // melting temp. of silicon
-		[]string{"1510"}, // " " " steel
-		[]string{"1600"}, // " " " glass
+	validInputs := positiveInts[:len(positiveInts)-2] // only small ints
+	invalidInputs := append(append(names, notInts...), notLengthOne...)
+	goodEggs := [][]string{
+		{"1414"}, // melting temp. of silicon
+		{"1510"}, // " " " steel
+		{"1600"}, // " " " glass
 	}
-	losers := []parameters{
-		[]string{"0"}, // freezing temp. of water
-		[]string{"1"},
-		[]string{"2"},
-	}
-	testInputs(t, temp, winners, losers)
+	badEggs := [][]string{{"0"}, {"1"}, {"2"}}
+	testParameters(validInputs, invalidInputs, Temp{}, t)
+	testCheck(goodEggs, badEggs, Temp{}, t)
 }
 
 func TestModule(t *testing.T) {
 	t.Parallel()
-	// winners := []parameters{ []string{"iptable_nat"}, []string{"ip_tables"}, }
-	losers := []parameters{
-		[]string{"knecht"},
-		[]string{"designori"},
-		[]string{"tegularius"},
-	}
-	testInputs(t, module, []parameters{}, losers)
+	validInputs := names
+	invalidInputs := notLengthOne
+	goodEggs := [][]string{}
+	badEggs := names
+	testParameters(validInputs, invalidInputs, Module{}, t)
+	testCheck(goodEggs, badEggs, Module{}, t)
 }
 
 func TestKernelParameter(t *testing.T) {
-	winners := []parameters{
-		[]string{"net.ipv4.conf.all.accept_local"},
-		[]string{"net.ipv4.conf.all.accept_redirects"},
-		[]string{"net.ipv4.conf.all.arp_accept"},
+	validInputs := names
+	invalidInputs := notLengthOne
+	goodEggs := [][]string{
+		{"net.ipv4.conf.all.accept_local"},
+		{"net.ipv4.conf.all.accept_redirects"},
+		{"net.ipv4.conf.all.arp_accept"},
 	}
-	losers := []parameters{
-		[]string{"harry haller"},
-		[]string{"loering"},
-		[]string{"hermine"},
-	}
-	testInputs(t, kernelParameter, winners, losers)
+	badEggs := names
+	testParameters(validInputs, invalidInputs, KernelParameter{}, t)
+	testCheck(goodEggs, badEggs, KernelParameter{}, t)
 }
 
 func TestPHPConfig(t *testing.T) {
 	t.Parallel()
-	losers := []parameters{
-		[]string{"vasudeva", "value"},
-		[]string{"kamala", "value"},
-		[]string{"gotama", "value"},
-	}
-	testInputs(t, phpConfig, []parameters{}, losers)
+	validInputs := appendParameter(names, "dummy-value")
+	invalidInputs := notLengthTwo
+	goodEggs := [][]string{}
+	badEggs := validInputs
+	testParameters(validInputs, invalidInputs, PHPConfig{}, t)
+	testCheck(goodEggs, badEggs, PHPConfig{}, t)
 }

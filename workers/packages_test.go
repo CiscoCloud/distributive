@@ -34,24 +34,36 @@ func TestGetRepos(t *testing.T) {
 
 func TestRepoExists(t *testing.T) {
 	t.Parallel()
-	losers := reverseAppendParameter(names, getManager())
-	testInputs(t, repoExists, []parameters{}, losers)
+	validInputs := reverseAppendParameter(names, getManager())
+	invalidInputs := reverseAppendParameter(names, "nonsense")
+	goodEggs := [][]string{}
+	badEggs := reverseAppendParameter(names, getManager())
+	invalidInputs = append(invalidInputs, notLengthTwo...)
+	testParameters(validInputs, invalidInputs, RepoExists{}, t)
+	testCheck(goodEggs, badEggs, RepoExists{}, t)
 }
 
 func TestRepoExistsURI(t *testing.T) {
 	t.Parallel()
-	losers := reverseAppendParameter(names, getManager())
-	testInputs(t, repoExistsURI, []parameters{}, losers)
+	validInputs := reverseAppendParameter(names, getManager())
+	invalidInputs := reverseAppendParameter(names, "nonsense")
+	invalidInputs = append(invalidInputs, notLengthTwo...)
+	goodEggs := [][]string{}
+	badEggs := reverseAppendParameter(names, getManager())
+	testParameters(validInputs, invalidInputs, RepoExistsURI{}, t)
+	testCheck(goodEggs, badEggs, RepoExistsURI{}, t)
 }
 
 func TestPacmanIgnore(t *testing.T) {
 	t.Parallel()
+	testParameters(names, notLengthOne, PacmanIgnore{}, t)
 	if getManager() == "pacman" {
-		testInputs(t, pacmanIgnore, []parameters{}, names)
+		testCheck([][]string{}, names, PacmanIgnore{}, t)
 	}
 }
 
 func TestInstalled(t *testing.T) {
 	t.Parallel()
-	testInputs(t, installed, []parameters{}, names)
+	testParameters(names, notLengthOne, Installed{}, t)
+	testCheck([][]string{}, names, Installed{}, t)
 }

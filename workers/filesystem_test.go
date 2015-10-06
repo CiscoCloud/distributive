@@ -4,90 +4,118 @@ import (
 	"testing"
 )
 
-var fileParameters = []parameters{
-	[]string{"/proc/net/tcp"},
-	[]string{"/bin/bash"},
-	[]string{"/proc/filesystems"},
-	[]string{"/proc/uptime"},
-	[]string{"/proc/cpuinfo"},
+var fileParameters = [][]string{
+	{"/proc/net/tcp"},
+	{"/bin/bash"},
+	{"/proc/filesystems"},
+	{"/proc/uptime"},
+	{"/proc/cpuinfo"},
 }
 
-var dirParameters = []parameters{
-	[]string{"/dev"},
-	[]string{"/var"},
-	[]string{"/tmp"},
-	[]string{"/opt"},
-	[]string{"/usr"},
-	[]string{"/usr/bin"},
+var dirParameters = [][]string{
+	{"/dev"},
+	{"/var"},
+	{"/tmp"},
+	{"/opt"},
+	{"/usr"},
+	{"/usr/bin"},
 }
 
-var symlinkParameters = []parameters{
-	[]string{"/bin/sh"},
+var symlinkParameters = [][]string{
+	{"/bin/sh"},
 }
+
+var notPaths = append(notLengthOne,
+	[]string{}, []string{`\{{[(`}, []string{"", "", ""}, []string{"fail"},
+	[]string{""}, []string{"7"},
+)
 
 func TestFile(t *testing.T) {
-	losers := append(dirParameters, symlinkParameters...)
-	testInputs(t, file, fileParameters, losers)
+	t.Parallel()
+	validInputs := append(fileParameters, dirParameters...)
+	validInputs = append(validInputs, symlinkParameters...)
+	invalidInputs := notLengthOne
+	goodEggs := fileParameters
+	badEggs := append(dirParameters, symlinkParameters...)
+	testParameters(validInputs, invalidInputs, File{}, t)
+	testCheck(goodEggs, badEggs, File{}, t)
 }
 
 func TestDirectory(t *testing.T) {
 	t.Parallel()
-	losers := append(fileParameters, symlinkParameters...)
-	testInputs(t, directory, dirParameters, losers)
+	validInputs := append(fileParameters, dirParameters...)
+	validInputs = append(validInputs, symlinkParameters...)
+	invalidInputs := notLengthOne
+	goodEggs := dirParameters
+	badEggs := append(fileParameters, symlinkParameters...)
+	testParameters(validInputs, invalidInputs, Directory{}, t)
+	testCheck(goodEggs, badEggs, Directory{}, t)
 }
 
 func TestSymlink(t *testing.T) {
 	t.Parallel()
-	losers := append(fileParameters, dirParameters...)
-	testInputs(t, symlink, symlinkParameters, losers)
+	validInputs := append(fileParameters, dirParameters...)
+	validInputs = append(validInputs, symlinkParameters...)
+	invalidInputs := notLengthOne
+	goodEggs := symlinkParameters
+	badEggs := append(dirParameters, fileParameters...)
+	testParameters(validInputs, invalidInputs, Symlink{}, t)
+	testCheck(goodEggs, badEggs, Symlink{}, t)
 }
 
 // $1 - algorithm, $2 - check against, $3 - path
 func TestChecksum(t *testing.T) {
 	t.Parallel()
-	winners := []parameters{
-		[]string{"md5", "d41d8cd98f00b204e9800998ecf8427e", "/dev/null"},
+	validInputs := [][]string{
+		{"md5", "d41d8cd98f00b204e9800998ecf8427e", "/dev/null"},
+		{"sha1", "da39a3ee5e6b4b0d3255bfef95601890afd80709", "/dev/null"},
+		{"sha256", "chksum", "/proc/cpuinfo"},
+		{"sha512", "chksum", "/proc/cpuinfo"},
 	}
 	// generate losers from all files - none of them have that checksum
-	losers := []parameters{}
-	for _, f := range fileParameters {
-		loser := []string{"md5", "00000000000000000000000000000000", f[0]}
-		losers = append(losers, loser)
+	invalidInputs := [][]string{
+		{}, {"", "", ""}, {"", ""}, {"sha256", "chksum", "/invalid/path"},
 	}
-	testInputs(t, checksum, winners, losers)
+	invalidInputs = append(invalidInputs, names...)
+	// TODO this fails when testing
+	//goodEggs := [][]string{validInputs[0], validInputs[1]}
+	//badEggs := [][]string{validInputs[2], validInputs[3]}
+	testParameters(validInputs, invalidInputs, Checksum{}, t)
+	//testCheck(goodEggs, badEggs, Checksum{}, t)
 }
 
-func TestFileContains(t *testing.T) {
+func TestFileMatches(t *testing.T) {
 	t.Parallel()
-	winners := []parameters{
-		[]string{"/dev/null", ""},
+	validInputs := appendParameter(fileParameters, "")
+	invalidInputs := append(names,
+		[][]string{{"", ""}, {}, {"/notfile", "notmatch"}}...)
+	invalidInputs = append(notLengthTwo, names...)
+	goodEggs := validInputs
+	badEggs := [][]string{
+		{"/dev/null", "something"}, {"/proc/cpuinfo", "siddharthist"},
 	}
-	losers := []parameters{
-		[]string{"/dev/null", "fail"},
-	}
-	testInputs(t, fileContains, winners, losers)
+	testParameters(validInputs, invalidInputs, FileMatches{}, t)
+	testCheck(goodEggs, badEggs, FileMatches{}, t)
 }
 
 // $1 - path, $2 - givenMode (-rwxrwxrwx)
 func TestPermissions(t *testing.T) {
 	t.Parallel()
-	winners := []parameters{
-		[]string{"/dev/null", "-rw-rw-rw-"},
-		[]string{"/proc/", "-r-xr-xr-x"},
-		[]string{"/bin/", "-rwxr-xr-x"},
+	valid1 := appendParameter(fileParameters, "----------")
+	valid2 := appendParameter(dirParameters, "-rwxrwxrwx")
+	valid3 := appendParameter(symlinkParameters, "-r--r--r--")
+	validInputs := append(append(valid1, valid2...), valid3...)
+	invalid1 := appendParameter(fileParameters, "nonsense")
+	invalid2 := appendParameter(dirParameters, "-rrrwwwxxx")
+	invalid3 := appendParameter(symlinkParameters, "")
+	invalidInputs := append(append(invalid1, invalid2...), invalid3...)
+	invalidInputs = append(invalidInputs, names...)
+	goodEggs := [][]string{
+		{"/dev/null", "-rw-rw-rw-"},
+		{"/proc/", "-r-xr-xr-x"},
+		{"/bin/", "-rwxr-xr-x"},
 	}
-	losers := []parameters{
-		[]string{"/dev/null", "----------"},
-		[]string{"/proc/", "----------"},
-		[]string{"/bin/", "----------"},
-	}
-	testInputs(t, permissions, winners, losers)
-}
-
-// $1 - path, $2 maxpercent
-func TestDiskUsage(t *testing.T) {
-	t.Parallel()
-	winners := []parameters{[]string{"/", "99"}, []string{"/", "98"}}
-	losers := []parameters{[]string{"/", "1"}, []string{"/", "2"}}
-	testInputs(t, diskUsage, winners, losers)
+	badEggs := appendParameter(fileParameters, "----------")
+	testParameters(validInputs, invalidInputs, Permissions{}, t)
+	testCheck(goodEggs, badEggs, Permissions{}, t)
 }

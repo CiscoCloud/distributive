@@ -2,32 +2,28 @@
     "Name": "Systemd checks",
     "Checklist" : [
         {
-            "Check" : "systemctlLoaded",
+            "ID" : "systemctlLoaded",
             "Parameters" : ["docker.service"]
         },
         {
-            "Check" : "systemctlActive",
+            "ID" : "systemctlActive",
             "Parameters" : ["boot.automount"]
         },
         {
-            "Check" : "systemctlSockPath",
+            "ID" : "systemctlSockListening",
             "Parameters" : ["/var/run/docker.sock"]
         },
         {
-            "Check" : "systemctlSockUnit",
+            "ID" : "systemctlSockUnit",
             "Parameters" : ["docker.socket"]
         },
         {
-            "Check" : "systemctlTimer",
+            "ID" : "systemctlTimer",
             "Parameters" : ["man-db.timer"]
         },
         {
-            "Check" : "systemctlTimerLoaded",
+            "ID" : "systemctlTimerLoaded",
             "Parameters" : ["man-db.timer"]
-        },
-        {
-            "Check" : "systemctlUnitFileStatus",
-            "Parameters" : ["shutdown.target", "static"]
         }
     ]
 }
