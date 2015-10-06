@@ -8,8 +8,12 @@ package main
 import (
 	"github.com/CiscoCloud/distributive/checklists"
 	log "github.com/Sirupsen/logrus"
+	"github.com/mitchellh/panicwrap"
 	"os"
 )
+
+const Version = "v0.2.1-dev"
+const Name = "distributive"
 
 // getChecklists returns a list of checklists based on the supplied sources
 func getChecklists(file string, dir string, url string, stdin bool) (lsts []checklists.Checklist) {
@@ -67,6 +71,22 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 // main reads the command line flag -f, runs the Check specified in the JSON,
 // and exits with the appropriate message and exit code.
 func main() {
+	// Set up global panic handling
+	exitStatus, err := panicwrap.BasicWrap(panicHandler)
+	if err != nil {
+		reportURL := "https://github.com/mitchellh/panicwrap"
+		log.WithFields(log.Fields{
+			"err": err.Error(),
+		}).Fatal("Please report this error to " + reportURL)
+	}
+	// If exitStatus >= 0, then we're the parent process and the panicwrap
+	// re-executed ourselves and completed. Just exit with the proper status.
+	if exitStatus >= 0 {
+		os.Exit(exitStatus)
+	}
+	// Otherwise, exitStatus < 0 means we're the child. Continue executing as
+	// normal...
+
 	// Set up and parse flags
 	log.Debug("Parsing flags")
 	file, URL, directory, stdin := getFlags()
