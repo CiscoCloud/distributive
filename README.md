@@ -47,18 +47,21 @@ Installation and Usage
 
 Installation/Building
 ---------------------
+
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
- 2. Build a binary with `./build.sh`
- 3. Follow the "Usage" instructions below
+ 2. Get dependencies with `go get .` (or used versioned dependencies with
+ [godep] [godep]).
+ 3. (Optional) Test with `go test -short ./...`
+ 4. Build a binary with `go build .`
+ 5. Follow the "Usage" instructions below
+
+The Dockerfile demonstrates how to build it from scratch (without golang
+installed, etc.).
 
 We also provide premade RPM packages on [Bintray][bintray] for versioned
 releases. You can view the RPM source and build RPM snapshots at
 [distributive-rpm][distributive-rpm].
-
-To build a tiny binary, we use [UPX][upx] and [goupx][goupx]. If you have both
-of these tools installed, you can optionally use `./build.sh compress` to tell
-the build script to compress the binary once it's finished.
 
 Usage
 -----
@@ -197,3 +200,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [direnv]: https://github.com/direnv/direnv
 [distributive-rpm]: https://github.com/CiscoCloud/distributive-rpm
 [mi]: https://github.com/CiscoCloud/microservices-infrastructure/
+[godep]: https://github.com/tools/godep
