@@ -13,11 +13,21 @@ done
 
 # print lines that are between /* */
 for f in "${files[@]}"; do
+  echo
+  echo "## $f"
   in_comment=false
   while read line; do
     # the order is such that it won't print any of the comment delimiters
     [[ $line == "*/" ]] && in_comment=false
-    [[ $in_comment == true ]] && echo "$line"
+    if [[ $in_comment == true ]]; then
+      # if it was a bullet point, add a blank line
+      if [[ ${line:0:1} == "-" ]]; then
+        echo "$line"
+        echo
+      else
+        echo "$line"
+      fi
+    fi
     [[ $line == "/*" ]] && in_comment=true
   done < "$f"
 done
