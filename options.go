@@ -20,8 +20,7 @@ func validateFlags(file string, URL string, directory string) {
 		if _, err := os.Stat(path); err != nil {
 			errutil.CouldntReadError(path, err)
 		}
-	}
-	// validateURL ensures that the given URL is valid, or logs an error
+	} // validateURL ensures that the given URL is valid, or logs an error
 	validateURL := func(urlstr string) {
 		if _, err := url.Parse(urlstr); err != nil {
 			log.WithFields(log.Fields{
@@ -115,6 +114,10 @@ func getFlags() (f string, u string, d string, s bool) {
 			Name:  "stdin, s",
 			Usage: "Read data piped from stdin as a checklist",
 		},
+		cli.BoolFlag{
+			Name:  "no-cache",
+			Usage: "Don't use a cached version of a remote check, fetch it.",
+		},
 	}
 	var verbosity string
 	var file string
@@ -137,6 +140,7 @@ func getFlags() (f string, u string, d string, s bool) {
 			"directory": directory,
 			"stdin":     stdin,
 		}).Debug("Command line options")
+		useCache = !c.Bool("no-cache")
 	}
 	if verbosity == "" {
 		verbosity = "warn"

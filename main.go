@@ -11,6 +11,8 @@ import (
 	"os"
 )
 
+var useCache bool // should remote checks be run from the cache when possible?
+
 // getChecklists returns a list of checklists based on the supplied sources
 func getChecklists(file string, dir string, url string, stdin bool) (lsts []checklists.Checklist) {
 	parseError := func(src string, err error) {
@@ -46,7 +48,7 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 			"type": "url",
 			"path": url,
 		}).Info(msg)
-		chklst, err := checklists.ChecklistFromURL(url)
+		chklst, err := checklists.ChecklistFromURL(url, useCache)
 		parseError(url, err)
 		lsts = append(lsts, chklst)
 	case stdin == true:

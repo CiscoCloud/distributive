@@ -211,23 +211,22 @@ func ChecklistsFromDir(dirpath string) (chklsts []Checklist, err error) {
 }
 
 // checklistsFromDir reads data retrieved from the URL and parses its utf8
-// encoded json data, turning it into a checklist struct. It also caches this
-// data at remoteCheckDir, currently "/var/run/distributive/"
-func ChecklistFromURL(urlstr string) (chklst Checklist, err error) {
-	// ensure temp files dir exists
+// encoded json data, turning it into a checklist struct. It also optionally
+// caches this data at remoteCheckDir, currently "/var/run/distributive/".
+func ChecklistFromURL(urlstr string, cache bool) (chklst Checklist, err error) {
 	log.Debug("Creating/checking remote checklist dir")
 	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
 		log.WithFields(log.Fields{
 			"dir":   remoteCheckDir,
 			"error": err.Error(),
 		}).Warn("Could not create remote check directory")
+		// attempt a more local directory
 		remoteCheckDir = "./.remote-checks"
 		if err := os.MkdirAll(remoteCheckDir, 0755); err != nil {
 			errutil.CouldntWriteError(remoteCheckDir, err)
 		}
 	}
 	log.Debug("Using " + remoteCheckDir + " for remote check storage")
-
 	// pathSanitize filters these (path illegal) chars: /?%*:|<^>. \
 	pathSanitize := func(str string) (filename string) {
 		filename = str
@@ -242,8 +241,8 @@ func ChecklistFromURL(urlstr string) (chklst Checklist, err error) {
 	filename := pathSanitize(urlstr) + ".json"
 	fullpath := filepath.Join(remoteCheckDir, filename)
 
-	// only create it if it doesn't exist
-	if _, err := os.Stat(fullpath); err != nil {
+	// only create it if it doesn't exist or we aren't using the cached copy
+	if _, err := os.Stat(fullpath); err != nil || !cache {
 		log.Info("Fetching remote checklist")
 		body := chkutil.URLToBytes(urlstr, true) // secure connection
 		log.Debug("Writing remote checklist to cache")
