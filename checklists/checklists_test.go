@@ -84,7 +84,14 @@ func TestChecklistFromURL(t *testing.T) {
 	// should add more
 	urls := [1]string{"http://pastebin.com/raw.php?i=GKk5yZEK"}
 	for _, url := range urls {
-		_, err := ChecklistFromURL(url)
+		_, err := ChecklistFromURL(url, true)
+		if err != nil {
+			t.Errorf("ChecklistFromURL failed on %s", url)
+		}
+	}
+	// don't use cache, test again
+	for _, url := range urls {
+		_, err := ChecklistFromURL(url, false)
 		if err != nil {
 			t.Errorf("ChecklistFromURL failed on %s", url)
 		}
