@@ -8,11 +8,6 @@ import (
 	"os"
 )
 
-// Version is self explanatory: it contains the version number of this binary
-// of Distributive. It is set at compile time using the flag
-// -X main.version $VERSION
-var Version string
-
 // validateFlags ensures that all options passed via the command line are valid
 func validateFlags(file string, URL string, directory string) {
 	// validatePath ensures that something is at a given path
