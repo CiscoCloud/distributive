@@ -16,9 +16,59 @@ import (
 
 var noTime, _ = time.ParseDuration("0μs")
 
+// parsePort determines whether or not this string represents a valid port
+// number, and returns it if so, and an error if not.
+func parsePort(portStr string) (uint16, error) {
+	portInt, err := strconv.ParseUint(portStr, 10, 16)
+	if err != nil || portInt < 0 || portInt > 65535 {
+		return 0, err
+	}
+	return uint16(portInt), nil
+}
+
 /*
-#### port
+#### Port
 Description: Is this port open?
+Parameters:
+  - Number (uint16): Port number (decimal)
+Example parameters:
+  - 80, 8080, 8500, 5050
+Dependencies:
+  - /proc/net/tcp
+  - /proc/net/udp
+*/
+
+type Port struct{ port uint16 }
+
+func (chk Port) ID() string { return "Port" }
+
+func (chk Port) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	} else if portInt, err := parsePort(params[0]); err == nil {
+		chk.port = portInt
+	} else {
+		return chk, errutil.ParameterTypeError{params[0], "uint16"}
+	}
+	return chk, nil
+}
+
+func (chk Port) Status() (int, string, error) {
+	if netutil.PortOpen("tcp", chk.port) || netutil.PortOpen("udp", chk.port) {
+		return errutil.Success()
+	}
+	// convert ports to string to send to errutil.GenericError
+	var strPorts []string
+	openPorts := append(netutil.OpenPorts("tcp"), netutil.OpenPorts("udp")...)
+	for _, port := range openPorts {
+		strPorts = append(strPorts, fmt.Sprint(port))
+	}
+	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
+}
+
+/*
+#### PortTCP
+Description: Is this port open on the TCP protocol?
 Parameters:
   - Number (uint16): Port number (decimal)
 Example parameters:
@@ -27,29 +77,66 @@ Dependencies:
   - /proc/net/tcp
 */
 
-type Port struct{ port uint16 }
+type PortTCP struct{ port uint16 }
 
-func (chk Port) ID() string { return "port" }
+func (chk PortTCP) ID() string { return "PortTCP" }
 
-func (chk Port) New(params []string) (chkutil.Check, error) {
+func (chk PortTCP) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
-	}
-	portInt, err := strconv.ParseUint(params[0], 10, 16)
-	if err != nil || portInt < 0 || portInt > 65535 {
+	} else if portInt, err := parsePort(params[0]); err == nil {
+		chk.port = portInt
+	} else {
 		return chk, errutil.ParameterTypeError{params[0], "uint16"}
 	}
-	chk.port = uint16(portInt)
 	return chk, nil
 }
 
-func (chk Port) Status() (int, string, error) {
-	if netutil.PortOpen(chk.port) {
+func (chk PortTCP) Status() (int, string, error) {
+	if netutil.PortOpen("tcp", chk.port) {
 		return errutil.Success()
 	}
 	// convert ports to string to send to errutil.GenericError
 	var strPorts []string
-	for _, port := range netutil.OpenPorts() {
+	for _, port := range netutil.OpenPorts("tcp") {
+		strPorts = append(strPorts, fmt.Sprint(port))
+	}
+	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
+}
+
+/*
+#### PortUDP
+Description: Is this port open on the UDP protocol?
+Parameters:
+  - Number (uint16): Port number (decimal)
+Example parameters:
+  - 80, 8080, 8500, 5050
+Dependencies:
+  - /proc/net/udp
+*/
+
+type PortUDP struct{ port uint16 }
+
+func (chk PortUDP) ID() string { return "PortUDP" }
+
+func (chk PortUDP) New(params []string) (chkutil.Check, error) {
+	if len(params) != 1 {
+		return chk, errutil.ParameterLengthError{1, params}
+	} else if portInt, err := parsePort(params[0]); err == nil {
+		chk.port = portInt
+	} else {
+		return chk, errutil.ParameterTypeError{params[0], "uint16"}
+	}
+	return chk, nil
+}
+
+func (chk PortUDP) Status() (int, string, error) {
+	if netutil.PortOpen("udp", chk.port) {
+		return errutil.Success()
+	}
+	// convert ports to string to send to errutil.GenericError
+	var strPorts []string
+	for _, port := range netutil.OpenPorts("udp") {
 		strPorts = append(strPorts, fmt.Sprint(port))
 	}
 	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)

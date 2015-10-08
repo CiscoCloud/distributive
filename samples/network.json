@@ -3,7 +3,15 @@
     "Checklist" : [
         {
             "ID": "port",
-            "Parameters": ["41483"]
+            "Parameters": ["80"]
+        },
+        {
+            "ID": "portTCP",
+            "Parameters": ["80"]
+        },
+        {
+            "ID": "portUDP",
+            "Parameters": ["80"]
         },
         {
             "ID" : "interfaceExists",

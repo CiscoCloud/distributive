@@ -16,13 +16,25 @@ import (
 )
 
 // GetHexPorts gets all open ports as hex strings from /proc/net/tcp
-func GetHexPorts() (ports []string) {
-	path := "/proc/net/tcp"
+// Its protocol argument can only be one of: "tcp" | "udp"
+func GetHexPorts(protocol string) (ports []string) {
+	var path string
+	switch strings.ToLower(protocol) {
+	case "tcp":
+		path = "/proc/net/tcp"
+	case "udp":
+		path = "/proc/net/udp"
+	default:
+		log.WithFields(log.Fields{
+			"protocol":        protocol,
+			"valid protocols": "tcp|udp",
+		}).Fatal("Invalid protocol passed to GetHexPorts!")
+	}
 	data := chkutil.FileToString(path)
-	table := tabular.ProbabalisticSplit(data)
-	// TODO by header isn't working
-	//localAddresses := tabular.GetColumnByHeader("local_address", table)
-	localAddresses := tabular.GetColumnNoHeader(1, table)
+	rowSep := regexp.MustCompile(`\n+`)
+	colSep := regexp.MustCompile(`\s+`)
+	table := tabular.SeparateString(rowSep, colSep, data)
+	localAddresses := tabular.GetColumnByHeader("local_address", table)
 	portRe := regexp.MustCompile(`([0-9A-F]{8}):([0-9A-F]{4})`)
 	for _, address := range localAddresses {
 		port := portRe.FindString(address)
@@ -40,8 +52,9 @@ func GetHexPorts() (ports []string) {
 	return ports
 }
 
-// OpenPorts gets a list of open/listening ports as integers
-func OpenPorts() (ports []uint16) {
+// OpenPorts gets a list of open/listening TCP or UDP ports as integers.
+// Its protocol argument can only be one of: "tcp" | "udp"
+func OpenPorts(protocol string) (ports []uint16) {
 	// strHexToDecimal converts from string containing hex number to int
 	strHexToDecimal := func(hex string) int {
 		portInt, err := strconv.ParseInt(hex, 16, 64)
@@ -53,14 +66,15 @@ func OpenPorts() (ports []uint16) {
 		}
 		return int(portInt)
 	}
-	for _, port := range GetHexPorts() {
+	for _, port := range GetHexPorts(protocol) {
 		ports = append(ports, uint16(strHexToDecimal(port)))
 	}
 	return ports
 }
 
 // PortOpen reports whether or not the given (decimal) port is open
-func PortOpen(port uint16) bool {
+// Its protocol argument can only be one of: "tcp" | "udp"
+func PortOpen(protocol string, port uint16) bool {
 	uint16In := func(n uint16, slc []uint16) bool {
 		for _, nPrime := range slc {
 			if n == nPrime {
@@ -69,7 +83,7 @@ func PortOpen(port uint16) bool {
 		}
 		return false
 	}
-	return uint16In(port, OpenPorts())
+	return uint16In(port, OpenPorts(protocol))
 }
 
 // ValidIP returns a boolean answering the question "is this a valid IPV4/6

@@ -54,6 +54,10 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 		/***************** network.go *****************/
 	case "port":
 		return workers.Port{}
+	case "porttcp":
+		return workers.PortTCP{}
+	case "portudp":
+		return workers.PortUDP{}
 	case "interfaceexists":
 		return workers.InterfaceExists{}
 	case "up":

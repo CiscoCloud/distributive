@@ -18,24 +18,31 @@ var invalidIPs = []string{
 
 func TestGetHexPorts(t *testing.T) {
 	t.Parallel()
-	if len(GetHexPorts()) < 1 {
-		t.Error("len(GetHexPorts) < 1")
+	if len(GetHexPorts("tcp")) < 1 {
+		t.Error("len(GetHexPorts(tcp)) < 1")
+	} else if len(GetHexPorts("udp")) < 1 {
+		t.Error("len(GetHexPorts(udp)) < 1")
 	}
 }
 
 func TestOpenPorts(t *testing.T) {
 	// TODO test valid range
 	t.Parallel()
-	if len(OpenPorts()) < 1 {
-		t.Error("len(OpenPorts) < 1")
+	if len(OpenPorts("tcp")) < 1 {
+		t.Error("len(OpenPorts(tcp)) < 1")
+	} else if len(OpenPorts("udp")) < 1 {
+		t.Error("len(OpenPorts(udp)) < 1")
 	}
 }
 
 func TestPortOpen(t *testing.T) {
 	t.Parallel()
-	for _, port := range OpenPorts() {
-		if !PortOpen(port) {
-			t.Errorf("PortOpen and OpenPorts reported differently for " + fmt.Sprint(port))
+	for _, protocol := range [2]string{"tcp", "udp"} {
+		for _, port := range OpenPorts(protocol) {
+			if !PortOpen(protocol, port) {
+				msg := "PortOpen and OpenPorts reported differently for "
+				t.Errorf(msg + fmt.Sprint(port) + " with protocol " + protocol)
+			}
 		}
 	}
 	// TODO test all other ports in valid range
@@ -67,7 +74,8 @@ func TestInterfaceIPs(t *testing.T) {
 	// TODO check for valid interface IP addresses with ValidIP
 	for _, iface := range GetInterfaces() {
 		if len(InterfaceIPs(iface.Name)) < 1 {
-			t.Error("len(InterfaceIPs) < 1")
+			msg := ". Are all of your interfaces connected?"
+			t.Error("len(InterfaceIPs) < 1" + msg)
 		}
 	}
 }
