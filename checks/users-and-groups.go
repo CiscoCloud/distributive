@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
-	"github.com/CiscoCloud/distributive/tabular"
-	log "github.com/Sirupsen/logrus"
+	"github.com/CiscoCloud/distributive/usrstatus"
 	"os/user"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -28,45 +26,16 @@ func validUsername(name string) bool {
 	return true
 }
 
-// Group is a struct that contains all relevant information that can be parsed
-// from an entry in /etc/group
-type Group struct {
-	Name  string
-	ID    int
-	Users []string
-}
-
-// getGroups returns a list of Group structs, as parsed from /etc/group
-func getGroups() (groups []Group) {
-	path := "/etc/group"
-	data := chkutil.FileToString(path)
-	rowSep := regexp.MustCompile(`\n`)
-	colSep := regexp.MustCompile(`:`)
-	lines := tabular.SeparateString(rowSep, colSep, data)
-	commaRegexp := regexp.MustCompile(`,`)
-	for _, line := range lines {
-		if len(line) > 3 { // only lines that have all fields (non-empty)
-			gid, err := strconv.ParseInt(line[2], 10, 64)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"group": line[0],
-					"path":  path,
-				}).Fatal("Could not parse ID for group")
-			}
-			userSlice := commaRegexp.Split(line[3], -1)
-			group := Group{Name: line[0], ID: int(gid), Users: userSlice}
-			groups = append(groups, group)
-		}
-	}
-	return groups
-}
-
 // groupNotFound creates generic error messages and exit codes for groupExits,
 // UserInGroup, and GroupID
 func groupNotFound(name string) (int, string, error) {
 	// get a nicely formatted list of groups that do exist
 	var existing []string
-	for _, group := range getGroups() {
+	groups, err := usrstatus.Groups()
+	if err != nil {
+		return 1, "", err
+	}
+	for _, group := range groups {
 		existing = append(existing, group.Name)
 	}
 	return errutil.GenericError("Group not found", name, existing)
@@ -97,16 +66,22 @@ func (chk GroupExists) New(params []string) (chkutil.Check, error) {
 
 func (chk GroupExists) Status() (int, string, error) {
 	// doesGroupExist preforms all the meat of GroupExists
-	doesGroupExist := func(name string) bool {
-		groups := getGroups()
+	doesGroupExist := func(name string) (bool, error) {
+		groups, err := usrstatus.Groups()
+		if err != nil {
+			return false, err
+		}
 		for _, group := range groups {
 			if group.Name == name {
-				return true
+				return true, nil
 			}
 		}
-		return false
+		return false, nil
 	}
-	if doesGroupExist(chk.name) {
+	boo, err := doesGroupExist(chk.name)
+	if err != nil {
+		return 1, "", err
+	} else if boo {
 		return errutil.Success()
 	}
 	return groupNotFound(chk.name)
@@ -141,17 +116,13 @@ func (chk UserInGroup) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk UserInGroup) Status() (int, string, error) {
-	groups := getGroups()
-	for _, g := range groups {
-		if g.Name == chk.group {
-			if tabular.StrIn(chk.user, g.Users) {
-				return errutil.Success()
-			}
-			msg := "User not found in group"
-			return errutil.GenericError(msg, chk.user, g.Users)
-		}
+	boo, err := usrstatus.UserInGroup(chk.user, chk.group)
+	if err != nil {
+		return 1, "", err
+	} else if boo {
+		return errutil.Success()
 	}
-	return groupNotFound(chk.group)
+	return 1, "User not found in group", nil
 }
 
 /*
@@ -188,7 +159,10 @@ func (chk GroupID) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk GroupID) Status() (int, string, error) {
-	groups := getGroups()
+	groups, err := usrstatus.Groups()
+	if err != nil {
+		return 0, "", err
+	}
 	for _, g := range groups {
 		if g.Name == chk.name {
 			if g.ID == chk.id {

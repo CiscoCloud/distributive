@@ -7,14 +7,6 @@ import (
 
 var validUsernamesOrUIDs = append(append(names, smallInts...), bigIntsUnder100...)
 
-func TestGetGroups(t *testing.T) {
-	t.Parallel()
-	groups := getGroups()
-	if len(groups) < 1 {
-		t.Error("Couldn't find any groups in /etc/group")
-	}
-}
-
 func TestGroupNotFound(t *testing.T) {
 	t.Parallel()
 	code, message, _ := groupNotFound("dummyGroup")
