@@ -1,18 +1,12 @@
 package workers
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/fsstatus"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
-	"hash"
 	"os"
 	"regexp"
 	"strings"
@@ -56,19 +50,7 @@ func (chk File) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk File) Status() (int, string, error) {
-	return isType("file", isFile, chk.path)
-}
-
-// returns true if there is a regular ol' file at path
-func isFile(path string) (bool, error) {
-	if is, _ := isSymlink(path); is {
-		return false, nil
-	}
-	fileInfo, err := os.Stat(path)
-	if fileInfo == nil || !fileInfo.Mode().IsRegular() {
-		return false, err
-	}
-	return true, err
+	return isType("file", fsstatus.IsFile, chk.path)
 }
 
 /*
@@ -93,19 +75,7 @@ func (chk Directory) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Directory) Status() (int, string, error) {
-	return isType("directory", isDirectory, chk.path)
-}
-
-// returns true if there is a regular ol' directory at path
-func isDirectory(path string) (bool, error) {
-	if is, _ := isSymlink(path); is {
-		return false, nil
-	}
-	fileInfo, err := os.Stat(path)
-	if fileInfo == nil || !fileInfo.Mode().IsDir() {
-		return false, err
-	}
-	return true, err
+	return isType("directory", fsstatus.IsDirectory, chk.path)
 }
 
 /*
@@ -130,15 +100,7 @@ func (chk Symlink) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Symlink) Status() (int, string, error) {
-	return isType("symlink", isSymlink, chk.path)
-}
-
-func isSymlink(path string) (bool, error) {
-	_, err := os.Readlink(path)
-	if err == nil {
-		return true, err
-	}
-	return false, err
+	return isType("symlink", fsstatus.IsSymlink, chk.path)
 }
 
 /*
@@ -146,11 +108,12 @@ func isSymlink(path string) (bool, error) {
 Description: Does this file match the expected checksum when using the specified
 algorithm?
 Parameters:
-  - Algorithm (string): MD5 | SHA1 | SHA224 | SHA256 | SHA384 | SHA512
+  - Algorithm (string): MD5 | SHA1 | SHA224 | SHA256 | SHA384 | SHA512 |
+  SHA3224 | SHA3256 | SHA3384 | SHA3512
   - Expected checksum (checksum/string)
   - Path (filepath): Path to file to check the checksum of
 Example parameters:
-  - SHA1, SHA224, SHA256, SHA384, SHA512
+  - MD5, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3224, SHA3256, SHA3384,
   - d41d8cd98f00b204e9800998ecf8427e, c6cf669dbd4cf2fbd59d03cc8039420a48a037fe
   - /dev/null, /etc/config/important-file.conf
 */
@@ -179,48 +142,20 @@ func (chk Checksum) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Checksum) Status() (int, string, error) {
-	// getChecksum returns the checksum of some data, using a specified
-	// algorithm
-	getChecksum := func(algorithm string, data []byte) (checksum string) {
-		algorithm = strings.ToUpper(algorithm)
-		// default
-		var hasher hash.Hash
-		switch algorithm {
-		case "MD5":
-			hasher = md5.New()
-		case "SHA1":
-			hasher = sha1.New()
-		case "SHA224":
-			hasher = sha256.New224()
-		case "SHA256":
-			hasher = sha256.New()
-		case "SHA384":
-			hasher = sha512.New384()
-		case "SHA512":
-			hasher = sha512.New()
-		default:
-			log.WithFields(log.Fields{
-				"given":    algorithm,
-				"expected": "MD5 | SHA1 | SHA224 | SHA256 | SHA384 | SHA512",
-			}).Fatal("Invalid algorithm parameter passed to getChecksum")
-		}
-		hasher.Write(data)
-		str := hex.EncodeToString(hasher.Sum(nil))
-		return str
-
-	}
 	// getFileChecksum is self-explanatory
-	getFileChecksum := func(algorithm string, path string) (checksum string) {
+	fileChecksum := func(algorithm string, path string) string {
 		if path == "" {
 			log.Fatal("getFileChecksum got a blank path")
 		} else if _, err := os.Stat(chk.path); err != nil {
 			log.WithFields(log.Fields{
 				"path": chk.path,
-			}).Fatal("getFileChecksum got an invalid path")
+			}).Fatal("fileChecksum got an invalid path")
 		}
-		return getChecksum(algorithm, chkutil.FileToBytes(path))
+		// we already validated the aglorithm
+		chksum, _ := fsstatus.Checksum(algorithm, chkutil.FileToBytes(path))
+		return chksum
 	}
-	actualChksum := getFileChecksum(chk.algorithm, chk.path)
+	actualChksum := fileChecksum(chk.algorithm, chk.path)
 	if actualChksum == chk.expectedChksum {
 		return errutil.Success()
 	}
@@ -307,14 +242,12 @@ func (chk Permissions) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Permissions) Status() (int, string, error) {
-	finfo, err := os.Stat(chk.path)
+	passed, err := fsstatus.FileHasPermissions(chk.expectedPerms, chk.path)
 	if err != nil {
-		errutil.CouldntReadError(chk.path, err)
+		return 0, "", err
 	}
-	actualMode := fmt.Sprint(finfo.Mode().Perm()) // -rwxrw-r-- format
-	if actualMode == chk.expectedPerms {
+	if passed {
 		return errutil.Success()
 	}
-	msg := "File modes did not match"
-	return errutil.GenericError(msg, chk.expectedPerms, []string{actualMode})
+	return 1, "File did not have permissions: " + chk.expectedPerms, nil
 }
