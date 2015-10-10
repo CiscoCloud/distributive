@@ -1,34 +1,13 @@
 package checks
 
 import (
-	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/systemdstatus"
 	"github.com/CiscoCloud/distributive/tabular"
 	"os"
-	"os/exec"
 	"strings"
 )
-
-// systemctlService checks to see if a service has a givens status
-// status: active | loaded
-func systemctlService(service string, activeOrLoaded string) (int, string, error) {
-	// cmd depends on whether we're checking active or loaded
-	cmd := exec.Command("systemctl", "show", "-p", "ActiveState", service)
-	if activeOrLoaded == "loaded" {
-		cmd = exec.Command("systemctl", "show", "-p", "LoadState", service)
-	}
-	outString := chkutil.CommandOutput(cmd)
-	contained := "ActiveState=active"
-	if activeOrLoaded == "loaded" {
-		contained = "LoadState=loaded"
-	}
-	if strings.Contains(outString, contained) {
-		return errutil.Success()
-	}
-	msg := "Service not " + activeOrLoaded
-	return errutil.GenericError(msg, service, []string{outString})
-}
 
 /*
 #### SystemctlLoaded
@@ -52,7 +31,13 @@ func (chk SystemctlLoaded) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk SystemctlLoaded) Status() (int, string, error) {
-	return systemctlService(chk.service, "loaded")
+	boo, err := systemdstatus.ServiceLoaded(chk.service)
+	if err != nil {
+		return 1, "", err
+	} else if boo {
+		return errutil.Success()
+	}
+	return 1, "Service wasn't loaded: " + chk.service, nil
 }
 
 /*
@@ -77,29 +62,18 @@ func (chk SystemctlActive) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk SystemctlActive) Status() (int, string, error) {
-	return systemctlService(chk.service, "active")
-}
-
-// SystemctlSock is an abstraction of SystemctlSockPath and SystemctlSockUnit,
-// it reads from `systemctl list-sockets` and sees if the value is in the
-// appropriate column.
-func SystemctlSock(value string, column string) (int, string, error) {
-	outstr := chkutil.CommandOutput(exec.Command("systemctl", "list-sockets"))
-	lines := tabular.Lines(outstr)
-	msg := "systemctl list-sockers didn't output enough rows"
-	errutil.IndexError(msg, len(lines)-4, lines)
-	unlines := tabular.Unlines(lines[:len(lines)-4])
-	table := tabular.SeparateOnAlignment(unlines)
-	values := tabular.GetColumnByHeader(column, table)
-	if tabular.StrIn(value, values) {
+	boo, err := systemdstatus.ServiceActive(chk.service)
+	if err != nil {
+		return 1, "", err
+	} else if boo {
 		return errutil.Success()
 	}
-	return errutil.GenericError("Socket not found", value, values)
+	return 1, "Service wasn't active: " + chk.service, nil
 }
 
 /*
 #### SystemctlSockListening
-Description: Is systemd socket in the LISTEN state?
+Description: Is the systemd socket at this path in the LISTEN state?
 Parameters:
   - Path (filepath): Path to socket
 Example parameters:
@@ -121,57 +95,22 @@ func (chk SystemctlSockListening) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk SystemctlSockListening) Status() (int, string, error) {
-	return SystemctlSock(chk.path, "LISTEN")
-}
-
-/*
-#### SystemctlSockUnit
-Description: Is a socket registered with this unit?
-Parameters:
-  - Unit (string): Name of systemd unit
-Example parameters:
-  - TODO
-*/
-
-type SystemctlSockUnit struct{ path, unit string }
-
-func (chk SystemctlSockUnit) ID() string { return "SystemctlSockUnit" }
-
-func (chk SystemctlSockUnit) New(params []string) (chkutil.Check, error) {
-	if len(params) != 1 {
-		return chk, errutil.ParameterLengthError{1, params}
+	listening, err := systemdstatus.ListeningSockets()
+	if err != nil {
+		return 1, "", err
 	}
-	chk.unit = params[0]
-	return chk, nil
-}
-
-func (chk SystemctlSockUnit) Status() (int, string, error) {
-	return SystemctlSock(chk.unit, "UNIT")
-}
-
-// getTimers returns of all the timers under the UNIT column of
-// `systemctl list-timers`
-func getTimers(all bool) []string {
-	cmd := exec.Command("systemctl", "list-timers")
-	if all {
-		cmd = exec.Command("systemctl", "list-timers", "--all")
+	if tabular.StrIn(chk.path, listening) {
+		return errutil.Success()
 	}
-	out, err := cmd.CombinedOutput()
-	outstr := string(out)
-	errutil.ExecError(cmd, outstr, err)
-	// last three lines are junk
-	lines := tabular.Lines(outstr)
-	msg := fmt.Sprint(cmd.Args) + " didn't output enough lines"
-	errutil.IndexError(msg, 3, lines)
-	table := tabular.SeparateOnAlignment(tabular.Unlines(lines[:len(lines)-3]))
-	column := tabular.GetColumnByHeader("UNIT", table)
-	return column
+	return errutil.GenericError("Socket wasn't listening", chk.path, listening)
 }
 
 // timerCheck is pure DRY for SystemctlTimer and SystemctlTimerLoaded
 func timerCheck(unit string, all bool) (int, string, error) {
-	timers := getTimers(all)
-	if tabular.StrIn(unit, timers) {
+	timers, err := systemdstatus.Timers(all)
+	if err != nil {
+		return 1, "", err
+	} else if tabular.StrIn(unit, timers) {
 		return errutil.Success()
 	}
 	return errutil.GenericError("Timer not found", unit, timers)
@@ -246,28 +185,31 @@ func (chk SystemctlUnitFileStatus) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
+	validStatuses := []string{"static", "enabled", "disabled"}
+	if !tabular.StrIn(strings.ToLower(params[1]), validStatuses) {
+		validStatusesStr := "static | enabled | disabled"
+		return chk, errutil.ParameterTypeError{params[1], validStatusesStr}
+	}
 	chk.unit = params[0]
 	chk.status = params[1]
 	return chk, nil
 }
 
 func (chk SystemctlUnitFileStatus) Status() (int, string, error) {
-	// getUnitFilesWithStatuses returns a pair of string slices that hold
-	// the name of unit files with their current statuses.
-	getUnitFilesWithStatuses := func() (units []string, statuses []string) {
-		cmd := exec.Command("systemctl", "--no-pager", "list-unit-files")
-		units = chkutil.CommandColumnNoHeader(0, cmd)
-		cmd = exec.Command("systemctl", "--no-pager", "list-unit-files")
-		statuses = chkutil.CommandColumnNoHeader(1, cmd)
-		// last two are empty line and junk statistics we don't care about
-		msg := fmt.Sprint(cmd.Args) + " didn't output enough lines"
-		errutil.IndexError(msg, 2, units)
-		errutil.IndexError(msg, 2, statuses)
-		return units[:len(units)-2], statuses[:len(statuses)-2]
+	units, statuses, err := systemdstatus.UnitFileStatuses()
+	if err != nil {
+		return 1, "", err
 	}
-	units, statuses := getUnitFilesWithStatuses()
 	var actualStatus string
-	// TODO check if unit could be found at all
+	found := false
+	for _, unit := range units {
+		if unit == chk.unit {
+			found = true
+		}
+	}
+	if !found {
+		return 1, "Unit file could not be found: " + chk.unit, nil
+	}
 	for i, un := range units {
 		if un == chk.unit {
 			actualStatus = statuses[i]

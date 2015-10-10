@@ -106,8 +106,6 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 		return checks.SystemctlActive{}
 	case "systemctlsocklistening":
 		return checks.SystemctlSockListening{}
-	case "systemctlsockunit":
-		return checks.SystemctlSockUnit{}
 	case "systemctltimer":
 		return checks.SystemctlTimer{}
 	case "systemctltimerloaded":

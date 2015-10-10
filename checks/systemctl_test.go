@@ -32,15 +32,6 @@ func TestSystemctlSockPath(t *testing.T) {
 	testCheck(goodEggs, fileParameters, SystemctlSockListening{}, t)
 }
 
-func TestSystemctlSockUnit(t *testing.T) {
-	t.Parallel()
-	goodEggs := [][]string{
-		{"dbus.socket"}, {"systemd-journald.socket"}, {"dm-event.socket"},
-	}
-	testParameters(names, notLengthOne, SystemctlSockUnit{}, t)
-	testCheck(goodEggs, names, SystemctlSockUnit{}, t)
-}
-
 func TestSystemctlTimer(t *testing.T) {
 	t.Parallel()
 	testParameters(names, notLengthOne, SystemctlTimer{}, t)

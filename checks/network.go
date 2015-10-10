@@ -181,7 +181,7 @@ func (chk InterfaceExists) Status() (int, string, error) {
 }
 
 /*
-#### up
+#### Up
 Description: Is this interface up?
 Parameters:
   - Name (string): name of the interface
@@ -191,7 +191,7 @@ Example parameters:
 
 type Up struct{ name string }
 
-func (chk Up) ID() string { return "up" }
+func (chk Up) ID() string { return "Up" }
 
 func (chk Up) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
