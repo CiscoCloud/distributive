@@ -1,4 +1,4 @@
-package workers
+package checks
 
 import (
 	"github.com/CiscoCloud/distributive/chkutil"
