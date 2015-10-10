@@ -36,7 +36,7 @@ func (chk DockerImage) New(params []string) (chkutil.Check, error) {
 func (chk DockerImage) Status() (int, string, error) {
 	images, err := dockerstatus.DockerImageRepositories()
 	if err != nil {
-		return 0, "", err
+		return 1, "", err
 	}
 	if tabular.StrIn(chk.name, images) {
 		return errutil.Success()
@@ -69,7 +69,7 @@ func (chk DockerImageRegexp) New(params []string) (chkutil.Check, error) {
 func (chk DockerImageRegexp) Status() (int, string, error) {
 	images, err := dockerstatus.DockerImageRepositories()
 	if err != nil {
-		return 0, "", err
+		return 1, "", err
 	}
 	if tabular.ReIn(chk.re, images) {
 		return errutil.Success()
@@ -102,7 +102,7 @@ func (chk DockerRunning) New(params []string) (chkutil.Check, error) {
 func (chk DockerRunning) Status() (int, string, error) {
 	running, err := dockerstatus.RunningContainers()
 	if err != nil {
-		return 0, "", err
+		return 1, "", err
 	}
 	if tabular.StrContainedIn(chk.name, running) {
 		return errutil.Success()
@@ -201,7 +201,7 @@ func (chk DockerRunningRegexp) New(params []string) (chkutil.Check, error) {
 func (chk DockerRunningRegexp) Status() (int, string, error) {
 	running, err := dockerstatus.RunningContainers()
 	if err != nil {
-		return 0, "", err
+		return 1, "", err
 	}
 	if tabular.ReIn(chk.re, running) {
 		return errutil.Success()

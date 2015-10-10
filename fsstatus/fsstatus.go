@@ -1,5 +1,5 @@
-// fsstatus provides several utility functions for querying several aspects of
-// the filesystem, especially as pertains to monitoring.
+// fsstatus provides utility functions for querying several aspects of the
+// filesystem, especially as pertains to monitoring.
 package fsstatus
 
 import (

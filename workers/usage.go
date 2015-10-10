@@ -4,109 +4,15 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
-	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/CiscoCloud/distributive/memstatus"
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 )
-
-// getSwapOrMemory returns output from `free`, it is an abstraction of
-// getSwap and getMemory. inputs: status: free | used | total
-// swapOrMem: memory | swap, units: b | kb | mb | gb | tb
-// TODO: support kib/gib style units, with proper transformations.
-func getSwapOrMemory(status string, swapOrMem string, units string) int {
-	statusToColumn := map[string]int{
-		"total": 1,
-		"used":  2,
-		"free":  3,
-	}
-	unitsToFlag := map[string]string{
-		"b":  "--bytes",
-		"kb": "--kilo",
-		"mb": "--mega",
-		"gb": "--giga",
-		"tb": "--tera",
-	}
-	typeToRow := map[string]int{
-		"memory": 0,
-		"swap":   1,
-	}
-	// check to see that our keys are really in our dict
-	if _, ok := statusToColumn[status]; !ok {
-		log.WithFields(log.Fields{
-			"status":   status,
-			"expected": []string{"total", "used", "free"},
-		}).Fatal("Internal error: invalid status in getSwapOrMemory")
-	} else if _, ok := unitsToFlag[units]; !ok {
-		log.WithFields(log.Fields{
-			"units":    units,
-			"expected": []string{"b", "kb", "mb", "gb", "tb"},
-		}).Fatal("Internal error: invalid units in getSwapOrMemory")
-	} else if _, ok := typeToRow[swapOrMem]; !ok {
-		log.WithFields(log.Fields{
-			"option":   swapOrMem,
-			"expected": []string{"memory", "swap"},
-		}).Fatal("Internal error: invalid option in getSwapOrMemory")
-	}
-	// execute free and return the appropriate output
-	cmd := exec.Command("free", unitsToFlag[units])
-	outStr := chkutil.CommandOutput(cmd)
-	// TODO probabalisticsplit isn't handling this appropriately
-	//table := tabular.ProbabalisticSplit(outStr)
-	colSep := regexp.MustCompile(`\s{2,}`)
-	rowSep := regexp.MustCompile(`\n+`)
-	table := tabular.SeparateString(rowSep, colSep, outStr)
-	column := tabular.GetColumnByHeader(status, table)
-	row := typeToRow[swapOrMem]
-	// check for errors in output of `free`
-	if column == nil || len(column) < 1 {
-		log.WithFields(log.Fields{
-			"header": status,
-			"table":  "\n" + tabular.ToString(table),
-		}).Fatal("Free column was empty")
-	}
-	if row >= len(column) {
-		log.WithFields(log.Fields{
-			"output": outStr,
-			"column": column,
-			"row":    row,
-		}).Fatal("`free` didn't output enough rows")
-	}
-	toReturn, err := strconv.ParseInt(column[row], 10, 64)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"cell":   column[row],
-			"error":  err.Error(),
-			"output": outStr,
-		}).Fatal("Couldn't parse output of `free` as an int")
-	}
-	return int(toReturn)
-}
-
-// getSwap returns amount of swap with a certain status: free | used | total
-// and with a certain given unit: b | kb | mb | gb | tb
-func getSwap(status string, units string) int {
-	return getSwapOrMemory(status, "swap", units)
-}
-
-// getMemory returns amount of swap with a certain status: free | used | total
-// and with a certain given unit: b | kb | mb | gb | tb
-func getMemory(status string, units string) int {
-	return getSwapOrMemory(status, "memory", units)
-}
-
-// getUsedPercent returns the % of physical memory or swap currently in use
-func getUsedPercent(swapOrMem string) float32 {
-	used := getSwapOrMemory("used", swapOrMem, "b")
-	total := getSwapOrMemory("total", swapOrMem, "b")
-	return (float32(used) / float32(total)) * 100
-}
 
 /*
 #### MemoryUsage
@@ -118,7 +24,7 @@ Example parameters:
 */
 
 // TODO use a uint
-type MemoryUsage struct{ maxPercentUsed int8 }
+type MemoryUsage struct{ maxPercentUsed uint8 }
 
 func (chk MemoryUsage) ID() string { return "MemoryUsage" }
 
@@ -128,18 +34,18 @@ func (chk MemoryUsage) New(params []string) (chkutil.Check, error) {
 	}
 	per, err := strconv.ParseInt(strings.Replace(params[0], "%", "", -1), 10, 8)
 	if err != nil {
-		return chk, errutil.ParameterTypeError{params[0], "int8"}
+		return chk, errutil.ParameterTypeError{params[0], "uint8"}
 	}
-	if per < 0 {
-		return chk, errutil.ParameterTypeError{params[0], "positive int8"}
-	}
-	chk.maxPercentUsed = int8(per)
+	chk.maxPercentUsed = uint8(per)
 	return chk, nil
 }
 
 func (chk MemoryUsage) Status() (int, string, error) {
-	actualPercentUsed := getUsedPercent("memory")
-	if actualPercentUsed < float32(chk.maxPercentUsed) {
+	actualPercentUsed, err := memstatus.FreeMemory("percent")
+	if err != nil {
+		return 1, "", err
+	}
+	if actualPercentUsed < int(chk.maxPercentUsed) {
 		return errutil.Success()
 	}
 	msg := "Memory usage above defined maximum"
@@ -173,8 +79,11 @@ func (chk SwapUsage) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk SwapUsage) Status() (int, string, error) {
-	actualPercentUsed := getUsedPercent("swap")
-	if actualPercentUsed < float32(chk.maxPercentUsed) {
+	actualPercentUsed, err := memstatus.UsedSwap("percent")
+	if err != nil {
+		return 1, "", err
+	}
+	if actualPercentUsed < int(chk.maxPercentUsed) {
 		return errutil.Success()
 	}
 	msg := "Swap usage above defined maximum"
@@ -191,8 +100,18 @@ func freeMemOrSwap(input string, swapOrMem string) (int, string, error) {
 			"err": err.Error(),
 		}).Fatal("Couldn't separate string into a scalar and units")
 	}
-	actualAmount := getSwapOrMemory("free", swapOrMem, units)
-	if actualAmount > amount {
+	var actualAmount int
+	switch strings.ToLower(swapOrMem) {
+	case "memory":
+		actualAmount, err = memstatus.FreeMemory(units)
+	case "swap":
+		actualAmount, err = memstatus.FreeSwap(units)
+	default:
+		log.Fatalf("Invalid option passed to freeMemoOrSwap: %s", swapOrMem)
+	}
+	if err != nil {
+		return 1, "", err
+	} else if actualAmount > amount {
 		return errutil.Success()
 	}
 	msg := "Free " + swapOrMem + " lower than defined threshold"

@@ -244,7 +244,7 @@ func (chk Permissions) New(params []string) (chkutil.Check, error) {
 func (chk Permissions) Status() (int, string, error) {
 	passed, err := fsstatus.FileHasPermissions(chk.expectedPerms, chk.path)
 	if err != nil {
-		return 0, "", err
+		return 1, "", err
 	}
 	if passed {
 		return errutil.Success()
