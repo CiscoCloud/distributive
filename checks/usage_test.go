@@ -1,7 +1,6 @@
-package workers
+package checks
 
 import (
-	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"testing"
 )
@@ -12,41 +11,6 @@ var bigIntsUnder100 = [][]string{{"100"}, {"99"}, {"98"}}
 
 var reallyBigInts = [][]string{
 	{"999999999999999999"}, {"888888888888888888"}, {"777777777777777777"},
-}
-
-// Some of these will fail if the resource usage is below 3%, above 98%, etc.
-
-// this takes the place of individual tests for getSwap, getMemory, etc.
-/*
-func TestGetSwapOrMemory(t *testing.T) {
-	t.Parallel()
-	for _, status := range []string{"total", "used", "free"} {
-		for _, swapOrMem := range []string{"swap", "memory"} {
-			for _, units := range []string{"b", "kb", "mb", "gb", "tb"} {
-				result := getSwapOrMemory(status, swapOrMem, units)
-				if result < 0 {
-					msg := "getSwapOrMemory gave a negative result"
-					msg += "\n\tStatus: " + status
-					msg += "\n\tSwapOrMemory: " + swapOrMem
-					msg += "\n\tUnits: " + units
-					msg += "\n\tResult: " + fmt.Sprint(result)
-					t.Error(msg)
-				}
-			}
-		}
-	}
-}
-*/
-
-func TestGetUsedPercent(t *testing.T) {
-	t.Parallel()
-	for _, swapOrMem := range []string{"swap", "memory"} {
-		used := getUsedPercent(swapOrMem)
-		if used < 0 {
-			msg := "getUsedPercent reported negative " + swapOrMem + " usage"
-			msg += "\n\tUsed: " + fmt.Sprint(used)
-		}
-	}
 }
 
 func TestMemoryUsage(t *testing.T) {

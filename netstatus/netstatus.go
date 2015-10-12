@@ -1,8 +1,6 @@
-/*
-Package netutil provides some basic networking utilities, especially for health
-checking.
-*/
-package netutil
+// netstatus provides utility functions for querying several aspects of the
+// network/host, especially as pertains to monitoring.
+package netstatus
 
 import (
 	"github.com/CiscoCloud/distributive/chkutil"

@@ -1,22 +1,16 @@
-package workers
+package checks
 
 import (
 	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/dockerstatus"
 	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 )
-
-// getDockerImages returns a list of all downloaded Docker images
-func getDockerImages() (images []string) {
-	cmd := exec.Command("docker", "images")
-	return chkutil.CommandColumnNoHeader(0, cmd)
-}
 
 /*
 #### DockerImage
@@ -40,7 +34,10 @@ func (chk DockerImage) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk DockerImage) Status() (int, string, error) {
-	images := getDockerImages()
+	images, err := dockerstatus.DockerImageRepositories()
+	if err != nil {
+		return 1, "", err
+	}
 	if tabular.StrIn(chk.name, images) {
 		return errutil.Success()
 	}
@@ -70,33 +67,15 @@ func (chk DockerImageRegexp) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk DockerImageRegexp) Status() (int, string, error) {
-	images := getDockerImages()
+	images, err := dockerstatus.DockerImageRepositories()
+	if err != nil {
+		return 1, "", err
+	}
 	if tabular.ReIn(chk.re, images) {
 		return errutil.Success()
 	}
 	msg := "Docker image was not found."
 	return errutil.GenericError(msg, chk.re.String(), images)
-}
-
-// getRunningContainers returns a list of names of running docker containers
-func getRunningContainers() (containers []string) {
-	cmd := exec.Command("docker", "ps", "-a")
-	outstr := chkutil.CommandOutput(cmd)
-	// the output of `docker ps -a` has spaces in columns, but each column
-	// is separated by 2 or more spaces. Just what Probabalistic was made for!
-	lines := tabular.ProbabalisticSplit(outstr)
-	if len(lines) < 1 {
-		return []string{}
-	}
-	names := tabular.GetColumnByHeader("image", lines)
-	statuses := tabular.GetColumnByHeader("status", lines)
-	for i, status := range statuses {
-		// index error caught by second condition in if clause
-		if strings.Contains(status, "Up") && len(names) > i {
-			containers = append(containers, names[i])
-		}
-	}
-	return containers
 }
 
 /*
@@ -121,7 +100,10 @@ func (chk DockerRunning) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk DockerRunning) Status() (int, string, error) {
-	running := getRunningContainers()
+	running, err := dockerstatus.RunningContainers()
+	if err != nil {
+		return 1, "", err
+	}
 	if tabular.StrContainedIn(chk.name, running) {
 		return errutil.Success()
 	}
@@ -217,7 +199,10 @@ func (chk DockerRunningRegexp) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk DockerRunningRegexp) Status() (int, string, error) {
-	running := getRunningContainers()
+	running, err := dockerstatus.RunningContainers()
+	if err != nil {
+		return 1, "", err
+	}
 	if tabular.ReIn(chk.re, running) {
 		return errutil.Success()
 	}

@@ -1,4 +1,4 @@
-package netutil
+package netstatus
 
 import (
 	"fmt"

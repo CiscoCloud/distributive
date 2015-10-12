@@ -1,8 +1,8 @@
 package checklists
 
 import (
+	"github.com/CiscoCloud/distributive/checks"
 	"github.com/CiscoCloud/distributive/chkutil"
-	"github.com/CiscoCloud/distributive/workers"
 	log "github.com/Sirupsen/logrus"
 	"strings"
 )
@@ -14,134 +14,132 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 	switch strings.ToLower(chkjs.ID) {
 	/***************** docker.go *****************/
 	case "dockerimage":
-		return workers.DockerImage{}
+		return checks.DockerImage{}
 	case "dockerimageregexp":
-		return workers.DockerImageRegexp{}
+		return checks.DockerImageRegexp{}
 	case "dockerrunning":
-		return workers.DockerRunning{}
+		return checks.DockerRunning{}
 	case "dockerrunningapi":
-		return workers.DockerRunningAPI{}
+		return checks.DockerRunningAPI{}
 	case "dockerrunningregexp":
-		return workers.DockerRunningRegexp{}
+		return checks.DockerRunningRegexp{}
 		/***************** filesystem.go *****************/
 	case "file":
-		return workers.File{}
+		return checks.File{}
 	case "directory":
-		return workers.Directory{}
+		return checks.Directory{}
 	case "symlink":
-		return workers.Symlink{}
+		return checks.Symlink{}
 	case "checksum":
-		return workers.Checksum{}
+		return checks.Checksum{}
 	case "filematches":
-		return workers.FileMatches{}
+		return checks.FileMatches{}
 	case "permissions":
-		return workers.Permissions{}
+		return checks.Permissions{}
 		/***************** misc.go *****************/
 	case "command":
-		return workers.Command{}
+		return checks.Command{}
 	case "commandoutputmatches":
-		return workers.CommandOutputMatches{}
+		return checks.CommandOutputMatches{}
 	case "running":
-		return workers.Running{}
+		return checks.Running{}
 	case "temp":
-		return workers.Temp{}
+		return checks.Temp{}
 	case "module":
-		return workers.Module{}
+		return checks.Module{}
 	case "kernelparameter":
-		return workers.KernelParameter{}
+		return checks.KernelParameter{}
 	case "phpconfig":
-		return workers.PHPConfig{}
+		return checks.PHPConfig{}
 		/***************** network.go *****************/
 	case "port":
-		return workers.Port{}
+		return checks.Port{}
 	case "porttcp":
-		return workers.PortTCP{}
+		return checks.PortTCP{}
 	case "portudp":
-		return workers.PortUDP{}
+		return checks.PortUDP{}
 	case "interfaceexists":
-		return workers.InterfaceExists{}
+		return checks.InterfaceExists{}
 	case "up":
-		return workers.Up{}
+		return checks.Up{}
 	case "ip4":
-		return workers.IP4{}
+		return checks.IP4{}
 	case "ip6":
-		return workers.IP6{}
+		return checks.IP6{}
 	case "gateway":
-		return workers.Gateway{}
+		return checks.Gateway{}
 	case "gatewayinterface":
-		return workers.GatewayInterface{}
+		return checks.GatewayInterface{}
 	case "host":
-		return workers.Host{}
+		return checks.Host{}
 	case "tcp":
-		return workers.TCP{}
+		return checks.TCP{}
 	case "udp":
-		return workers.UDP{}
+		return checks.UDP{}
 	case "tcptimeout":
-		return workers.TCPTimeout{}
+		return checks.TCPTimeout{}
 	case "udptimeout":
-		return workers.UDPTimeout{}
+		return checks.UDPTimeout{}
 	case "routingtabledestination":
-		return workers.RoutingTableDestination{}
+		return checks.RoutingTableDestination{}
 	case "routingtableinterface":
-		return workers.RoutingTableInterface{}
+		return checks.RoutingTableInterface{}
 	case "routingtablegateway":
-		return workers.RoutingTableGateway{}
+		return checks.RoutingTableGateway{}
 	case "responsematches":
-		return workers.ResponseMatches{}
+		return checks.ResponseMatches{}
 	case "responsematchesinsecure":
-		return workers.ResponseMatchesInsecure{}
+		return checks.ResponseMatchesInsecure{}
 		/***************** packages.go *****************/
 	case "repoexists":
-		return workers.RepoExists{}
+		return checks.RepoExists{}
 	case "repoexistsuri":
-		return workers.RepoExistsURI{}
+		return checks.RepoExistsURI{}
 	case "pacmanignore":
-		return workers.PacmanIgnore{}
+		return checks.PacmanIgnore{}
 	case "installed":
-		return workers.Installed{}
+		return checks.Installed{}
 		/***************** systemctl.go *****************/
 	case "systemctlloaded":
-		return workers.SystemctlLoaded{}
+		return checks.SystemctlLoaded{}
 	case "systemctlactive":
-		return workers.SystemctlActive{}
+		return checks.SystemctlActive{}
 	case "systemctlsocklistening":
-		return workers.SystemctlSockListening{}
-	case "systemctlsockunit":
-		return workers.SystemctlSockUnit{}
+		return checks.SystemctlSockListening{}
 	case "systemctltimer":
-		return workers.SystemctlTimer{}
+		return checks.SystemctlTimer{}
 	case "systemctltimerloaded":
-		return workers.SystemctlTimerLoaded{}
+		return checks.SystemctlTimerLoaded{}
 		/***************** usage.go *****************/
 	case "memoryusage":
-		return workers.MemoryUsage{}
+		return checks.MemoryUsage{}
 	case "swapusage":
-		return workers.SwapUsage{}
+		return checks.SwapUsage{}
 	case "freememory":
-		return workers.FreeMemory{}
+		return checks.FreeMemory{}
 	case "freeswap":
-		return workers.FreeSwap{}
+		return checks.FreeSwap{}
 	case "cpuusage":
-		return workers.CPUUsage{}
+		return checks.CPUUsage{}
 	case "diskusage":
-		return workers.DiskUsage{}
+		return checks.DiskUsage{}
 		/***************** users-and-groups.go *****************/
 	case "groupexists":
-		return workers.GroupExists{}
+		return checks.GroupExists{}
 	case "useringroup":
-		return workers.UserInGroup{}
+		return checks.UserInGroup{}
 	case "groupid":
-		return workers.GroupID{}
+		return checks.GroupID{}
 	case "userexists":
-		return workers.UserExists{}
+		return checks.UserExists{}
 	case "userhasuid":
-		return workers.UserHasUID{}
+		return checks.UserHasUID{}
 	case "userhasgid":
-		return workers.UserHasGID{}
+		return checks.UserHasGID{}
 	case "userhasusername":
-		return workers.UserHasUsername{}
+		return checks.UserHasUsername{}
 	case "userhashomedir":
-		return workers.UserHasHomeDir{}
+		return checks.UserHasHomeDir{}
 	/***************** default *****************/
 	default:
 		log.WithFields(log.Fields{

@@ -1,10 +1,10 @@
-package workers
+package checks
 
 import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
-	"github.com/CiscoCloud/distributive/netutil"
+	"github.com/CiscoCloud/distributive/netstatus"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
 	"net"
@@ -54,12 +54,12 @@ func (chk Port) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Port) Status() (int, string, error) {
-	if netutil.PortOpen("tcp", chk.port) || netutil.PortOpen("udp", chk.port) {
+	if netstatus.PortOpen("tcp", chk.port) || netstatus.PortOpen("udp", chk.port) {
 		return errutil.Success()
 	}
 	// convert ports to string to send to errutil.GenericError
 	var strPorts []string
-	openPorts := append(netutil.OpenPorts("tcp"), netutil.OpenPorts("udp")...)
+	openPorts := append(netstatus.OpenPorts("tcp"), netstatus.OpenPorts("udp")...)
 	for _, port := range openPorts {
 		strPorts = append(strPorts, fmt.Sprint(port))
 	}
@@ -93,12 +93,12 @@ func (chk PortTCP) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk PortTCP) Status() (int, string, error) {
-	if netutil.PortOpen("tcp", chk.port) {
+	if netstatus.PortOpen("tcp", chk.port) {
 		return errutil.Success()
 	}
 	// convert ports to string to send to errutil.GenericError
 	var strPorts []string
-	for _, port := range netutil.OpenPorts("tcp") {
+	for _, port := range netstatus.OpenPorts("tcp") {
 		strPorts = append(strPorts, fmt.Sprint(port))
 	}
 	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
@@ -131,12 +131,12 @@ func (chk PortUDP) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk PortUDP) Status() (int, string, error) {
-	if netutil.PortOpen("udp", chk.port) {
+	if netstatus.PortOpen("udp", chk.port) {
 		return errutil.Success()
 	}
 	// convert ports to string to send to errutil.GenericError
 	var strPorts []string
-	for _, port := range netutil.OpenPorts("udp") {
+	for _, port := range netstatus.OpenPorts("udp") {
 		strPorts = append(strPorts, fmt.Sprint(port))
 	}
 	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
@@ -166,7 +166,7 @@ func (chk InterfaceExists) New(params []string) (chkutil.Check, error) {
 func (chk InterfaceExists) Status() (int, string, error) {
 	// getInterfaceNames returns the names of all network interfaces
 	getInterfaceNames := func() (interfaces []string) {
-		for _, iface := range netutil.GetInterfaces() {
+		for _, iface := range netstatus.GetInterfaces() {
 			interfaces = append(interfaces, iface.Name)
 		}
 		return
@@ -181,7 +181,7 @@ func (chk InterfaceExists) Status() (int, string, error) {
 }
 
 /*
-#### up
+#### Up
 Description: Is this interface up?
 Parameters:
   - Name (string): name of the interface
@@ -191,7 +191,7 @@ Example parameters:
 
 type Up struct{ name string }
 
-func (chk Up) ID() string { return "up" }
+func (chk Up) ID() string { return "Up" }
 
 func (chk Up) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -204,7 +204,7 @@ func (chk Up) New(params []string) (chkutil.Check, error) {
 func (chk Up) Status() (int, string, error) {
 	// getUpInterfaces returns all the names of the interfaces that are up
 	getUpInterfaces := func() (interfaceNames []string) {
-		for _, iface := range netutil.GetInterfaces() {
+		for _, iface := range netstatus.GetInterfaces() {
 			if iface.Flags&net.FlagUp != 0 {
 				interfaceNames = append(interfaceNames, iface.Name)
 			}
@@ -222,7 +222,7 @@ func (chk Up) Status() (int, string, error) {
 // ipCheck(int, string, error) is an abstraction of IP4 and
 // IP6
 func ipCheck(name string, address *net.IP, version int) (int, string, error) {
-	ips := netutil.InterfaceIPs(name)
+	ips := netstatus.InterfaceIPs(name)
 	for _, ip := range ips {
 		if ip.Equal(*address) {
 			return errutil.Success()
@@ -252,7 +252,7 @@ func (chk IP4) ID() string { return "IP4" }
 func (chk IP4) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
-	} else if !netutil.ValidIP(params[1]) {
+	} else if !netstatus.ValidIP(params[1]) {
 		return chk, errutil.ParameterTypeError{params[1], "IP"}
 	}
 	chk.name = params[0]
@@ -286,7 +286,7 @@ func (chk IP6) ID() string { return "IP6" }
 func (chk IP6) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
-	} else if !netutil.ValidIP(params[1]) {
+	} else if !netstatus.ValidIP(params[1]) {
 		return chk, errutil.ParameterTypeError{params[1], "IP"}
 	}
 	chk.name = params[0]
@@ -314,7 +314,7 @@ func (chk Gateway) ID() string { return "Gateway" }
 func (chk Gateway) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
-	} else if !netutil.ValidIP(params[0]) {
+	} else if !netstatus.ValidIP(params[0]) {
 		return chk, errutil.ParameterTypeError{params[0], "IP"}
 	}
 	chk.ip = net.ParseIP(params[0])
@@ -404,7 +404,7 @@ func (chk Host) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Host) Status() (int, string, error) {
-	if netutil.Resolvable(chk.hostname) {
+	if netstatus.Resolvable(chk.hostname) {
 		return errutil.Success()
 	}
 	return 1, "Host cannot be resolved: " + chk.hostname, nil
@@ -413,7 +413,7 @@ func (chk Host) Status() (int, string, error) {
 // TODO improve/fix
 // getConnection(int, string, error) is an abstraction of TCP and UDP
 func connectionCheck(host string, protocol string, timeout time.Duration) (int, string, error) {
-	if netutil.CanConnect(host, protocol, timeout) {
+	if netstatus.CanConnect(host, protocol, timeout) {
 		return errutil.Success()
 	}
 	return 1, "Could not connect over " + protocol + " to host: " + host, nil
@@ -572,7 +572,7 @@ func (chk RoutingTableDestination) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
 	}
-	if !netutil.ValidIP(params[0]) {
+	if !netstatus.ValidIP(params[0]) {
 		return chk, errutil.ParameterTypeError{params[0], "IP address"}
 	}
 	chk.ip = net.ParseIP(params[0])

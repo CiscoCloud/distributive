@@ -95,11 +95,11 @@ func SeparateByteUnits(str string) (int, string, error) {
 	// Warn the user upon failure, but should be shut down later
 	unit, err := getByteUnits(str)
 	if err != nil {
-		return 0, "", err
+		return 1, "", err
 	}
 	scalar, err := integerFromString(str)
 	if err != nil {
-		return 0, "", err
+		return 1, "", err
 	}
 	return scalar, unit, nil
 }

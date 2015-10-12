@@ -14,10 +14,6 @@
             "Parameters" : ["/var/run/docker.sock"]
         },
         {
-            "ID" : "systemctlSockUnit",
-            "Parameters" : ["docker.socket"]
-        },
-        {
             "ID" : "systemctlTimer",
             "Parameters" : ["man-db.timer"]
         },
