@@ -19,6 +19,9 @@ ENV GOBIN /gopath/bin
 ENV PATH $PATH:/gopath/bin
 RUN go get github.com/tools/godep
 ADD . /gopath/src/github.com/CiscoCloud/distributive
+# Note: docker-machine on Windows / OS X sometimes gets its time out of sync, which can cause SSL verification failures.
+# If this happens, `go get .`, will fail. If you run into this problem, uncomment out the following line and re-run `docker build .`.
+# RUN ntpd -d -q -n -p 0.pool.ntp.org
 RUN go get .
 RUN go build .
 
