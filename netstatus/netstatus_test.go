@@ -97,4 +97,14 @@ func TestCanConnect(t *testing.T) {
 			t.Error("Couldn't connect to host " + host)
 		}
 	}
+	badHosts := []string{"asdklfhabssdla.com:80", "lkjashldfb.com:80"}
+	for _, host := range badHosts {
+		duration, err := time.ParseDuration("20s")
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if CanConnect(host, "TCP", duration) {
+			t.Error("Could connect to host " + host)
+		}
+	}
 }
