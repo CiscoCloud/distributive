@@ -372,16 +372,21 @@ func (chk Installed) Status() (int, string, error) {
 	cmd := exec.Command(name, options, chk.pkg)
 	out, err := cmd.CombinedOutput()
 	outstr := string(out)
-	if strings.Contains(outstr, chk.pkg) {
+	var msg string
+	switch {
+	case err == nil && (name == "rpm" || name == "pacman"):
 		return errutil.Success()
-	} else if outstr != "" && err != nil {
-		// pacman - outstr == "", and exit code of 1 if it can't find the pkg
+	case name == "pacman" && strings.Contains(outstr, "not found"):
+	case name == "rpm" && strings.Contains(outstr, "not installed"):
+		msg := "Package was not found:"
+		msg += "\n\tPackage name: " + chk.pkg
+		msg += "\n\tPackage manager: " + name
+		msg += "\n\tCommand output: " + outstr
+		return 1, msg, nil
+	case err != nil:
 		errutil.ExecError(cmd, outstr, err)
+	default:
+		return errutil.Success()
 	}
-	msg := "Package was not found:"
-	msg += "\n\tPackage name: " + chk.pkg
-	msg += "\n\tPackage manager: " + name
-	msg += "\n\tCommand output: " + outstr
 	return 1, msg, nil
-
 }
