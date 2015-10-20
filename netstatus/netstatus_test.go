@@ -6,6 +6,30 @@ import (
 	"time"
 )
 
+func TestCanConnect(t *testing.T) {
+	t.Parallel()
+	goodHosts := []string{"eff.org:80", "google.com:80", "bing.com:80"}
+	for _, host := range goodHosts {
+		duration, err := time.ParseDuration("20s")
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if !CanConnect(host, "TCP", duration) {
+			t.Error("Couldn't connect to host " + host)
+		}
+	}
+	badHosts := []string{"asdklfhabssdla.com:80", "lkjashldfb.com:80"}
+	for _, host := range badHosts {
+		duration, err := time.ParseDuration("20s")
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if CanConnect(host, "TCP", duration) {
+			t.Error("Could connect to host " + host)
+		}
+	}
+}
+
 func TestGetHexPorts(t *testing.T) {
 	t.Parallel()
 	if len(GetHexPorts("tcp")) < 1 {
@@ -22,12 +46,20 @@ func TestOpenPorts(t *testing.T) {
 		if len(ports) < 1 {
 			t.Errorf("OpenPorts reported zero open ports for %s", protocol)
 		}
+		// test how many we can actually connect to as well (just FYI)
+		couldConnect := 0
 		for _, port := range ports {
 			if 0 > port || 65535 < port {
 				msg := "OpenPorts reported invalid port number on " + protocol
 				t.Errorf(msg+": %d", port)
+			} else {
+				dur, _ := time.ParseDuration("10s")
+				if CanConnect("localhost:"+fmt.Sprint(port), protocol, dur) {
+					couldConnect++
+				}
 			}
 		}
+		t.Logf("Could connect to %v/%v ports", couldConnect, len(ports))
 	}
 }
 
@@ -107,30 +139,6 @@ func TestResolvable(t *testing.T) {
 	for _, host := range badHosts {
 		if Resolvable(host) {
 			t.Error("Resolvable reported incorrectly for %s", host)
-		}
-	}
-}
-
-func TestCanConnect(t *testing.T) {
-	t.Parallel()
-	goodHosts := []string{"eff.org:80", "google.com:80", "bing.com:80"}
-	for _, host := range goodHosts {
-		duration, err := time.ParseDuration("20s")
-		if err != nil {
-			t.Error(err.Error())
-		}
-		if !CanConnect(host, "TCP", duration) {
-			t.Error("Couldn't connect to host " + host)
-		}
-	}
-	badHosts := []string{"asdklfhabssdla.com:80", "lkjashldfb.com:80"}
-	for _, host := range badHosts {
-		duration, err := time.ParseDuration("20s")
-		if err != nil {
-			t.Error(err.Error())
-		}
-		if CanConnect(host, "TCP", duration) {
-			t.Error("Could connect to host " + host)
 		}
 	}
 }
