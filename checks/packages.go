@@ -91,6 +91,10 @@ func getYumRepos() (repos []repo) {
 	// get and parse output of `yum repolist`
 	cmd := exec.Command("yum", "repolist")
 	outstr := chkutil.CommandOutput(cmd)
+	// handle empty case
+	if strings.Contains(outstr, "repolist: 0") {
+		return repos
+	}
 	slc := tabular.ProbabalisticSplit(outstr)
 
 	ids := tabular.GetColumnNoHeader(0, slc) // TODO use columnbyheader here
