@@ -27,7 +27,7 @@
         },
         {
             "ID" : "permissions",
-            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt", "-rw-rw-rw-"]
+            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt", "-rw-r--r--"]
         },
         {
             "ID": "diskUsage",
