@@ -1,0 +1,37 @@
+{
+    "Name": "Filesystem checks",
+    "Checklist" : [
+        {
+            "ID" : "file",
+            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt"]
+        },
+        {
+            "ID" : "directory",
+            "Parameters" : ["/proc"]
+        },
+        {
+            "ID" : "symlink",
+            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/symlink_checksum_test.txt"]
+        },
+        {
+            "ID" : "checksum",
+            "Parameters" : ["MD5", "d3b4ee24a6813207784ad46e93b2a24d", "/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt"]
+        },
+        {
+            "ID" : "checksum",
+            "Parameters" : ["SHA1", "5be648e76990668a6f684671fadf81dd18ed0863", "/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt"]
+        },
+        {
+            "ID" : "fileMatches",
+            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/filesystem_regex_test.txt", "\\d{8}"]
+        },
+        {
+            "ID" : "permissions",
+            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt", "-rw-rw-rw-"]
+        },
+        {
+            "ID": "diskUsage",
+            "Parameters": ["/", "90"]
+        }
+    ]
+}
