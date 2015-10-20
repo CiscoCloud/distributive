@@ -22,14 +22,9 @@ func TestSystemctlActive(t *testing.T) {
 
 func TestSystemctlSockPath(t *testing.T) {
 	t.Parallel()
-	goodEggs := [][]string{
-		{"/run/dbus/system_bus_socket"},
-		{"/run/systemd/journal/socket"},
-		{"/run/dmeventd-client"},
-	}
 	invalidInputs := append(notLengthOne, names...)
 	testParameters(fileParameters, invalidInputs, SystemctlSockListening{}, t)
-	testCheck(goodEggs, fileParameters, SystemctlSockListening{}, t)
+	testCheck([][]string{}, fileParameters, SystemctlSockListening{}, t)
 }
 
 func TestSystemctlTimer(t *testing.T) {

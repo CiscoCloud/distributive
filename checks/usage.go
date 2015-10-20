@@ -33,7 +33,7 @@ func (chk MemoryUsage) New(params []string) (chkutil.Check, error) {
 		return chk, errutil.ParameterLengthError{1, params}
 	}
 	per, err := strconv.ParseInt(strings.Replace(params[0], "%", "", -1), 10, 8)
-	if err != nil {
+	if strings.HasPrefix(params[0], "-") || err != nil {
 		return chk, errutil.ParameterTypeError{params[0], "uint8"}
 	}
 	chk.maxPercentUsed = uint8(per)
