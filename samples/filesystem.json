@@ -28,10 +28,6 @@
         {
             "ID" : "permissions",
             "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt", "-rw-r--r--"]
-        },
-        {
-            "ID": "diskUsage",
-            "Parameters": ["/", "90"]
         }
     ]
 }
