@@ -12,10 +12,6 @@
             "Parameters": ["/sbin/init"]
         },
         {
-            "ID" : "installed",
-            "Parameters" : ["urxvt"]
-        },
-        {
             "ID" : "module",
             "Parameters" : ["ext4"]
         },
