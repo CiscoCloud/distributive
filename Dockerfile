@@ -10,7 +10,7 @@ MAINTAINER Langston Barrett <langston@aster.is> (@siddharthist)
 # Note that Distributive doesn't have access to certain system information when
 # run in a container.
 
-RUN apk update && apk add bash go git && rm -rf /var/cache/apk/*
+RUN apk update && apk add bash go git php-cli && rm -rf /var/cache/apk/*
 
 WORKDIR /gopath/src/github.com/CiscoCloud/distributive
 RUN mkdir -p /gopath/{bin,src}
@@ -26,4 +26,4 @@ ADD . /gopath/src/github.com/CiscoCloud/distributive
 RUN go get .
 RUN go build .
 
-CMD ["distributive", "-f", "/gopath/src/github.com/CiscoCloud/distributive/samples/docker-alpine.json", "-d", "", "--verbosity", "info"]
+CMD ["distributive", "-f", "/gopath/src/github.com/CiscoCloud/distributive/samples/filesystem.json", "-d", "", "--verbosity", "info"]
