@@ -29,7 +29,7 @@
         },
         {
             "ID" : "commandOutputMatches",
-            "Parameters" : ["echo works", "\\w[aeiou]+(y) r[kl]s"]
+            "Parameters" : ["echo works", "\\w[aeiou]+(y)*r[kl]s"]
         }
     ]
 }
