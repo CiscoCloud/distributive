@@ -66,9 +66,9 @@ releases. You can view the RPM source and build RPM snapshots at
 Usage
 -----
 
-The default behavior is to run all checks in /etc/distributive.d/ (the default
-directory give to the `-d` option), in addition to any specified via the `-f`
-`-u`, or `-s` options.
+The default behavior is to run any checks specified via `-f`, `-u`, `-s`,
+or `-d` options, or all checks in /etc/distributive.d/ if no location is
+specified.
 
 ```
 $ distributive --help
@@ -93,10 +93,10 @@ Examples:
 
 ```
 $ /path/to/distributive --verbosity="warn" -f ./samples/filesystem.json
-$ distributive -d="" --f="/etc/distributive/samples/network.json" --verbosity=debug
-$ ./distributive -d="" -u "http://pastebin.com/raw.php?i=5c1BAxcX"
+$ distributive --f="/etc/distributive/samples/network.json" --verbosity=debug
+$ ./distributive -u "http://pastebin.com/raw.php?i=5c1BAxcX"
 $ /distributive --verbosity="info"
-$ /path/to/distributive -d "/etc/distributive.d/"
+$ /path/to/distributive -d "/etc/distributive.d/" # same as default behavior
 $ cat samples/filesystem.json | ./distributive -d "" -s=true --verbosity=fatal
 ```
 
@@ -132,7 +132,7 @@ packages. These dependencies are outlined for each check on our
 Comparison to Other Software
 ============================
 
-Distributive was created with the idea of pushing responsibiliy to the nodes,
+Distributive was created with the idea of pushing responsibility to the nodes,
 It was also designed around the idea of constantly changing infrastructure, with
 servers being added and destroyed constantly, changing IP addresses, and even
 changing roles. Integration with Consul provides even
