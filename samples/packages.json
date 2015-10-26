@@ -3,19 +3,7 @@
     "Checklist" : [
         {
             "ID" : "installed",
-            "Parameters" : ["urxvt"]
-        },
-        {
-            "ID" : "repoExistsUri",
-            "Parameters" : ["rpm", "http://apt.sw.be/fedora/$releasever/en/$basearch/dag/"]
-        },
-        {
-            "ID" : "repoexists",
-            "Parameters" : ["rpm", "core"]
-        },
-        {
-            "ID" : "pacmanIgnore",
-            "Parameters" : ["pulseaudio"]
+            "Parameters" : ["git"]
         }
     ]
 }

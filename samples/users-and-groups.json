@@ -3,11 +3,7 @@
     "Checklist" : [
         {
             "ID" : "groupExists",
-            "Parameters" : ["wheel"]
-        },
-        {
-            "ID" : "userInGroup",
-            "Parameters" : ["root", "wheel"]
+            "Parameters" : ["sudo"]
         },
         {
             "ID" : "groupExists",
@@ -26,16 +22,8 @@
             "Parameters" : ["root", "0"]
         },
         {
-            "ID" : "userHasGID",
-            "Parameters" : ["lb", "100"]
-        },
-        {
             "ID" : "UserHasHomeDir",
             "Parameters" : ["root", "/root"]
-        },
-        {
-            "ID" : "UserHasHomeDir",
-            "Parameters" : ["lb", "/home/lb"]
         }
     ]
 }

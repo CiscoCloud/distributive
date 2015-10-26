@@ -2,22 +2,9 @@
     "Name": "Miscellaneous system checks",
     "Checklist" : [
         {
-            "Name": "CPU temperature threshold",
-            "ID": "temp",
-            "Parameters": ["80"]
-        },
-        {
-            "Name": "/sbin/init check",
+            "Name": "shell running check",
             "ID" : "running",
-            "Parameters": ["/sbin/init"]
-        },
-        {
-            "ID" : "module",
-            "Parameters" : ["ext4"]
-        },
-        {
-            "ID" : "kernelParameter",
-            "Parameters" : ["kernel.ctrl-alt-del"]
+            "Parameters": ["ps"]
         },
         {
             "ID" : "phpConfig",
