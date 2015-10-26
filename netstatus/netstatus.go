@@ -3,6 +3,7 @@
 package netstatus
 
 import (
+	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
@@ -13,7 +14,7 @@ import (
 	"time"
 )
 
-// GetHexPorts gets all open ports as hex strings from /proc/net/tcp
+// GetHexPorts gets all open ports as hex strings from /proc/net/{tcp,udp}
 // Its protocol argument can only be one of: "tcp" | "udp"
 func GetHexPorts(protocol string) (ports []string) {
 	var path string
@@ -50,7 +51,9 @@ func GetHexPorts(protocol string) (ports []string) {
 	return ports
 }
 
-// OpenPorts gets a list of open/listening TCP or UDP ports as integers.
+// OpenPorts gets a list of open/listening TCP or UDP ports as integers from
+// the information at /proc/net/tcp and /proc/net/udp, which may not reflect
+// all of the ports that can be accessed externally.
 // Its protocol argument can only be one of: "tcp" | "udp"
 func OpenPorts(protocol string) (ports []uint16) {
 	// strHexToDecimal converts from string containing hex number to int
@@ -73,15 +76,11 @@ func OpenPorts(protocol string) (ports []uint16) {
 // PortOpen reports whether or not the given (decimal) port is open
 // Its protocol argument can only be one of: "tcp" | "udp"
 func PortOpen(protocol string, port uint16) bool {
-	uint16In := func(n uint16, slc []uint16) bool {
-		for _, nPrime := range slc {
-			if n == nPrime {
-				return true
-			}
-		}
-		return false
+	dur, err := time.ParseDuration("5s")
+	if err != nil {
+		log.Fatal(err)
 	}
-	return uint16In(port, OpenPorts(protocol))
+	return CanConnect("localhost"+fmt.Sprint(port), protocol, dur)
 }
 
 // ValidIP returns a boolean answering the question "is this a valid IPV4/6
