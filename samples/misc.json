@@ -1,5 +1,5 @@
 {
-    "Name": "Miscellanious system checks",
+    "Name": "Miscellaneous system checks",
     "Checklist" : [
         {
             "Name": "CPU temperature threshold",
@@ -10,10 +10,6 @@
             "Name": "/sbin/init check",
             "ID" : "running",
             "Parameters": ["/sbin/init"]
-        },
-        {
-            "ID" : "installed",
-            "Parameters" : ["urxvt"]
         },
         {
             "ID" : "module",

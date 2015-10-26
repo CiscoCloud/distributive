@@ -344,7 +344,7 @@ func (chk PHPConfig) Status() (int, string, error) {
 		quote := func(str string) string {
 			return "\"" + str + "\""
 		}
-		// php -r 'echo get_cfg_var("default_mimetype");
+		// php -r 'echo get_cfg_var("default_mimetype");'
 		echo := fmt.Sprintf("echo get_cfg_var(%s);", quote(name))
 		cmd := exec.Command("php", "-r", echo)
 		out, err := cmd.CombinedOutput()

@@ -20,6 +20,10 @@
         {
             "ID": "freeSwap",
             "Parameters": ["1kb"]
+        },
+        {
+            "ID": "diskUsage",
+            "Parameters": ["/", "90"]
         }
     ]
 }
