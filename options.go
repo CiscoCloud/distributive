@@ -102,7 +102,7 @@ func getFlags() (f string, u string, d string, s bool) {
 		},
 		cli.StringFlag{
 			Name:  "directory, d",
-			Value: "/etc/distributive.d/",
+			Value: "",
 			Usage: "Read all of the checklists in this directory",
 		},
 		cli.BoolFlag{
@@ -129,6 +129,11 @@ func getFlags() (f string, u string, d string, s bool) {
 		URL = c.String("url")
 		directory = c.String("directory")
 		stdin = c.Bool("stdin")
+
+		if file == "" && URL == "" && stdin == false && directory == "" {
+			// use default directory if no other options specified
+			directory = "/etc/distributive.d/"
+		}
 		log.WithFields(log.Fields{
 			"file":      file,
 			"URL":       URL,
