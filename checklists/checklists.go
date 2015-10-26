@@ -38,7 +38,7 @@ func (chklst *Checklist) MakeReport() (anyFailed bool, report string) {
 	codes := make(chan int)
 	msgs := make(chan string)
 	for _, chk := range chklst.Checks {
-		log.Info("Running checklist " + chk.ID())
+		log.Info("Running check " + chk.ID())
 		go func(chk chkutil.Check, codes chan int, msgs chan string) {
 			log.Debug("Running check " + chk.ID())
 			code, msg, err := chk.Status()
