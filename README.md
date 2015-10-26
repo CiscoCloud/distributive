@@ -24,7 +24,7 @@ Overview
 This readme documents the current (development) version of distributive.
 
 Distributive is a tool for running distributed health checks in datacenters.
-It was designed with Consul in mind, but is platform agnostic. It is simple
+It was designed with Consul in mind, but is stack agnostic. It is simple
 to configure (with JSON checklists) and easy to deploy and run. It has no
 dependencies, and can be shipped as a speedy 1.3MB (yes, megabytes!) binary.
 
@@ -62,6 +62,8 @@ installed, etc.).
 We also provide premade RPM packages on [Bintray][bintray] for versioned
 releases. You can view the RPM source and build RPM snapshots at
 [distributive-rpm][distributive-rpm].
+
+Distributive currently only supports Linux.
 
 Usage
 -----
