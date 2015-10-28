@@ -1,0 +1,7 @@
+*_test.go
+.dockerignore
+.git*
+.travis.yml
+Dockerfile
+README.md
+packaging/*
