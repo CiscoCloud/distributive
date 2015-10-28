@@ -2,80 +2,36 @@
     "Name": "Network checks",
     "Checklist" : [
         {
-            "ID": "port",
-            "Parameters": ["80"]
-        },
-        {
-            "ID": "portTCP",
-            "Parameters": ["80"]
-        },
-        {
-            "ID": "portUDP",
-            "Parameters": ["80"]
-        },
-        {
             "ID" : "interfaceExists",
-            "Parameters" : ["docker0"]
-        },
-        {
-            "ID" : "interfaceExists",
-            "Parameters" : ["wlp1s0"]
-        },
-        {
-            "ID" : "interfaceExists",
-            "Parameters" : ["lo"]
+            "Parameters" : ["eth0"]
         },
         {
             "ID" : "up",
-            "Parameters": ["wlp1s0"]
-        },
-        {
-            "ID" : "ip4",
-            "Parameters" : ["wlp1s0", "10.60.91.12"]
-        },
-        {
-            "ID" : "ip6",
-            "Parameters" : ["wlp1s0", "fe80::59bf:babe:f7bb:a327"]
-        },
-        {
-            "ID" : "gateway",
-            "Parameters" : ["192.168.0.1"]
+            "Parameters": ["eth0"]
         },
         {
             "ID" : "gatewayInterface",
-            "Parameters" : ["wlp1s0"]
-        },
-        {
-            "ID" : "gatewayInterface",
-            "Parameters" : ["docker0"]
+            "Parameters" : ["eth0"]
         },
         {
             "ID" : "host",
-            "Parameters" : ["google.com"]
+            "Parameters" : ["github.com"]
         },
         {
             "ID" : "TCP",
-            "Parameters" : ["google.com:80"]
+            "Parameters" : ["github.com:80"]
         },
         {
             "ID" : "UDP",
-            "Parameters" : ["google.com:80"]
+            "Parameters" : ["github.com:80"]
         },
         {
             "ID" : "UDP",
-            "Parameters" : ["yahoo.com:80"]
-        },
-        {
-            "ID" : "routingTableDestination",
-            "Parameters" : ["192.168.0.0"]
+            "Parameters" : ["github.com:80"]
         },
         {
             "ID" : "routingTableInterface",
-            "Parameters" : ["docker0"]
-        },
-        {
-            "ID" : "routingTableGateway",
-            "Parameters" : ["192.168.0.1"]
+            "Parameters" : ["eth0"]
         },
         {
             "ID" : "tcpTimeout",
