@@ -164,6 +164,7 @@ Depedencies:
   - A configured lm-sensors (namely, `sensors`)
 */
 
+// TODO use uint
 type Temp struct{ max int16 }
 
 func (chk Temp) ID() string { return "Temp" }
@@ -192,7 +193,7 @@ func (chk Temp) Status() (int, string, error) {
 		out, err := cmd.CombinedOutput()
 		outstr := string(out)
 		errutil.ExecError(cmd, outstr, err)
-		restr := `Core\s\d+:\s+[\+\-](?P<Temp>\d+)\.*\d*°C`
+		restr := `Core\s\d+:\s+[\+\-](?P<Temp>\d+)\.*\d*(°|\s)C`
 		re := regexp.MustCompile(restr)
 		for _, line := range regexp.MustCompile(`\n+`).Split(outstr, -1) {
 			if re.MatchString(line) {

@@ -3,6 +3,7 @@ package checks
 import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/tabular"
+	"strings"
 	"testing"
 )
 
@@ -29,10 +30,16 @@ func TestGetRepos(t *testing.T) {
 
 func TestRepoExists(t *testing.T) {
 	t.Parallel()
-	validInputs := reverseAppendParameter(names, getManager())
+	// dpkg will fail on invalid package name
+	validPackageNames := [][]string{}
+	for _, name := range names {
+		newName := strings.Replace(name[0], " ", "-", -1)
+		validPackageNames = append(validPackageNames, []string{newName})
+	}
+	validInputs := reverseAppendParameter(validPackageNames, getManager())
 	invalidInputs := reverseAppendParameter(names, "nonsense")
 	goodEggs := [][]string{}
-	badEggs := reverseAppendParameter(names, getManager())
+	badEggs := reverseAppendParameter(validPackageNames, getManager())
 	invalidInputs = append(invalidInputs, notLengthTwo...)
 	testParameters(validInputs, invalidInputs, RepoExists{}, t)
 	testCheck(goodEggs, badEggs, RepoExists{}, t)
@@ -40,11 +47,17 @@ func TestRepoExists(t *testing.T) {
 
 func TestRepoExistsURI(t *testing.T) {
 	t.Parallel()
-	validInputs := reverseAppendParameter(names, getManager())
+	// dpkg will fail on invalid package name
+	validPackageNames := [][]string{}
+	for _, name := range names {
+		newName := strings.Replace(name[0], " ", "-", -1)
+		validPackageNames = append(validPackageNames, []string{newName})
+	}
+	validInputs := reverseAppendParameter(validPackageNames, getManager())
 	invalidInputs := reverseAppendParameter(names, "nonsense")
 	invalidInputs = append(invalidInputs, notLengthTwo...)
 	goodEggs := [][]string{}
-	badEggs := reverseAppendParameter(names, getManager())
+	badEggs := reverseAppendParameter(validPackageNames, getManager())
 	testParameters(validInputs, invalidInputs, RepoExistsURI{}, t)
 	testCheck(goodEggs, badEggs, RepoExistsURI{}, t)
 }
@@ -59,6 +72,12 @@ func TestPacmanIgnore(t *testing.T) {
 
 func TestInstalled(t *testing.T) {
 	t.Parallel()
-	testParameters(names, notLengthOne, Installed{}, t)
+	// dpkg will fail on invalid package name
+	validPackageNames := [][]string{}
+	for _, name := range names {
+		newName := strings.Replace(name[0], " ", "-", -1)
+		validPackageNames = append(validPackageNames, []string{newName})
+	}
+	testParameters(validPackageNames, notLengthOne, Installed{}, t)
 	testCheck([][]string{}, names, Installed{}, t)
 }

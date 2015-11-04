@@ -16,7 +16,7 @@ func TestSwapOrMemory(t *testing.T) {
 					t.Error("swapOrMemory failed unexpectedly")
 				}
 				if amt < 0 {
-					t.Error("swapOrMemory reported negative")
+					t.Errorf("swapOrMemory reported negative: %v", amt)
 				}
 			}
 		}
@@ -31,7 +31,7 @@ func TestFreeMemory(t *testing.T) {
 			t.Error("FreeMemory failed unexpectedly")
 		}
 		if amt < 0 {
-			t.Error("FreeMemory reported negative")
+			t.Errorf("FreeMemory reported negative: %v", amt)
 		}
 	}
 }
@@ -44,7 +44,7 @@ func TestUsedMemory(t *testing.T) {
 			t.Error("UsedMemory failed unexpectedly")
 		}
 		if amt < 0 {
-			t.Error("UsedMemory reported negative")
+			t.Errorf("UsedMemory reported negative: %v", amt)
 		}
 	}
 }
@@ -57,7 +57,7 @@ func TestFreeSwap(t *testing.T) {
 			t.Error("FreeSwap failed unexpectedly")
 		}
 		if amt < 0 {
-			t.Error("FreeSwap reported negative")
+			t.Errorf("FreeSwap reported negative: %v", amt)
 		}
 	}
 }
@@ -70,7 +70,7 @@ func TestUsedSwap(t *testing.T) {
 			t.Error("UsedSwap failed unexpectedly")
 		}
 		if amt < 0 {
-			t.Error("UsedSwap reported negative")
+			t.Errorf("UsedSwap reported negative: %v", amt)
 		}
 	}
 }

@@ -12,8 +12,8 @@ MAINTAINER Langston Barrett <langston@aster.is> (@siddharthist)
 
 RUN apt-get update
 # network: net-tools
-# misc: lm-sensors, php5-cli
-RUN apt-get install -y bash golang git php5-cli lm-sensors net-tools && apt-get clean
+# misc: lm-sensors, php5-cli, module-init-tools
+RUN apt-get install -y module-init-tools bash golang git php5-cli lm-sensors net-tools && apt-get clean
 
 WORKDIR /gopath/src/github.com/CiscoCloud/distributive
 RUN mkdir -p /gopath/{bin,src}
@@ -27,7 +27,8 @@ ADD . /gopath/src/github.com/CiscoCloud/distributive
 # fail. If you run into this problem, run this command at your terminal:
 # docker-machine ssh ${machine} 'sudo ntpclient -s -h pool.ntp.org'
 # After that, you can retry `docker build .`.
-RUN go get .
-RUN go build .
+RUN godep go install .
+# Tests don't all pass in this Docker container, but they will soon!
+#RUN godep go test  --short ./...
 
 CMD ["distributive", "-d", "/gopath/src/github.com/CiscoCloud/distributive/samples/", "--verbosity", "info"]
