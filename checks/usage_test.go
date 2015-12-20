@@ -68,3 +68,13 @@ func TestDiskUsage(t *testing.T) {
 	testParameters(validInputs, invalidInputs, DiskUsage{}, t)
 	testCheck(goodEggs, badEggs, DiskUsage{}, t)
 }
+
+func TestInodeUsage(t *testing.T) {
+	t.Parallel()
+	// TODO: unknown which filesystems would be valid inputs, hence good/bad eggs
+	validInputs := [][]string{}
+	invalidInputs := append(notLengthTwo,
+		[][]string{{"", ""}, {}, {"testfail", "garble"}, {"/dev/testfail"}}...,
+	)
+	testParameters(validInputs, invalidInputs, DiskUsage{}, t)
+}

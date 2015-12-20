@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/fsstatus"
 	"github.com/CiscoCloud/distributive/memstatus"
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
@@ -18,9 +19,9 @@ import (
 #### MemoryUsage
 Description: Is system memory usage below this threshold?
 Parameters:
-  - Percent (int8 percentage): Maximum acceptable percentage memory used
+- Percent (int8 percentage): Maximum acceptable percentage memory used
 Example parameters:
-  - 95%, 90%, 87%
+- 95%, 90%, 87%
 */
 
 // TODO use a uint
@@ -123,9 +124,9 @@ func freeMemOrSwap(input string, swapOrMem string) (int, string, error) {
 #### FreeMemory
 Description: Is at least this amount of memory free?
 Parameters:
-  - Amount (string with byte unit): minimum acceptable amount of free memory
+- Amount (string with byte unit): minimum acceptable amount of free memory
 Example parameters:
-  - 100mb, 1gb, 3TB, 20kib
+- 100mb, 1gb, 3TB, 20kib
 */
 
 type FreeMemory struct{ amount string }
@@ -205,9 +206,9 @@ func getCPUSample() (idle, total uint64) {
 #### CPUUsage
 Description: Is the cpu usage below this percentage in a 3 second interval?
 Parameters:
-  - Percent (int8 percentage): Maximum acceptable percentage used
+- Percent (int8 percentage): Maximum acceptable percentage used
 Example parameters:
-  - 95%, 90%, 87%
+- 95%, 90%, 87%
 */
 
 // TODO use a uint
@@ -250,11 +251,11 @@ func (chk CPUUsage) Status() (int, string, error) {
 #### DiskUsage
 Description: Is the disk usage below this percentage?
 Parameters:
-  - Path (filepath): Path to the disk
-  - Percent (int8 percentage): Maximum acceptable percentage used
+- Path (filepath): Path to the disk
+- Percent (int8 percentage): Maximum acceptable percentage used
 Example parameters:
-  - /dev/sda1, /mnt/my-disk/
-  - 95%, 90%, 87%
+- /dev/sda1, /mnt/my-disk/
+- 95%, 90%, 87%
 */
 
 // TODO use a uint
@@ -281,6 +282,7 @@ func (chk DiskUsage) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk DiskUsage) Status() (int, string, error) {
+	// TODO: migrate to fsstatus
 	// percentFSUsed gets the percent of the filesystem that is occupied
 	percentFSUsed := func(path string) int {
 		// get FS info (*nix systems only!)
@@ -297,6 +299,50 @@ func (chk DiskUsage) Status() (int, string, error) {
 	}
 	actualPercentUsed := percentFSUsed(chk.path)
 	if actualPercentUsed < int(chk.maxPercentUsed) {
+		return errutil.Success()
+	}
+	msg := "More disk space used than expected"
+	slc := []string{fmt.Sprint(actualPercentUsed) + "%"}
+	return errutil.GenericError(msg, fmt.Sprint(chk.maxPercentUsed)+"%", slc)
+}
+
+/*
+#### InodeUsage
+Description: Is the inode usage below this percentage?
+Parameters:
+- Filesystem (string): Filesystem as shown by `df -i`
+- Percent (int8 percentage): Maximum acceptable percentage used
+Example parameters:
+- /dev/sda1, /mnt/my-disk/, tmpfs
+- 95%, 90%, 87%
+*/
+
+type InodeUsage struct {
+	filesystem     string
+	maxPercentUsed uint8
+}
+
+func (chk InodeUsage) ID() string { return "DiskUsage" }
+
+func (chk InodeUsage) New(params []string) (chkutil.Check, error) {
+	if len(params) != 2 {
+		return chk, errutil.ParameterLengthError{2, params}
+	}
+	per, err := strconv.ParseUint(strings.Replace(params[1], "%", "", -1), 10, 8)
+	if err != nil {
+		return chk, errutil.ParameterTypeError{params[1], "int8"}
+	}
+	chk.filesystem = params[0]
+	chk.maxPercentUsed = uint8(per)
+	return chk, nil
+}
+
+func (chk InodeUsage) Status() (int, string, error) {
+	actualPercentUsed, err := fsstatus.PercentInodesUsed(chk.filesystem)
+	if err != nil {
+		return 1, "Unexpected error", err
+	}
+	if actualPercentUsed < chk.maxPercentUsed {
 		return errutil.Success()
 	}
 	msg := "More disk space used than expected"

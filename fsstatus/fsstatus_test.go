@@ -1,6 +1,7 @@
 package fsstatus
 
 import (
+	"math"
 	"testing"
 )
 
@@ -67,5 +68,63 @@ func TestChecksum(t *testing.T) {
 		if actual != trio[2] {
 			t.Error("Data did not have expected checksum: %s", trio[0])
 		}
+	}
+}
+
+// Type of function that counts inodes
+type inodeFun func(string) (uint64, error)
+
+func testInodeCountingFunction(t *testing.T, f inodeFun, fName string) {
+	// test bad names, make sure they throw errors
+	for _, name := range []string{"askdjlfba", "", "12034", "testfail"} {
+		_, err := f(name)
+		if err == nil {
+			msg := "Got nil error with filesystem name %v and function %v"
+			t.Errorf(msg, name, fName)
+		}
+	}
+
+}
+
+func TestInodeCountingFunctions(t *testing.T) {
+	t.Parallel()
+	testInodeCountingFunction(t, FreeInodes, "FreeInodes")
+	testInodeCountingFunction(t, UsedInodes, "UsedInodes")
+	testInodeCountingFunction(t, TotalInodes, "TotalInodes")
+	// TODO: is the dev filesystem available on all systems?
+	filesystem := "dev"
+	free, freeErr := FreeInodes(filesystem)
+	used, usedErr := UsedInodes(filesystem)
+	total, totalErr := TotalInodes(filesystem)
+	for _, err := range []error{freeErr, usedErr, totalErr} {
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	if free+used != total {
+		msg := "(free inodes) + (used inodes) != (total inodes), %v + %v != %v"
+		t.Errorf(msg, free, used, total)
+	}
+}
+
+func TestInodePercentFunction(t *testing.T) {
+	t.Parallel()
+	// assume no errors because we just tested these
+	// TODO: is the dev filesystem available on all systems?
+	filesystem := "dev"
+	used, _ := UsedInodes(filesystem)
+	total, _ := TotalInodes(filesystem)
+	givenPercent, err := PercentInodesUsed(filesystem)
+	if err != nil {
+		t.Error(err)
+	}
+	// GNU Coreutils rounds the percent up. see lines 1092-1095 here:
+	// http://git.savannah.gnu.org/gitweb/?p=coreutils.git;a=blob;f=src/df.c;h=c1c1e683178f843febeb167224fe8ad2a1122a4f;hb=5148302771f1e36f3ea3e7ed33e55bd7a7a1cc3b
+	calculatedPercent := uint8(math.Ceil((float64(used) / float64(total)) * 100))
+	t.Logf("Used: %v, total: %v", used, total)
+	t.Logf("used/total = %v", float32(used)/float32(total))
+	if math.Abs(float64(calculatedPercent-givenPercent)) >= 1 {
+		msg := "Calculated percent (%v) ≉ Given percent: (%v)"
+		t.Errorf(msg, calculatedPercent, givenPercent)
 	}
 }

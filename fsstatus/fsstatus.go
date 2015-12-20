@@ -8,11 +8,13 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
-	"errors"
 	"fmt"
+	"github.com/CiscoCloud/distributive/tabular"
 	"golang.org/x/crypto/sha3"
 	"hash"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -78,8 +80,8 @@ func Checksum(algorithm string, data []byte) (checksum string, err error) {
 	case "SHA3512":
 		hasher = sha3.New512()
 	default:
-		msg := "Invalid algorithm parameter passed go Checksum: "
-		return checksum, errors.New(msg + algorithm)
+		msg := "Invalid algorithm parameter passed go Checksum: %s"
+		return checksum, fmt.Errorf(msg, algorithm)
 	}
 	hasher.Write(data)
 	str := hex.EncodeToString(hasher.Sum(nil))
@@ -95,4 +97,68 @@ func FileHasPermissions(expectedPerms string, path string) (bool, error) {
 	}
 	actualMode := fmt.Sprint(finfo.Mode().Perm()) // -rwxrw-r-- format
 	return (actualMode == expectedPerms), nil
+}
+
+// how many inodes are in this given state? state can be one of:
+// total, used, free, percent
+func inodesInState(filesystem, state string) (total uint64, err error) {
+	cmd := exec.Command("df", "-i")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return total, err
+	}
+	table := tabular.ProbabalisticSplit(string(out))
+	filesystems := tabular.GetColumnByHeader("Filesystem", table)
+	var totals []string
+	switch state {
+	case "total":
+		totals = tabular.GetColumnByHeader("Inodes", table)
+	case "free":
+		totals = tabular.GetColumnByHeader("IFree", table)
+	case "used":
+		totals = tabular.GetColumnByHeader("IUsed", table)
+	case "percent":
+		totals = tabular.GetColumnByHeader("IUse%", table)
+	default:
+		formatStr := "Internal error: unexpected state in inodesInState: %v"
+		return total, fmt.Errorf(formatStr, state)
+	}
+	if len(filesystems) != len(totals) {
+		formatStr := "The number of filesystems (%d) didn't match the number of"
+		formatStr += " inode totals (%d)!"
+		return total, fmt.Errorf(formatStr, len(filesystems), len(totals))
+	}
+	for i := range totals {
+		if filesystems[i] == filesystem {
+			// trim the % in case the state was "percent"
+			return strconv.ParseUint(strings.TrimSuffix(totals[i], "%"), 10, 64)
+		}
+	}
+	return total, fmt.Errorf("Couldn't find that filesystem: " + filesystem)
+}
+
+// FreeInodes reports the number of free inodes in a given filesystem, e.g.
+// /dev/sda1, as given by `df -i`
+func FreeInodes(filesystem string) (free uint64, err error) {
+	return inodesInState(filesystem, "free")
+}
+
+// UsedInodes is like FreeInodes
+func UsedInodes(filesystem string) (used uint64, err error) {
+	return inodesInState(filesystem, "used")
+}
+
+// TotalInodes is like FreeInodes
+func TotalInodes(filesystem string) (total uint64, err error) {
+	return inodesInState(filesystem, "total")
+}
+
+// PercentInodesUsed reports the percentage given by `df -i`, which is ceilinged
+// to the next integer value, so a percent like .001% would round to 1%.
+func PercentInodesUsed(filesystem string) (percent uint8, err error) {
+	percent64, err := inodesInState(filesystem, "percent")
+	if err != nil {
+		return percent, err
+	}
+	return uint8(percent64), err
 }
