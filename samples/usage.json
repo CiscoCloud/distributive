@@ -27,7 +27,7 @@
         },
         {
             "ID": "inodeUsage",
-            "Parameters": ["dev", "0"]
+            "Parameters": ["tmpfs", "90"]
         }
     ]
 }
