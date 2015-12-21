@@ -123,6 +123,8 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 		return checks.CPUUsage{}
 	case "diskusage":
 		return checks.DiskUsage{}
+	case "inodeusage":
+		return checks.InodeUsage{}
 		/***************** users-and-groups.go *****************/
 	case "groupexists":
 		return checks.GroupExists{}
@@ -140,7 +142,7 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 		return checks.UserHasUsername{}
 	case "userhashomedir":
 		return checks.UserHasHomeDir{}
-	/***************** default *****************/
+		/***************** default *****************/
 	default:
 		log.WithFields(log.Fields{
 			"id": chkjs.ID,

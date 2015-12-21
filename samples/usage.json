@@ -24,6 +24,10 @@
         {
             "ID": "diskUsage",
             "Parameters": ["/", "90"]
+        },
+        {
+            "ID": "inodeUsage",
+            "Parameters": ["tmpfs", "90"]
         }
     ]
 }
