@@ -376,6 +376,8 @@ func (chk Installed) Status() (int, string, error) {
 	switch {
 	case err == nil && (name == "rpm" || name == "pacman"):
 		return errutil.Success()
+	// failures due to mising package
+	case name == "dpkg" && strings.Contains(outstr, "not installed"):
 	case name == "pacman" && strings.Contains(outstr, "not found"):
 	case name == "rpm" && strings.Contains(outstr, "not installed"):
 		msg := "Package was not found:"
@@ -383,6 +385,7 @@ func (chk Installed) Status() (int, string, error) {
 		msg += "\n\tPackage manager: " + name
 		msg += "\n\tCommand output: " + outstr
 		return 1, msg, nil
+	// failures that were not due to packages not being installed
 	case err != nil:
 		errutil.ExecError(cmd, outstr, err)
 	default:

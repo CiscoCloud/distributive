@@ -16,7 +16,7 @@ func ServiceLoaded(name string) (bool, error) {
 	cmd := exec.Command("systemctl", "show", "-p", "LoadState", name)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return false, err
+		return false, errors.New(err.Error() + ": output: " + string(out))
 	}
 	return strings.Contains(string(out), "LoadState=loaded"), nil
 }
@@ -27,7 +27,7 @@ func ServiceActive(name string) (bool, error) {
 	cmd := exec.Command("systemctl", "show", "-p", "ActiveState", name)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return false, err
+		return false, errors.New(err.Error() + ": output: " + string(out))
 	}
 	return strings.Contains(string(out), "ActiveState=active"), nil
 }
@@ -36,7 +36,7 @@ func ServiceActive(name string) (bool, error) {
 func ListeningSockets() (socks []string, err error) {
 	out, err := exec.Command("systemctl", "list-sockets").CombinedOutput()
 	if err != nil {
-		return socks, err
+		return socks, errors.New(err.Error() + ": output: " + string(out))
 	}
 	table := tabular.ProbabalisticSplit(string(out))
 	return tabular.GetColumnByHeader("LISTENING", table), nil
@@ -51,7 +51,7 @@ func Timers(all bool) (timers []string, err error) {
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return timers, err
+		return timers, errors.New(err.Error() + ": output: " + string(out))
 	}
 	// last three lines are junk
 	lines := tabular.Lines(string(out))
@@ -70,7 +70,8 @@ func UnitFileStatuses() (units, statuses []string, err error) {
 	cmd := exec.Command("systemctl", "--no-pager", "list-unit-files")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return units, statuses, err
+		err2 := errors.New(err.Error() + ": output: " + string(out))
+		return units, statuses, err2
 	}
 	table := tabular.ProbabalisticSplit(string(out))
 	units = tabular.GetColumnNoHeader(0, table)

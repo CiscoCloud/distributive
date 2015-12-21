@@ -47,10 +47,18 @@ func swapOrMemory(status string, swapOrMem string, units string) (int, error) {
 	}
 	// TODO probabalisticsplit isn't handling this appropriately
 	//table := tabular.ProbabalisticSplit(outStr)
-	colSep := regexp.MustCompile(`\s{2,}`)
+	colSep := regexp.MustCompile(`\s+`)
 	rowSep := regexp.MustCompile(`\n+`)
 	table := tabular.SeparateString(rowSep, colSep, string(out))
 	column := tabular.GetColumnByHeader(status, table)
+
+	// filter out useless row from some versions of `free`
+	for i, row := range table {
+		if len(row) > 0 && strings.Contains(row[0], "-/+") {
+			table = append(table[:i], table[i+1:]...)
+		}
+	}
+
 	row := typeToRow[swapOrMem]
 	// check for errors in output of `free`
 	if column == nil || len(column) < 1 {

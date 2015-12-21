@@ -8,8 +8,8 @@ var validChecklistPaths = []string{
 	"../samples/filesystem.json",
 	"../samples/misc.json",
 	"../samples/network.json",
-	//"../samples/packages.json",
-	"../samples/systemctl.json",
+	"../samples/packages.json",
+	//"../samples/systemctl.json",
 	"../samples/usage.json",
 	"../samples/users-and-groups.json",
 }
