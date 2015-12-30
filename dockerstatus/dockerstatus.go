@@ -1,11 +1,12 @@
-// dockerstatus provides a few functions for getting very simple data out
-// of Docker, mostly for use in simple status checks.
+// Package dockerstatus provides a few functions for getting very simple data
+// out of Docker, mostly for use in simple status checks.
 package dockerstatus
 
 import (
+	"fmt"
 	"os/exec"
-	"strings"
 	"regexp"
+	"strings"
 
 	"github.com/CiscoCloud/distributive/tabular"
 )
@@ -27,20 +28,12 @@ func DockerImageRepositories() (images []string, err error) {
 	return tabular.GetColumnByHeader("REPOSITORY", table), nil
 }
 
-// RunningContainers returns a list of names of running docker containers
-// (what's under the IMAGE column of `docker ps -a` if it has status "Up".
-func RunningContainers() (containers []string, err error) {
-	cmd := exec.Command("docker", "ps", "-a", "--format", `{{.Image}}\t{{.Status}}\t{{.Names}}`)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		cmd = exec.Command("sudo", "docker", "ps", "-a", "--format", `{{.Image}}\t{{.Status}}\t{{.Names}}`)
-		out, err = cmd.CombinedOutput()
-		if err != nil {
-			return containers, err
-		}
-	}
-	output := "IMAGE\tSTATUS\tNAMES\n" + string(out)
-	lines := tabular.SeparateString(regexp.MustCompile(`\n`),regexp.MustCompile(`\t`),output)
+// parse the output of `docker ps -a` into a list of running container names
+func parseRunningContainers(output string) (containers []string) {
+	output = "IMAGE\tSTATUS\tNAMES\n" + output
+	rowRegexp := regexp.MustCompile(`\n`)
+	columnRegexp := regexp.MustCompile(`\t`)
+	lines := tabular.SeparateString(rowRegexp, columnRegexp, output)
 	names := tabular.GetColumnByHeader("IMAGE", lines)
 	statuses := tabular.GetColumnByHeader("STATUS", lines)
 	for i, status := range statuses {
@@ -49,5 +42,24 @@ func RunningContainers() (containers []string, err error) {
 			containers = append(containers, names[i])
 		}
 	}
-	return containers, nil
+	return containers
+}
+
+// RunningContainers returns a list of names of running docker containers
+// (what's under the IMAGE column of `docker ps -a` if it has status "Up").
+func RunningContainers() (containers []string, err error) {
+	outputFormat := `{{.Image}}\t{{.Status}}\t{{.Names}}`
+	cmd := exec.Command("docker", "ps", "-a", "--format", outputFormat)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		cmd = exec.Command("sudo", "docker", "ps", "-a", "--format", outputFormat)
+		out, err = cmd.CombinedOutput()
+		if err != nil {
+			return containers, err
+		}
+	} else if out == nil {
+		err = fmt.Errorf("The command %v produced no output", cmd.Args)
+		return containers, err
+	}
+	return parseRunningContainers(string(out)), nil
 }
