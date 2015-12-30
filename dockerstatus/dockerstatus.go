@@ -14,7 +14,12 @@ func DockerImageRepositories() (images []string, err error) {
 	cmd := exec.Command("docker", "images")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return images, err
+		// try escalating to sudo, the error might have been one of permissions
+		cmd = exec.Command("sudo", "docker", "images")
+		out, err = cmd.CombinedOutput()
+		if err != nil {
+			return images, err
+		}
 	}
 	table := tabular.ProbabalisticSplit(string(out))
 	return tabular.GetColumnByHeader("REPOSITORIES", table), nil
@@ -26,7 +31,11 @@ func RunningContainers() (containers []string, err error) {
 	cmd := exec.Command("docker", "ps", "-a")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return containers, err
+		cmd = exec.Command("sudo", "docker", "ps", "-a")
+		out, err = cmd.CombinedOutput()
+		if err != nil {
+			return containers, err
+		}
 	}
 	// the output of `docker ps -a` has spaces in columns, but each column
 	// is separated by 2 or more spaces. Just what Probabalistic was made for!
