@@ -54,7 +54,7 @@ func TestOpenPorts(t *testing.T) {
 				t.Errorf(msg+": %d", port)
 			} else {
 				dur, _ := time.ParseDuration("10s")
-				if CanConnect("localhost:"+fmt.Sprint(port), protocol, dur) {
+				if CanConnect(fmt.Sprintf("localhost:%v", port), protocol, dur) {
 					couldConnect++
 				}
 			}

@@ -80,7 +80,7 @@ func PortOpen(protocol string, port uint16) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return CanConnect("localhost"+fmt.Sprint(port), protocol, dur)
+	return CanConnect(fmt.Sprintf("localhost:%v", port), protocol, dur)
 }
 
 // ValidIP returns a boolean answering the question "is this a valid IPV4/6
