@@ -1,10 +1,11 @@
 package checklists
 
 import (
+	"strings"
+
 	"github.com/CiscoCloud/distributive/checks"
 	"github.com/CiscoCloud/distributive/chkutil"
 	log "github.com/Sirupsen/logrus"
-	"strings"
 )
 
 // constructCheck returns a new Check interface compliant object, translated
@@ -110,6 +111,8 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 		return checks.SystemctlTimer{}
 	case "systemctltimerloaded":
 		return checks.SystemctlTimerLoaded{}
+	case "systemctlunitfilestatus":
+		return checks.SystemctlUnitFileStatus{}
 		/***************** usage.go *****************/
 	case "memoryusage":
 		return checks.MemoryUsage{}
