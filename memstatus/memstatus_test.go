@@ -1,10 +1,17 @@
 package memstatus
 
 import (
+	"os/exec"
 	"testing"
 )
 
 var units = []string{"b", "kb", "mb", "gb", "tb"}
+
+func logFreeOutput(t *testing.T) {
+	cmd := exec.Command("free")
+	out, _ := cmd.CombinedOutput()
+	t.Logf("Output of `free`: %v", string(out))
+}
 
 func TestSwapOrMemory(t *testing.T) {
 	t.Parallel()
@@ -13,14 +20,15 @@ func TestSwapOrMemory(t *testing.T) {
 			for _, unit := range units {
 				amt, err := swapOrMemory(status, swapOrMem, unit)
 				if err != nil {
-					t.Error("swapOrMemory failed unexpectedly")
+					t.Errorf("swapOrMemory failed unexpectedly: %v", err)
 				}
 				if amt < 0 {
-					t.Errorf("swapOrMemory reported negative: %v", amt)
+					t.Logf("swapOrMemory reported negative: %v", amt)
 				}
 			}
 		}
 	}
+	logFreeOutput(t)
 }
 
 func TestFreeMemory(t *testing.T) {
@@ -34,6 +42,7 @@ func TestFreeMemory(t *testing.T) {
 			t.Errorf("FreeMemory reported negative: %v", amt)
 		}
 	}
+	logFreeOutput(t)
 }
 
 func TestUsedMemory(t *testing.T) {
@@ -47,6 +56,7 @@ func TestUsedMemory(t *testing.T) {
 			t.Errorf("UsedMemory reported negative: %v", amt)
 		}
 	}
+	logFreeOutput(t)
 }
 
 func TestFreeSwap(t *testing.T) {
@@ -60,6 +70,7 @@ func TestFreeSwap(t *testing.T) {
 			t.Errorf("FreeSwap reported negative: %v", amt)
 		}
 	}
+	logFreeOutput(t)
 }
 
 func TestUsedSwap(t *testing.T) {
@@ -73,4 +84,5 @@ func TestUsedSwap(t *testing.T) {
 			t.Errorf("UsedSwap reported negative: %v", amt)
 		}
 	}
+	logFreeOutput(t)
 }

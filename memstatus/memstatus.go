@@ -4,22 +4,18 @@ package memstatus
 
 import (
 	"errors"
-	"github.com/CiscoCloud/distributive/tabular"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/CiscoCloud/distributive/tabular"
 )
 
 // swapOrMemory returns output from `free`, it is an abstraction of swap and
 // memory. inputs: status: free | used | total; swapOrMem: memory | swap;
 // units: b | kb | mb | gb | tb
 func swapOrMemory(status string, swapOrMem string, units string) (int, error) {
-	statusToColumn := map[string]int{
-		"total": 1,
-		"used":  2,
-		"free":  3,
-	}
 	unitsToFlag := map[string]string{
 		"b":  "--bytes",
 		"kb": "--kilo",
@@ -32,9 +28,7 @@ func swapOrMemory(status string, swapOrMem string, units string) (int, error) {
 		"swap":   1,
 	}
 	// check to see that our keys are really in our dict
-	if _, ok := statusToColumn[status]; !ok {
-		return 0, errors.New("Invalid status in swapOrMemory: " + status)
-	} else if _, ok := unitsToFlag[units]; !ok {
+	if _, ok := unitsToFlag[units]; !ok {
 		return 0, errors.New("Invalid units in swapOrMemory: " + units)
 	} else if _, ok := typeToRow[swapOrMem]; !ok {
 		return 0, errors.New("Invalid option in swapOrMemory: " + swapOrMem)

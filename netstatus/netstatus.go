@@ -4,14 +4,15 @@ package netstatus
 
 import (
 	"fmt"
-	"github.com/CiscoCloud/distributive/chkutil"
-	"github.com/CiscoCloud/distributive/tabular"
-	log "github.com/Sirupsen/logrus"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/tabular"
+	log "github.com/Sirupsen/logrus"
 )
 
 // GetHexPorts gets all open ports as hex strings from /proc/net/{tcp,udp}
@@ -141,44 +142,46 @@ func Resolvable(host string) bool {
 func CanConnect(host string, protocol string, timeout time.Duration) bool {
 	var conn net.Conn
 	var err error
-	var timeoutNetwork = "tcp"
 	var timeoutAddress string
+	protocol = strings.ToLower(protocol)
 	nanoseconds := timeout.Nanoseconds()
-	switch strings.ToUpper(protocol) {
-	case "TCP":
-		tcpaddr, err := net.ResolveTCPAddr("tcp", host)
+	switch protocol {
+	case "tcp":
+		tcpaddr, err := net.ResolveTCPAddr(protocol, host)
 		if err != nil {
 			return false
 		}
 		timeoutAddress = tcpaddr.String()
 		if nanoseconds <= 0 {
-			conn, err = net.DialTCP(timeoutNetwork, nil, tcpaddr)
+			conn, err = net.DialTCP(protocol, nil, tcpaddr)
 		}
-	case "UDP":
-		timeoutNetwork = "udp"
-		udpaddr, err := net.ResolveUDPAddr("udp", host)
+	case "udp":
+		udpaddr, err := net.ResolveUDPAddr(protocol, host)
 		if err != nil {
 			return false
 		}
 		timeoutAddress = udpaddr.String()
 		if nanoseconds <= 0 {
-			// TODO why the inconsistency here?
-			conn, err = net.DialUDP("udp", nil, udpaddr)
+			// TODO why the inconsistency here? with the tialTCP call
+			conn, err = net.DialUDP(protocol, nil, udpaddr)
 		}
 	default:
 		msg := "Probable configuration error: Unsupported protocol"
 		log.WithField("protocol", protocol).Fatal(msg)
 	}
+	if conn != nil {
+		defer conn.Close()
+	}
 	// if a duration was specified, use it
 	if nanoseconds > 0 {
-		conn, err = net.DialTimeout(timeoutNetwork, timeoutAddress, timeout)
+		conn, err = net.DialTimeout("protocol", timeoutAddress, timeout)
 		if conn != nil {
 			defer conn.Close()
 		}
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
-			}).Warn("Error while connecting to host")
+			}).Debug("Error while connecting to host")
 		}
 	}
 	if err == nil {
