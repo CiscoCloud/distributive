@@ -3,9 +3,10 @@
 package dockerstatus
 
 import (
-	"github.com/CiscoCloud/distributive/tabular"
 	"os/exec"
 	"strings"
+
+	"github.com/CiscoCloud/distributive/tabular"
 )
 
 // DockerImageRepositories returns a slice of the names of the Docker images
@@ -22,7 +23,7 @@ func DockerImageRepositories() (images []string, err error) {
 		}
 	}
 	table := tabular.ProbabalisticSplit(string(out))
-	return tabular.GetColumnByHeader("REPOSITORIES", table), nil
+	return tabular.GetColumnByHeader("REPOSITORY", table), nil
 }
 
 // RunningContainers returns a list of names of running docker containers
