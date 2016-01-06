@@ -1,6 +1,6 @@
 ---
 name: distributive
-version: 0.2.3
+version: 0.2.4
 iteration: 1
 license: ASL 2.0
 description: Distributive is a tool for running distributed health checks in datacenters.

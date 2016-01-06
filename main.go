@@ -6,15 +6,16 @@
 package main
 
 import (
+	"os"
+
 	"github.com/CiscoCloud/distributive/checklists"
 	log "github.com/Sirupsen/logrus"
 	"github.com/mitchellh/panicwrap"
-	"os"
 )
 
 var useCache bool // should remote checks be run from the cache when possible?
 
-const Version = "v0.2.4-dev"
+const Version = "v0.2.4"
 const Name = "distributive"
 
 // getChecklists returns a list of checklists based on the supplied sources
