@@ -2,6 +2,7 @@ package fsstatus
 
 import (
 	"math"
+	"os/exec"
 	"testing"
 )
 
@@ -18,6 +19,8 @@ var dirParameters = []string{
 }
 
 var symlinkParameters = []string{"/bin/sh"}
+
+var inodeFilesystem = "tmpfs" // TODO: not available on all distros
 
 type fileTest func(path string) (bool, error)
 
@@ -88,14 +91,16 @@ func testInodeCountingFunction(t *testing.T, f inodeFun, fName string) {
 
 func TestInodeCountingFunctions(t *testing.T) {
 	t.Parallel()
+	cmd := exec.Command("df", "-i")
+	out, _ := cmd.CombinedOutput()
+	t.Logf("Output of `df -i`: %v", string(out))
 	testInodeCountingFunction(t, FreeInodes, "FreeInodes")
 	testInodeCountingFunction(t, UsedInodes, "UsedInodes")
 	testInodeCountingFunction(t, TotalInodes, "TotalInodes")
-	// TODO: is the dev filesystem available on all systems?
-	filesystem := "dev"
-	free, freeErr := FreeInodes(filesystem)
-	used, usedErr := UsedInodes(filesystem)
-	total, totalErr := TotalInodes(filesystem)
+	// TODO: this filesystem is not available on all systems
+	free, freeErr := FreeInodes(inodeFilesystem)
+	used, usedErr := UsedInodes(inodeFilesystem)
+	total, totalErr := TotalInodes(inodeFilesystem)
 	for _, err := range []error{freeErr, usedErr, totalErr} {
 		if err != nil {
 			t.Error(err)
@@ -110,11 +115,9 @@ func TestInodeCountingFunctions(t *testing.T) {
 func TestInodePercentFunction(t *testing.T) {
 	t.Parallel()
 	// assume no errors because we just tested these
-	// TODO: is the dev filesystem available on all systems?
-	filesystem := "dev"
-	used, _ := UsedInodes(filesystem)
-	total, _ := TotalInodes(filesystem)
-	givenPercent, err := PercentInodesUsed(filesystem)
+	used, _ := UsedInodes(inodeFilesystem)
+	total, _ := TotalInodes(inodeFilesystem)
+	givenPercent, err := PercentInodesUsed(inodeFilesystem)
 	if err != nil {
 		t.Error(err)
 	}

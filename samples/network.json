@@ -14,40 +14,8 @@
             "Parameters" : ["eth0"]
         },
         {
-            "ID" : "host",
-            "Parameters" : ["github.com"]
-        },
-        {
-            "ID" : "TCP",
-            "Parameters" : ["github.com:80"]
-        },
-        {
-            "ID" : "UDP",
-            "Parameters" : ["github.com:80"]
-        },
-        {
-            "ID" : "UDP",
-            "Parameters" : ["github.com:80"]
-        },
-        {
             "ID" : "routingTableInterface",
             "Parameters" : ["eth0"]
-        },
-        {
-            "ID" : "tcpTimeout",
-            "Parameters" : ["google.com:80", "20s"]
-        },
-        {
-            "ID" : "udpTimeout",
-            "Parameters" : ["google.com:80", "20s"]
-        },
-        {
-            "ID": "responseMatches",
-            "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "[hHl]\\w[^eiwa]+s[^7ga]"]
-        },
-        {
-            "ID": "responseMatchesInsecure",
-            "Parameters": ["http://pastebin.com/raw.php?i=23ersi8i", "[hHl]\\w[^eiwa]+s[^7ga]"]
         }
     ]
 }
