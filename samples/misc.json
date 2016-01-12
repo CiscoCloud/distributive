@@ -17,6 +17,10 @@
         {
             "ID" : "commandOutputMatches",
             "Parameters" : ["echo works", "\\w[aeiou]+(y)*r[kl]s"]
+        },
+        {
+            "ID" : "module",
+            "Parameters" : ["btrfs"]
         }
     ]
 }

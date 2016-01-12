@@ -1,0 +1,37 @@
+cache:
+  mount:
+    - .git
+    - Godeps
+
+build:
+  image: golang
+  volumes:
+    # dockerAPI
+    - /var/run/docker.sock:/var/rundocker.sock
+    # getHexPorts
+    - /proc/net/tcp:/proc/net/tcp
+    - /proc/net/udp:/proc/net/udp
+  commands:
+    # filesystem
+    - ln -sT / /fakeroot
+    - echo 'This is a file to check the "checksum" check.' > /tmp/test.txt
+    - chmod 0644 /tmp/test.txt
+    # Get packages that distributive tests
+    - apt-get update > /dev/null
+    - apt-get install -y sudo > /dev/null       # docker
+    - apt-get install -y net-tools > /dev/null  # network
+    - apt-get install -y lm-sensors php5-cli module-init-tools > /dev/null # misc
+    # There are lots of lint errors in distributive, the comments are laid out
+    # non-canonically.
+    # - go vet ./...
+    # - go get -u github.com/golang/lint/golint
+    # - golint ./...
+    - go get github.com/tools/godep
+    # TODO: make all tests work in drone!
+    # Missing: checklists, checks, memstatus, netstatus
+    #- godep go test ./...
+    - godep go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular ./usrstatus
+    - godep go install .
+    - distributive --verbosity=info -d "./samples"
+    # - distributive -d ./samples/
+    - echo $?

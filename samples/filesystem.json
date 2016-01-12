@@ -2,32 +2,28 @@
     "Name": "Filesystem checks",
     "Checklist" : [
         {
-            "ID" : "file",
-            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt"]
-        },
-        {
             "ID" : "directory",
             "Parameters" : ["/"]
         },
         {
             "ID" : "symlink",
-            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/symlink_checksum_test.txt"]
+            "Parameters" : ["/fakeroot"]
         },
         {
             "ID" : "checksum",
-            "Parameters" : ["MD5", "d3b4ee24a6813207784ad46e93b2a24d", "/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt"]
+            "Parameters" : ["MD5", "d3b4ee24a6813207784ad46e93b2a24d", "/tmp/test.txt"]
         },
         {
             "ID" : "checksum",
-            "Parameters" : ["SHA1", "5be648e76990668a6f684671fadf81dd18ed0863", "/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt"]
+            "Parameters" : ["SHA1", "5be648e76990668a6f684671fadf81dd18ed0863", "/tmp/test.txt"]
         },
         {
             "ID" : "fileMatches",
-            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/filesystem_regex_test.txt", "\\d{8}"]
+            "Parameters" : ["/tmp/test.txt", "c[has]eck\\wum"]
         },
         {
             "ID" : "permissions",
-            "Parameters" : ["/gopath/src/github.com/CiscoCloud/distributive/samples/files/checksum_testfile.txt", "-rw-r--r--"]
+            "Parameters" : ["/tmp/test.txt", "-rw-r--r--"]
         }
     ]
 }

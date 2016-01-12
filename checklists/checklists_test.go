@@ -30,22 +30,22 @@ func TestChecklistFromBytes(t *testing.T) {
 	// won't work until logging and failing is properly decoupled from
 	// constructing checklists
 	/*
-		badChklsts := [][]byte{[]byte(`
-		{
-			"asdf": "test1",
-			"Checklist" : [ { "ID" : "", "Parameters" : ["/dev/null"] } ]
-		}`),
-			[]byte(`
-		{
-			"Name": "test2",
-			"aslk" : [ { "ID" : "directory", "Parameters" : ["/"] } ]
-		}`),
-			[]byte(`
-		{
-			"Name": "test2",
-			"Parameters" : [ { "asdf" : "directory", "Parameters" : ["/"] } ]
-		}`),
-		}
+	   badChklsts := [][]byte{[]byte(`
+	   {
+	   	"asdf": "test1",
+	   	"Checklist" : [ { "ID" : "", "Parameters" : ["/dev/null"] } ]
+	   }`),
+	   []byte(`
+	   {
+	   	"Name": "test2",
+	   	"aslk" : [ { "ID" : "directory", "Parameters" : ["/"] } ]
+	   }`),
+	   []byte(`
+	   {
+	   	"Name": "test2",
+	   	"Parameters" : [ { "asdf" : "directory", "Parameters" : ["/"] } ]
+	   }`),
+	   		}
 	*/
 	for _, goodEgg := range goodChklsts {
 		if _, err := ChecklistFromBytes(goodEgg); err != nil {
@@ -79,7 +79,6 @@ func TestChecklistsFromDir(t *testing.T) {
 }
 
 func TestChecklistFromURL(t *testing.T) {
-	// currently failing with error message about check ID
 	t.Parallel()
 	// should add more
 	urls := [1]string{"http://pastebin.com/raw.php?i=GKk5yZEK"}

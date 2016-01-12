@@ -1,12 +1,15 @@
 package main
 
 import (
+	"net/url"
+	"os"
+
 	"github.com/CiscoCloud/distributive/errutil"
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"net/url"
-	"os"
 )
+
+const defaultVerbosity = log.WarnLevel
 
 // validateFlags ensures that all options passed via the command line are valid
 func validateFlags(file string, URL string, directory string) {
@@ -38,29 +41,19 @@ func validateFlags(file string, URL string, directory string) {
 // initializeLogrus sets the logrus log level according to the specified
 // verbosity level, both for packages main and chkutils
 func initializeLogrus(verbosity string) {
-	lvls := "info | debug | fatal | panic | warn"
-	var logLevel log.Level
-	logLevel = 0
-	switch verbosity {
-	case "info":
-		logLevel = log.InfoLevel
-	case "debug":
-		logLevel = log.DebugLevel
-	case "fatal":
-		logLevel = log.FatalLevel
-	case "error":
-		logLevel = log.ErrorLevel
-	case "panic":
-		logLevel = log.PanicLevel
-	case "warn":
-		logLevel = log.WarnLevel
-	default:
-		log.WithFields(log.Fields{
-			"given":    verbosity,
-			"expected": lvls,
-		}).Fatal("Invalid verbosity option")
+	var levelMap = map[string]log.Level{
+		"info":  log.InfoLevel,
+		"debug": log.DebugLevel,
+		"fatal": log.FatalLevel,
+		"error": log.ErrorLevel,
+		"panic": log.PanicLevel,
+		"warn":  log.WarnLevel,
 	}
-	log.SetLevel(logLevel)
+	if v, ok := levelMap[verbosity]; ok {
+		log.SetLevel(v)
+	} else {
+		log.SetLevel(defaultVerbosity)
+	}
 	log.WithFields(log.Fields{
 		"verbosity": verbosity,
 	}).Debug("Verbosity level specified")
@@ -68,9 +61,6 @@ func initializeLogrus(verbosity string) {
 
 // getFlags validates and returns command line options
 func getFlags() (f string, u string, d string, s bool) {
-	lvls := "info | debug | fatal | error | panic | warn"
-	defaultVerbosity := "warn"
-
 	app := cli.NewApp()
 	app.Name = "Distributive"
 	app.Usage = "Perform distributed health tests"
@@ -87,8 +77,8 @@ func getFlags() (f string, u string, d string, s bool) {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "verbosity",
-			Value: defaultVerbosity,
-			Usage: lvls,
+			Value: "",
+			Usage: "info | debug | fatal | error | panic | warn",
 		},
 		cli.StringFlag{
 			Name:  "file, f",
@@ -114,7 +104,6 @@ func getFlags() (f string, u string, d string, s bool) {
 			Usage: "Don't use a cached version of a remote check, fetch it.",
 		},
 	}
-	var verbosity string
 	var file string
 	var URL string
 	var directory string
@@ -124,7 +113,8 @@ func getFlags() (f string, u string, d string, s bool) {
 		if version {
 			os.Exit(0)
 		}
-		verbosity = c.String("verbosity")
+		// set logLevel appropriately for chkutils
+		initializeLogrus(c.String("verbosity"))
 		file = c.String("file")
 		URL = c.String("url")
 		directory = c.String("directory")
@@ -142,10 +132,6 @@ func getFlags() (f string, u string, d string, s bool) {
 		}).Debug("Command line options")
 		useCache = !c.Bool("no-cache")
 	}
-	if verbosity == "" {
-		verbosity = "warn"
-	}
-	app.Run(os.Args)            // parse the arguments, execute app.Action
-	initializeLogrus(verbosity) // set logLevel appropriately for chkutils
+	app.Run(os.Args) // parse the arguments, execute app.Action
 	return file, URL, directory, stdin
 }

@@ -4,9 +4,7 @@ import (
 	"testing"
 )
 
-var validHosts = [][]string{
-	{"eff.org"}, {"mozilla.org"}, {"golang.org"},
-}
+var validHosts = [][]string{{"eff.org"}, {"mozilla.org"}, {"golang.org"}}
 
 var invalidHosts = [][]string{
 	{"serbapsidpuflnaskjdcasd.com"},

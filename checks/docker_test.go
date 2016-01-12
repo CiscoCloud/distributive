@@ -55,15 +55,16 @@ func TestDockerRunning(t *testing.T) {
 	}
 }
 
+/*
 func TestDockerRunningAPI(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
 		t.Parallel()
 		validInputs := [][]string{
-			{"/proc/cpuinfo", "name"},
-			{"/proc/cpuinfo", "test"},
-			{"/proc/cpuinfo", "win"},
+			{"/var/run/docker.sock", "name"},
+			{"/var/run/docker.sock", "test"},
+			{"/var/run/docker.sock", "win"},
 		}
 		invalidInputs := notLengthOne
 		invalidInputs = append(invalidInputs, names...)
@@ -77,6 +78,7 @@ func TestDockerRunningAPI(t *testing.T) {
 		testCheck(goodEggs, badEggs, DockerRunningAPI{}, t)
 	}
 }
+*/
 
 func TestDockerRunningRegexp(t *testing.T) {
 	if testing.Short() {
