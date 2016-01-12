@@ -2,24 +2,25 @@ package checks
 
 import (
 	"fmt"
-	"github.com/CiscoCloud/distributive/chkutil"
-	"github.com/CiscoCloud/distributive/errutil"
-	"github.com/CiscoCloud/distributive/tabular"
-	log "github.com/Sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/tabular"
+	log "github.com/Sirupsen/logrus"
 )
 
 /*
 #### Command
 Description: Does this Command exit without error?
 Parameters:
-  - Cmd (string): Command to be executed
+- Cmd (string): Command to be executed
 Example parameters:
-  - "cat /etc/my-config/", "/bin/my_health_check.py"
+- "cat /etc/my-config/", "/bin/my_health_check.py"
 */
 
 type Command struct{ Command string }
@@ -70,11 +71,11 @@ func (chk Command) Status() (int, string, error) {
 Description: Does the combined (stdout + stderr) output of this Command match
 the given regexp?
 Parameters:
-  - Cmd (string): Command to be executed
-  - Regexp (regexp): Regexp to query output with
+- Cmd (string): Command to be executed
+- Regexp (regexp): Regexp to query output with
 Example parameters:
-  - "cat /etc/my-config/", "/bin/my_health_check.py"
-  - "value=expected", "[rR]{1}e\we[Xx][^oiqnlkasdjc]"
+- "cat /etc/my-config/", "/bin/my_health_check.py"
+- "value=expected", "[rR]{1}e\we[Xx][^oiqnlkasdjc]"
 */
 
 type CommandOutputMatches struct {
@@ -114,11 +115,11 @@ func (chk CommandOutputMatches) Status() (int, string, error) {
 #### Running
 Description: Is a process by this exact name Running (excluding this process)?
 Parameters:
-  - Name (string): Process name to look for
+- Name (string): Process name to look for
 Example parameters:
-  - nginx, [kthreadd], consul-agent, haproxy-consul
+- nginx, [kthreadd], consul-agent, haproxy-consul
 Depedencies:
-  - `ps aux`
+- `ps aux`
 */
 
 type Running struct{ name string }
@@ -157,11 +158,11 @@ func (chk Running) Status() (int, string, error) {
 #### Temp
 Description: Is the core Temperature under this value (in degrees Celcius)?
 Parameters:
-  - Temp (positive int16): Maximum acceptable Temperature
+- Temp (positive int16): Maximum acceptable Temperature
 Example parameters:
-  - 100, 110C, 98°C, 100℃
+- 100, 110C, 98°C, 100℃
 Depedencies:
-  - A configured lm-sensors (namely, `sensors`)
+- A configured lm-sensors (namely, `sensors`)
 */
 
 // TODO use uint
@@ -236,13 +237,13 @@ func (chk Temp) Status() (int, string, error) {
 
 /*
 #### Module
-Description: Is this kernel Module installed?
+Description: Is this kernel module installed?
 Parameters:
 - Name (string): Module name
 Example parameters:
-  - hid, drm, rfkill
+- hid, drm, rfkill
 Depedencies:
-  - `/sbin/lsmod`
+- `/sbin/lsmod`
 */
 
 type Module struct{ name string }
@@ -259,16 +260,16 @@ func (chk Module) New(params []string) (chkutil.Check, error) {
 
 func (chk Module) Status() (int, string, error) {
 	// kernelModules returns a list of all Modules that are currently loaded
-	// TODO just read from /proc/Modules
+	// TODO just read from /proc/modules
 	kernelModules := func() (Modules []string) {
 		cmd := exec.Command("/sbin/lsmod")
 		return chkutil.CommandColumnNoHeader(0, cmd)
 	}
-	Modules := kernelModules()
-	if tabular.StrIn(chk.name, Modules) {
+	modules := kernelModules()
+	if tabular.StrIn(chk.name, modules) {
 		return errutil.Success()
 	}
-	return errutil.GenericError("Module is not loaded", chk.name, Modules)
+	return errutil.GenericError("Module is not loaded", chk.name, modules)
 }
 
 /*
@@ -277,9 +278,9 @@ Description: Is this kernel parameter set?
 Parameters:
 - Name (string): Kernel parameter to check
 Example parameters:
-  - TODO
+- TODO
 Depedencies:
-  - `/sbin/sysctl`
+- `/sbin/sysctl`
 */
 
 type KernelParameter struct{ name string }
@@ -317,12 +318,12 @@ func (chk KernelParameter) Status() (int, string, error) {
 #### PHPConfig
 Description: Does this PHP configuration variable have this value?
 Parameters:
-  - Variable (string): PHP variable to check
-  - Value (string): Expected value
+- Variable (string): PHP variable to check
+- Value (string): Expected value
 Example parameters:
-  - TODO
+- TODO
 Depedencies:
-  - `php`
+- `php`
 */
 
 type PHPConfig struct{ variable, value string }
