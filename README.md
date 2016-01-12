@@ -50,14 +50,10 @@ Installation/Building
 
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
- 2. Get dependencies with `go get .` (or used versioned dependencies with
- [godep] [godep]).
- 3. (Optional) Test with `go test -short ./...`
+ 2. Get [Godep] [godep].
+ 3. (Optional) Test with `drone exec`
  4. Build a binary with `go build .`
  5. Follow the "Usage" instructions below
-
-The Dockerfile demonstrates how to build it from scratch (without golang
-installed, etc.).
 
 We also provide premade RPM packages on [Bintray][bintray] for versioned
 releases. You can view the RPM source and build RPM snapshots at
@@ -68,27 +64,25 @@ Distributive currently only supports Linux.
 Usage
 -----
 
-The default behavior is to run any checks specified via `-f`, `-u`, `-s`,
-or `-d` options, or all checks in /etc/distributive.d/ if no location is
-specified.
+The default behavior is to run any checks specified via `--file`, `--url`,
+`--stdin`, or `--directory` options, or all checks in /etc/distributive.d/ if no
+location is specified.
 
 ```
 $ distributive --help
 [...]
-USAGE:
-   Distributive [global options] command [command options] [arguments...]
-
 VERSION:
-   0.1.3
+   v0.2.4
 
 GLOBAL OPTIONS:
-   --verbosity "warn"           info | debug | fatal | error | panic | warn
-   --file, -f                   Read a checklist from a file
-   --url, -u                    Read a checklist from a URL
-   --directory, -d "/etc/distributive.d/"   Read all of the checklists in this directory
-   --stdin, -s                  Read data piped from stdin as a checklist
-   --help, -h                   show help
-   --version, -v                print the version
+   --verbosity          info | debug | fatal | error | panic | warn
+   --file, -f           Read a checklist from a file
+   --url, -u            Read a checklist from a URL
+   --directory, -d      Read all of the checklists in this directory
+   --stdin, -s          Read data piped from stdin as a checklist
+   --no-cache           Don't use a cached version of a remote check, fetch it.
+   --help, -h           show help
+   --version, -v        print the version
 ```
 
 Examples:
@@ -106,10 +100,9 @@ Supported Frameworks
 --------------------
 
 Distributive attempts to be as framework-agnostic as possible. It is known to
-work well with Consul, Kubernetes, Sensu and Nagios, which have similar design
+work well with Consul, Kubernetes, Sensu, and Nagios, which have similar design
 in how they detect passing and failing checks. There is documentation on how to
 use Distributive with Consul on our [Github wiki][wiki].
-
 
 Checks
 =======
@@ -120,7 +113,7 @@ for each check available on our [Github wiki][wiki].
 
 If you'd like to see how Distributive is used in production environments, take
 a look at the [RPM source][distributive-rpm], which includes checks used in
-[Microservices-Infrastructure][mi].
+[Mantl][mi].
 
 
 Dependencies
