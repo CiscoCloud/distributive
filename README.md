@@ -1,3 +1,5 @@
+[![Build Status](http://drone04.shipped-cisco.com/api/badges/CiscoCloud/distributive/status.svg)](http://drone04.shipped-cisco.com/CiscoCloud/distributive)
+
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
 
