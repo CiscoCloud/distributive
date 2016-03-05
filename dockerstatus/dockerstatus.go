@@ -5,6 +5,7 @@ package dockerstatus
 import (
 	"os/exec"
 	"strings"
+	"regexp"
 
 	"github.com/CiscoCloud/distributive/tabular"
 )
@@ -29,18 +30,17 @@ func DockerImageRepositories() (images []string, err error) {
 // RunningContainers returns a list of names of running docker containers
 // (what's under the IMAGE column of `docker ps -a` if it has status "Up".
 func RunningContainers() (containers []string, err error) {
-	cmd := exec.Command("docker", "ps", "-a")
+	cmd := exec.Command("docker", "ps", "-a", "--format", `{{.Image}}\t{{.Status}}\t{{.Names}}`)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		cmd = exec.Command("sudo", "docker", "ps", "-a")
+		cmd = exec.Command("sudo", "docker", "ps", "-a", "--format", `{{.Image}}\t{{.Status}}\t{{.Names}}`)
 		out, err = cmd.CombinedOutput()
 		if err != nil {
 			return containers, err
 		}
 	}
-	// the output of `docker ps -a` has spaces in columns, but each column
-	// is separated by 2 or more spaces. Just what Probabalistic was made for!
-	lines := tabular.ProbabalisticSplit(string(out))
+	output := "IMAGE\tSTATUS\tNAMES\n" + string(out)
+	lines := tabular.SeparateString(regexp.MustCompile(`\n`),regexp.MustCompile(`\t`),output)
 	names := tabular.GetColumnByHeader("IMAGE", lines)
 	statuses := tabular.GetColumnByHeader("STATUS", lines)
 	for i, status := range statuses {
