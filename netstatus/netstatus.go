@@ -174,7 +174,7 @@ func CanConnect(host string, protocol string, timeout time.Duration) bool {
 	}
 	// if a duration was specified, use it
 	if nanoseconds > 0 {
-		conn, err = net.DialTimeout("protocol", timeoutAddress, timeout)
+		conn, err = net.DialTimeout(protocol, timeoutAddress, timeout)
 		if conn != nil {
 			defer conn.Close()
 		}
