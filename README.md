@@ -73,9 +73,6 @@ location is specified.
 ```
 $ distributive --help
 [...]
-VERSION:
-   v0.2.4
-
 GLOBAL OPTIONS:
    --verbosity          info | debug | fatal | error | panic | warn
    --file, -f           Read a checklist from a file

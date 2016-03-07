@@ -15,7 +15,7 @@ import (
 
 var useCache bool // should remote checks be run from the cache when possible?
 
-const Version = "v0.2.4"
+const Version = "v0.2.5"
 const Name = "distributive"
 
 // getChecklists returns a list of checklists based on the supplied sources
