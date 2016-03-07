@@ -77,7 +77,6 @@ func TestValidIP(t *testing.T) {
 	}
 	invalidIPs := []string{
 		"256.256.256.256",
-		"-1.-5.-200.-8",
 		":::::::::1",
 	}
 	for _, valid := range validIPs {
