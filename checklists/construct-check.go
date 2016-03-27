@@ -141,8 +141,6 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 		return checks.UserHasUID{}
 	case "userhasgid":
 		return checks.UserHasGID{}
-	case "userhasusername":
-		return checks.UserHasUsername{}
 	case "userhashomedir":
 		return checks.UserHasHomeDir{}
 		/***************** default *****************/
