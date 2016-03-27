@@ -2,9 +2,9 @@
     "Name": "Miscellaneous system checks",
     "Checklist" : [
         {
-            "Name": "shell running check",
+            "Name": "process running check",
             "ID" : "running",
-            "Parameters": ["ps"]
+            "Parameters": ["distributive"]
         },
         {
             "ID" : "phpConfig",
