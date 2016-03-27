@@ -31,22 +31,6 @@ func TestGroupID(t *testing.T) {
 	testCheck(goodEggs, badEggs, GroupID{}, t)
 }
 
-func TestLookupUser(t *testing.T) {
-	t.Parallel()
-	user, err := lookupUser("root")
-	user2, err2 := lookupUser("0")
-	msg := "Couldn't successfully lookup root user"
-	if user == nil || err != nil {
-		msg += "\n\tUsername: root"
-		msg += "\n\tError: " + err.Error()
-		t.Error(msg)
-	} else if user2 == nil || err2 != nil {
-		msg += "\n\tUID: 0"
-		msg += "\n\tError: " + err2.Error()
-		t.Error(msg)
-	}
-}
-
 func TestUserExists(t *testing.T) {
 	t.Parallel()
 	testParameters(names, notLengthOne, UserExists{}, t)
@@ -71,16 +55,6 @@ func TestUserHasGID(t *testing.T) {
 	badEggs := appendParameter(names, "0")
 	testParameters(validInputs, invalidInputs, UserHasGID{}, t)
 	testCheck(goodEggs, badEggs, UserHasGID{}, t)
-}
-
-func TestUserHasUsername(t *testing.T) {
-	t.Parallel()
-	validInputs := reverseAppendParameter(names, "0")
-	invalidInputs := notLengthTwo
-	goodEggs := [][]string{[]string{"0", "root"}} // not always true
-	badEggs := appendParameter(names, "nonsense")
-	testParameters(validInputs, invalidInputs, UserHasUsername{}, t)
-	testCheck(goodEggs, badEggs, UserHasUsername{}, t)
 }
 
 func TestUserHasHomeDir(t *testing.T) {
