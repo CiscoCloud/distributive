@@ -52,10 +52,9 @@ Installation/Building
 
 To install the development version (potentially unstable):
  1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
- 2. Get [Godep] [godep].
- 3. (Optional) Test with `drone exec`
- 4. Build a binary with `go build .`
- 5. Follow the "Usage" instructions below
+ 2. (Optional) Test with `drone exec`
+ 3. Build a binary with `go build .`
+ 4. Follow the "Usage" instructions below
 
 We also provide premade RPM packages on [Bintray][bintray] for versioned
 releases. You can view the RPM source and build RPM snapshots at
@@ -194,4 +193,3 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [direnv]: https://github.com/direnv/direnv
 [distributive-rpm]: https://github.com/CiscoCloud/distributive-rpm
 [mi]: https://github.com/CiscoCloud/microservices-infrastructure/
-[godep]: https://github.com/tools/godep

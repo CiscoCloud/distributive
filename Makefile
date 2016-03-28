@@ -1,26 +1,23 @@
 TEST?=./...
 NAME = $(shell awk -F\" '/^const Name/ { print $$2 }' main.go)
 VERSION = $(shell awk -F\" '/^const Version/ { print $$2 }' main.go)
-DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 
 all: deps build
 
 deps:
-	godep go install ./...
-	echo $(DEPS) | xargs -n1 go get -d
+	go get -d -v ./...
 
 updatedeps:
-	godep update ./...
-	echo $(DEPS) | xargs -n1 go get -d
+	go get -u -v ./...
 
 build: deps
 	@mkdir -p bin/
-	godep go build -o bin/$(NAME)
+	go build -o bin/$(NAME)
 
-test:
-	sudo drone exec
+test: deps
+	go test $(go list ./... | grep -v /vendor/)
 
-xcompile: deps
+xcompile: deps test
 	@rm -rf build/
 	@mkdir -p build
 	gox \

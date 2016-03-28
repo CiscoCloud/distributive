@@ -1,7 +1,6 @@
 cache:
   mount:
     - .git
-    - Godeps
 
 build:
   image: golang
@@ -26,12 +25,12 @@ build:
     # - go vet ./...
     # - go get -u github.com/golang/lint/golint
     # - golint ./...
-    - go get github.com/tools/godep
     # TODO: make all tests work in drone!
     # Missing: checklists, checks, memstatus, netstatus
-    #- godep go test ./...
-    - godep go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular ./usrstatus
+    - go get ./...
+    - go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular ./usrstatus
     - make build
+    - go version
     - go get github.com/mitchellh/gox
     - make xcompile
     - ./bin/distributive --verbosity=info -d "./samples"

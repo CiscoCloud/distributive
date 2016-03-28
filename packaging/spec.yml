@@ -16,4 +16,4 @@ targets:
 scripts:
   build: |
     cd {{.SpecRoot}}/..
-    godep go build -o {{.BuildRoot}}/distributive .
+    go build -o {{.BuildRoot}}/distributive .

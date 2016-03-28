@@ -1,0 +1,34 @@
+hash: ea0c5b0909d02cc3d9e0e3f7a28eb9ee1e9b36da7a3ac1c7366e380168a7bef6
+updated: 2016-03-27T19:16:44.329679085-07:00
+imports:
+- name: github.com/codegangsta/cli
+  version: 565493f259bf868adb54d45d5f4c68d405117adf
+- name: github.com/fsouza/go-dockerclient
+  version: c9ad0ce23f68428421adfc6ced9e6123f54788a5
+  subpackages:
+  - external/github.com/docker/docker/opts
+  - external/github.com/docker/docker/pkg/archive
+  - external/github.com/docker/docker/pkg/fileutils
+  - external/github.com/docker/docker/pkg/homedir
+  - external/github.com/docker/docker/pkg/stdcopy
+  - external/github.com/docker/docker/pkg/parsers
+  - external/github.com/docker/docker/pkg/ulimit
+  - external/github.com/docker/docker/volume
+  - external/github.com/Sirupsen/logrus
+  - external/github.com/docker/docker/pkg/pools
+  - external/github.com/docker/docker/pkg/promise
+  - external/github.com/docker/docker/pkg/system
+  - external/github.com/opencontainers/runc/libcontainer/user
+  - external/github.com/docker/docker/pkg/ioutils
+  - external/github.com/docker/docker/pkg/units
+- name: github.com/mitchellh/osext
+  version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
+- name: github.com/mitchellh/panicwrap
+  version: 1655d88c8ff7495ae9d2c19fd8f445f4657e22b0
+- name: github.com/Sirupsen/logrus
+  version: 418b41d23a1bf978c06faea5313ba194650ac088
+- name: golang.org/x/crypto
+  version: c8b9e6388ef638d5a8a9d865c634befdc46a6784
+  subpackages:
+  - sha3
+devImports: []
