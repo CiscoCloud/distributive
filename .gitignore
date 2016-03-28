@@ -1,5 +1,7 @@
+# binaries
 distributive
-Godeps/**/.travis.yml
+bin/distributive
+build
 
 # hammer
 out

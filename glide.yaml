@@ -1,0 +1,16 @@
+package: github.com/CiscoCloud/distributive
+import:
+- package: github.com/Sirupsen/logrus
+  version: 418b41d23a1bf978c06faea5313ba194650ac088
+- package: github.com/codegangsta/cli
+  version: 565493f259bf868adb54d45d5f4c68d405117adf
+- package: github.com/fsouza/go-dockerclient
+  version: c9ad0ce23f68428421adfc6ced9e6123f54788a5
+- package: github.com/mitchellh/osext
+  version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
+- package: github.com/mitchellh/panicwrap
+  version: 1655d88c8ff7495ae9d2c19fd8f445f4657e22b0
+- package: golang.org/x/crypto
+  version: c8b9e6388ef638d5a8a9d865c634befdc46a6784
+  subpackages:
+  - sha3

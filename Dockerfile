@@ -20,15 +20,12 @@ RUN mkdir -p /gopath/{bin,src}
 ENV GOPATH /gopath
 ENV GOBIN /gopath/bin
 ENV PATH $PATH:/gopath/bin
-RUN go get github.com/tools/godep
 ADD . /gopath/src/github.com/CiscoCloud/distributive
 # Note: docker-machine on Windows / OS X sometimes gets its time out of sync,
 # which can cause SSL verification failures. If this happens, `go get .`, will
 # fail. If you run into this problem, run this command at your terminal:
 # docker-machine ssh ${machine} 'sudo ntpclient -s -h pool.ntp.org'
 # After that, you can retry `docker build .`.
-RUN godep go install .
-# Tests don't all pass in this Docker container, but they will soon!
-#RUN godep go test  --short ./...
+RUN go install .
 
 CMD ["distributive", "-d", "/gopath/src/github.com/CiscoCloud/distributive/samples/", "--verbosity", "info"]
