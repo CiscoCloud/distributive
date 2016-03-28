@@ -31,7 +31,7 @@ build:
     # Missing: checklists, checks, memstatus, netstatus
     #- godep go test ./...
     - godep go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular ./usrstatus
-    - godep go install .
-    - distributive --verbosity=info -d "./samples"
-    # - distributive -d ./samples/
-    - echo $?
+    - make build
+    - go get github.com/mitchellh/gox
+    - make xcompile
+    - ./bin/distributive --verbosity=info -d "./samples"
