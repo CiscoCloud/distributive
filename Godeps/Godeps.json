@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/CiscoCloud/distributive",
-	"GoVersion": "go1.5.1",
+	"GoVersion": "go1.6",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -15,6 +18,10 @@
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
 			"Rev": "c9ad0ce23f68428421adfc6ced9e6123f54788a5"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/go-ps",
+			"Rev": "e6c6068076470196af082b1ff896e24a51a87b2a"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/osext",

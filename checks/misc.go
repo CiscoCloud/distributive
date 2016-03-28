@@ -11,6 +11,7 @@ import (
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
+	"github.com/mitchellh/go-ps"
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -135,23 +136,18 @@ func (chk Running) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Running) Status() (int, string, error) {
-	// getRunningCommands returns the entries in the "Command" column of `ps aux`
-	getRunningCommands := func() (Commands []string) {
-		cmd := exec.Command("ps", "aux")
-		return chkutil.CommandColumnNoHeader(10, cmd)
+	processes, err := ps.Processes()
+	if err != nil {
+		return 1, "", err
 	}
-	// remove this process from consideration
-	Commands := getRunningCommands()
-	var filtered []string
-	for _, cmd := range Commands {
-		if !strings.Contains(cmd, "distributive") {
-			filtered = append(filtered, cmd)
-		}
+	var executables []string
+	for _, proc := range processes {
+		executables = append(executables, proc.Executable())
 	}
-	if tabular.StrIn(chk.name, filtered) {
+	if tabular.StrIn(chk.name, executables) {
 		return errutil.Success()
 	}
-	return errutil.GenericError("Process not Running", chk.name, filtered)
+	return errutil.GenericError("Process not Running", chk.name, executables)
 }
 
 /*
