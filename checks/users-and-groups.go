@@ -1,14 +1,20 @@
 package checks
 
+// Many of the following checks were copied from/inspired by goss, which has a
+// compatible Apache license:
+// https://github.com/aelsabbahy/goss/blob/d28f3cc6d708fb012ea614acf712eb56712a7de3/system/group.go
+// https://github.com/aelsabbahy/goss/blob/d28f3cc6d708fb012ea614acf712eb56712a7de3/LICENSE
+
 import (
-	"fmt"
-	"github.com/CiscoCloud/distributive/chkutil"
-	"github.com/CiscoCloud/distributive/errutil"
-	"github.com/CiscoCloud/distributive/usrstatus"
-	"os/user"
-	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/tabular"
+	gossuser "github.com/aelsabbahy/goss/system"
+	gossutil "github.com/aelsabbahy/goss/util"
+	libcontaineruser "github.com/opencontainers/runc/libcontainer/user"
 )
 
 // validGroupName asks: Is this a valid POSIX+Linux group name?
@@ -26,28 +32,13 @@ func validUsername(name string) bool {
 	return true
 }
 
-// groupNotFound creates generic error messages and exit codes for groupExits,
-// UserInGroup, and GroupID
-func groupNotFound(name string) (int, string, error) {
-	// get a nicely formatted list of groups that do exist
-	var existing []string
-	groups, err := usrstatus.Groups()
-	if err != nil {
-		return 1, "", err
-	}
-	for _, group := range groups {
-		existing = append(existing, group.Name)
-	}
-	return errutil.GenericError("Group not found", name, existing)
-}
-
 /*
 #### GroupExists
 Description: Does this group exist?
 Parameters:
-  - Name (group name): Name of the group
+- Name (group name): Name of the group
 Example parameters:
-  - sudo, wheel, www, storage
+- sudo, wheel, www, storage
 */
 
 type GroupExists struct{ name string }
@@ -65,37 +56,22 @@ func (chk GroupExists) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk GroupExists) Status() (int, string, error) {
-	// doesGroupExist preforms all the meat of GroupExists
-	doesGroupExist := func(name string) (bool, error) {
-		groups, err := usrstatus.Groups()
-		if err != nil {
-			return false, err
-		}
-		for _, group := range groups {
-			if group.Name == name {
-				return true, nil
-			}
-		}
-		return false, nil
-	}
-	boo, err := doesGroupExist(chk.name)
+	_, err := libcontaineruser.LookupGroup(chk.name)
 	if err != nil {
 		return 1, "", err
-	} else if boo {
-		return errutil.Success()
 	}
-	return groupNotFound(chk.name)
+	return errutil.Success()
 }
 
 /*
 #### UserInGroup
 Description: Is this user in this group?
 Parameters:
-  - User (user name): Name of the group
-  - Group (group name): Name of the group
+- User (user name): Name of the group
+- Group (group name): Name of the group
 Example parameters:
-  - lb, siddharthist, root, centos
-  - sudo, wheel, www, storage
+- siddharthist, siddharthist, root, centos
+- sudo, wheel, www, storage
 */
 
 type UserInGroup struct{ user, group string }
@@ -116,10 +92,11 @@ func (chk UserInGroup) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk UserInGroup) Status() (int, string, error) {
-	boo, err := usrstatus.UserInGroup(chk.user, chk.group)
+	usr := gossuser.NewDefUser(chk.user, nil, gossutil.Config{})
+	groups, err := usr.Groups()
 	if err != nil {
 		return 1, "", err
-	} else if boo {
+	} else if tabular.StrIn(chk.group, groups) {
 		return errutil.Success()
 	}
 	return 1, "User not found in group", nil
@@ -129,11 +106,11 @@ func (chk UserInGroup) Status() (int, string, error) {
 #### GroupID
 Description: Does this group have this integer ID?
 Parameters:
-  - Group (group name): Name of the group
-  - ID (int): Group ID
+- Group (group name): Name of the group
+- ID (int): Group ID
 Example parameters:
-  - sudo, wheel, www, storage
-  - 0, 20, 50, 38
+- sudo, wheel, www, storage
+- 0, 20, 50, 38
 */
 
 type GroupID struct {
@@ -152,119 +129,66 @@ func (chk GroupID) New(params []string) (chkutil.Check, error) {
 	chk.name = params[0]
 	id64, err := strconv.ParseInt(params[1], 10, 64)
 	if err != nil {
-		return chk, errutil.ParameterTypeError{params[1], "int"}
+		return chk, errutil.ParameterTypeError{params[1], "int64"}
 	}
 	chk.id = int(id64)
 	return chk, nil
 }
 
 func (chk GroupID) Status() (int, string, error) {
-	groups, err := usrstatus.Groups()
+	group, err := libcontaineruser.LookupGroup(chk.name)
 	if err != nil {
-		return 0, "", err
-	}
-	for _, g := range groups {
-		if g.Name == chk.name {
-			if g.ID == chk.id {
-				return errutil.Success()
-			}
-			msg := "Group does not have expected ID"
-			return errutil.GenericError(msg, chk.id, []int{g.ID})
-		}
-	}
-	return groupNotFound(chk.name)
-}
-
-// lookupUser: Does the user with either the given username or given user id
-// exist? Given argument can either be a string that can be parsed as an int
-// (UID) or just a username
-func lookupUser(usernameOrUID string) (*user.User, error) {
-	usr, err := user.LookupId(usernameOrUID)
-	if err != nil {
-		usr, err = user.Lookup(usernameOrUID)
-	}
-	if err != nil {
-		return usr, fmt.Errorf("Couldn't find user: " + usernameOrUID)
-	}
-	return usr, nil
-}
-
-// userHasField checks to see if the user of a given username or UID's struct
-// field "fieldName" matches the given value. An abstraction of hasUID, hasGID,
-// hasName, hasHomeDir, and userExists
-func userHasField(usernameOrUID string, fieldName string, expected string) (bool, error) {
-	// get user to look at their info
-	user, err := lookupUser(usernameOrUID)
-	if err != nil || user == nil {
-		return false, err
-	}
-	// reflect and get values
-	val := reflect.ValueOf(*user)
-	fieldVal := val.FieldByName(fieldName)
-	// check to see if the field is a string
-	errutil.ReflectError(fieldVal, reflect.Struct, "userHasField")
-	actualValue := fieldVal.String()
-	return actualValue == expected, nil
-}
-
-// genericUserField constructs (int, string, error)s that check if a given field of a User
-// object found by lookupUser has a given value
-func genericUserField(usernameOrUID string, fieldName string, fieldValue string) (int, string, error) {
-	boolean, err := userHasField(usernameOrUID, fieldName, fieldValue)
-	if err != nil {
-		return 1, "User does not exist: " + usernameOrUID, nil
-	} else if boolean {
+		return 1, "", err
+	} else if group.Gid == chk.id {
 		return errutil.Success()
 	}
-	msg := "User does not have expected " + fieldName + ": "
-	msg += "\nUser: " + usernameOrUID
-	msg += "\nGiven: " + fieldValue
-	return 1, msg, nil
+	msg := "Group does not have expected ID"
+	return errutil.GenericError(msg, chk.id, []int{group.Gid})
 }
 
 /*
 #### UserExists
 Description: Does this user exist?
 Parameters:
-  - Username/UID (username or UID)
+- Username
 Example parameters:
-  - lb, root, user, 10
+- siddharthist, root, user, 10
 */
 
-type UserExists struct{ usernameOrUID string }
+type UserExists struct{ username string }
 
 func (chk UserExists) ID() string { return "UserExists" }
 
 func (chk UserExists) New(params []string) (chkutil.Check, error) {
-	// TODO validate usernameOrUID
+	// TODO validate username
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
 	}
-	chk.usernameOrUID = params[0]
+	chk.username = params[0]
 	return chk, nil
 }
 
 func (chk UserExists) Status() (int, string, error) {
-	if _, err := lookupUser(chk.usernameOrUID); err == nil {
+	if _, err := libcontaineruser.LookupUser(chk.username); err == nil {
 		return errutil.Success()
 	}
-	return 1, "User does not exist: " + chk.usernameOrUID, nil
+	return 1, "User does not exist: " + chk.username, nil
 }
 
 /*
 #### UserHasUID
 Description: Does this user have this UID?
 Parameters:
-  - Username/UID (username or UID)
-  - Expected UID (UID)
+- Username
+- Expected UID (UID)
 Example parameters:
-  - lb, root, user, 10
-  - 11, 13, 17
+- siddharthist, root, user, 10
+- 11, 13, 17
 */
 
 type UserHasUID struct {
-	usernameOrUID string
-	desiredUID    string
+	username    string
+	expectedUID int
 }
 
 func (chk UserHasUID) ID() string { return "UserHasUID" }
@@ -273,36 +197,41 @@ func (chk UserHasUID) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
-	// simply check that it is an integer, no need to store it as such
-	// since it is converted back to a string in the comparison
-	_, err := strconv.ParseInt(params[1], 10, 32)
+	// TODO validate username
+	chk.username = params[0]
+	uidInt, err := strconv.ParseInt(params[1], 10, 32)
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "int32"}
 	}
-	chk.desiredUID = params[1]
-	// TODO validate usernameOrUID
-	chk.usernameOrUID = params[0]
+	chk.expectedUID = int(uidInt)
 	return chk, nil
 }
 
 func (chk UserHasUID) Status() (int, string, error) {
-	return genericUserField(chk.usernameOrUID, "Uid", chk.desiredUID)
+	usr, err := libcontaineruser.LookupUser(chk.username)
+	if err != nil {
+		return 1, "", err
+	} else if usr.Uid == chk.expectedUID {
+		return errutil.Success()
+	}
+	msg := "User " + chk.username + "didn't have UID" + string(chk.expectedUID)
+	return 1, msg, nil
 }
 
 /*
 #### UserHasGID
 Description: Does this user have this GID?
 Parameters:
-  - Username/UID (username or UID)
-  - Expected GID (GID)
+- Username
+- Expected GID (GID)
 Example parameters:
-  - lb, root, user, 10
-  - 11, 13, 17
+- siddharthist, root, user, 10
+- 11, 13, 17
 */
 
 type UserHasGID struct {
-	usernameOrUID string
-	desiredGID    string
+	username    string
+	expectedGID int
 }
 
 func (chk UserHasGID) ID() string { return "UserHasGID" }
@@ -311,90 +240,39 @@ func (chk UserHasGID) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
-	// store it as a string for comparison
-	_, err := strconv.ParseInt(params[1], 10, 32)
+	gidInt, err := strconv.ParseInt(params[1], 10, 32)
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "int32"}
 	}
-	chk.desiredGID = params[1]
-	// TODO validate usernameOrUID
-	chk.usernameOrUID = params[0]
+	chk.expectedGID = int(gidInt)
+	// TODO validate username
+	chk.username = params[0]
 	return chk, nil
 }
 
 func (chk UserHasGID) Status() (int, string, error) {
-	return genericUserField(chk.usernameOrUID, "Gid", string(chk.desiredGID))
-}
-
-/*
-#### UserHasUsername
-Description: Does this user have this username?
-Parameters:
-  - Username/UID (username or UID)
-  - Expected Username (username)
-Example parameters:
-  - lb, 0, 12
-  - lb, root, user
-*/
-
-type UserHasUsername struct{ usernameOrUID, expectedUsername string }
-
-func (chk UserHasUsername) ID() string { return "UserHasUsername" }
-
-func (chk UserHasUsername) New(params []string) (chkutil.Check, error) {
-	if len(params) != 2 {
-		return chk, errutil.ParameterLengthError{2, params}
+	usr, err := libcontaineruser.LookupUser(chk.username)
+	if err != nil {
+		return 1, "", err
+	} else if usr.Gid == chk.expectedGID {
+		return errutil.Success()
 	}
-	chk.usernameOrUID = params[0]
-	chk.expectedUsername = params[1]
-	return chk, nil
-}
-
-func (chk UserHasUsername) Status() (int, string, error) {
-	return genericUserField(chk.usernameOrUID, "Username", chk.expectedUsername)
-}
-
-/*
-#### UserHasName
-Description: Does this user have this real name?
-Parameters:
-  - Username/UID (username or UID)
-  - Expected real name (string)
-Example parameters:
-  - lb, root, 0
-  - langston, steve, brian
-*/
-
-type UserHasName struct{ usernameOrUID, expectedName string }
-
-func (chk UserHasName) ID() string { return "UserHasName" }
-
-func (chk UserHasName) New(params []string) (chkutil.Check, error) {
-	if len(params) != 2 {
-		return chk, errutil.ParameterLengthError{2, params}
-	}
-	// TODO validate username
-	chk.usernameOrUID = params[0]
-	chk.expectedName = params[1]
-	return chk, nil
-}
-
-func (chk UserHasName) Status() (int, string, error) {
-	return genericUserField(chk.usernameOrUID, "Name", chk.expectedName)
+	msg := "User " + chk.username + "didn't have GID" + string(chk.expectedGID)
+	return 1, msg, nil
 }
 
 /*
 #### UserHasHomeDir
 Description: Does this user have this home directory?
 Parameters:
-  - Username/UID (username or UID)
-  - Expected home directory (path)
+- Username
+- Expected home directory (path)
 Example parameters:
-  - lb, root, 0
-  - /home/lb, /root, /mnt/my/custom/dir
+- siddharthist, root, 0
+- /home/siddharthist, /root, /mnt/my/custom/dir
 */
 
-type UserHasHomeDir struct{ usernameOrUID, expectedHomeDir string }
+type UserHasHomeDir struct{ username, expectedHomeDir string }
 
 func (chk UserHasHomeDir) ID() string { return "UserHasHomeDir" }
 
@@ -403,11 +281,18 @@ func (chk UserHasHomeDir) New(params []string) (chkutil.Check, error) {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
 	// TODO validate username
-	chk.usernameOrUID = params[0]
+	chk.username = params[0]
 	chk.expectedHomeDir = params[1]
 	return chk, nil
 }
 
 func (chk UserHasHomeDir) Status() (int, string, error) {
-	return genericUserField(chk.usernameOrUID, "HomeDir", chk.expectedHomeDir)
+	usr, err := libcontaineruser.LookupUser(chk.username)
+	if err != nil {
+		return 1, "", err
+	} else if usr.Home == chk.expectedHomeDir {
+		return errutil.Success()
+	}
+	msg := "User " + chk.username + "didn't have home dir " + chk.expectedHomeDir
+	return 1, msg, nil
 }

@@ -30,7 +30,7 @@ build:
     # TODO: make all tests work in drone!
     # Missing: checklists, checks, memstatus, netstatus
     #- godep go test ./...
-    - godep go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular ./usrstatus
+    - godep go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular
     - godep go install .
     - distributive --verbosity=info -d "./samples"
     # - distributive -d ./samples/

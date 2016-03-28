@@ -1,22 +1,6 @@
 package checks
 
-import (
-	"fmt"
-	"testing"
-)
-
-var validUsernamesOrUIDs = append(append(names, smallInts...), bigIntsUnder100...)
-
-func TestGroupNotFound(t *testing.T) {
-	t.Parallel()
-	code, message, _ := groupNotFound("dummyGroup")
-	if code <= 0 || message == "" {
-		msg := "groupNotFound isn't properly reporting errors as such"
-		msg += "\n\tCode: " + fmt.Sprint(code)
-		msg += "\n\tMessage: " + message
-		t.Error(msg)
-	}
-}
+import "testing"
 
 func TestGroupExists(t *testing.T) {
 	t.Parallel()
@@ -65,7 +49,7 @@ func TestLookupUser(t *testing.T) {
 
 func TestUserExists(t *testing.T) {
 	t.Parallel()
-	testParameters(validUsernamesOrUIDs, notLengthOne, UserExists{}, t)
+	testParameters(names, notLengthOne, UserExists{}, t)
 	testCheck([][]string{{"root"}}, names, UserExists{}, t)
 }
 
