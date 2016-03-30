@@ -2,10 +2,7 @@
 distributive
 
 # glide/vendoring
-vendor/**/.git*
-vendor/**/.travis.yml
-vendor/**/README*
-vendor/**/LICENSE*
+vendor
 
 # hammer
 out
