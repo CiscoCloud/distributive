@@ -5,6 +5,8 @@ cache:
 
 build:
   image: golang
+  environment:
+    - GO15VENDOREXPERIMENT=1
   volumes:
     # dockerAPI
     - /var/run/docker.sock:/var/rundocker.sock
