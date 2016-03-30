@@ -1,5 +1,11 @@
+# binary
 distributive
-Godeps/**/.travis.yml
+
+# glide/vendoring
+vendor/**/.git*
+vendor/**/.travis.yml
+vendor/**/README*
+vendor/**/LICENSE*
 
 # hammer
 out
