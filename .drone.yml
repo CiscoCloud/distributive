@@ -1,10 +1,12 @@
 cache:
   mount:
     - .git
-    - Godeps
+    - vendor
 
 build:
   image: golang
+  environment:
+    - GO15VENDOREXPERIMENT=1
   volumes:
     # dockerAPI
     - /var/run/docker.sock:/var/rundocker.sock
@@ -21,17 +23,9 @@ build:
     - apt-get install -y sudo > /dev/null       # docker
     - apt-get install -y net-tools > /dev/null  # network
     - apt-get install -y lm-sensors php5-cli module-init-tools > /dev/null # misc
-    # There are lots of lint errors in distributive, the comments are laid out
-    # non-canonically.
-    # - go vet ./...
-    # - go get -u github.com/golang/lint/golint
-    # - golint ./...
-    - go get github.com/tools/godep
-    # TODO: make all tests work in drone!
-    # Missing: checklists, checks, memstatus, netstatus
-    #- godep go test ./...
-    - godep go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular
-    - godep go install .
+    # TODO: make all tests work in drone!  Missing: checklists, checks, memstatus, netstatus
+    - go get github.com/Masterminds/glide
+    - glide install
+    - go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular
+    - go install .
     - distributive --verbosity=info -d "./samples"
-    # - distributive -d ./samples/
-    - echo $?

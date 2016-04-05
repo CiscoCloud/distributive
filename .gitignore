@@ -1,5 +1,8 @@
+# binary
 distributive
-Godeps/**/.travis.yml
+
+# glide/vendoring
+vendor
 
 # hammer
 out

@@ -1,0 +1,36 @@
+package: github.com/CiscoCloud/distributive
+import:
+- package: github.com/Sirupsen/logrus
+  version: 418b41d23a1bf978c06faea5313ba194650ac088
+- package: github.com/aelsabbahy/GOnetstat
+  version: 2907f74398ebea717cab8187513bee184b1fdd26
+- package: github.com/aelsabbahy/goss
+  version: d28f3cc6d708fb012ea614acf712eb56712a7de3
+  subpackages:
+  - system
+  - util
+- package: github.com/codegangsta/cli
+  version: 565493f259bf868adb54d45d5f4c68d405117adf
+- package: github.com/coreos/go-systemd
+  version: 7b2428fec40033549c68f54e26e89e7ca9a9ce31
+  subpackages:
+  - dbus
+  - util
+- package: github.com/fsouza/go-dockerclient
+  version: c9ad0ce23f68428421adfc6ced9e6123f54788a5
+- package: github.com/godbus/dbus
+  version: e2cf28118e66a6a63db46cf6088a35d2054d3bb0
+- package: github.com/mitchellh/go-ps
+  version: e6c6068076470196af082b1ff896e24a51a87b2a
+- package: github.com/mitchellh/osext
+  version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
+- package: github.com/mitchellh/panicwrap
+  version: 1655d88c8ff7495ae9d2c19fd8f445f4657e22b0
+- package: github.com/opencontainers/runc
+  version: 519529febe2e0acb14e39cf54112c292ccb2eabe
+  subpackages:
+  - libcontainer/user
+- package: golang.org/x/crypto
+  version: c8b9e6388ef638d5a8a9d865c634befdc46a6784
+  subpackages:
+  - sha3
