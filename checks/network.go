@@ -2,19 +2,18 @@ package checks
 
 import (
 	"fmt"
-	"github.com/CiscoCloud/distributive/chkutil"
-	"github.com/CiscoCloud/distributive/errutil"
-	"github.com/CiscoCloud/distributive/netstatus"
-	"github.com/CiscoCloud/distributive/tabular"
-	log "github.com/Sirupsen/logrus"
 	"net"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"time"
-)
 
-var noTime, _ = time.ParseDuration("0μs")
+	"github.com/CiscoCloud/distributive/chkutil"
+	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/netstatus"
+	"github.com/CiscoCloud/distributive/tabular"
+	log "github.com/Sirupsen/logrus"
+)
 
 // parsePort determines whether or not this string represents a valid port
 // number, and returns it if so, and an error if not.
@@ -30,12 +29,12 @@ func parsePort(portStr string) (uint16, error) {
 #### Port
 Description: Is this port open?
 Parameters:
-  - Number (uint16): Port number (decimal)
+- Number (uint16): Port number (decimal)
 Example parameters:
-  - 80, 8080, 8500, 5050
+- 80, 8080, 8500, 5050
 Dependencies:
-  - /proc/net/tcp
-  - /proc/net/udp
+- /proc/net/tcp
+- /proc/net/udp
 */
 
 type Port struct{ port uint16 }
@@ -70,11 +69,11 @@ func (chk Port) Status() (int, string, error) {
 #### PortTCP
 Description: Is this port open on the TCP protocol?
 Parameters:
-  - Number (uint16): Port number (decimal)
+- Number (uint16): Port number (decimal)
 Example parameters:
-  - 80, 8080, 8500, 5050
+- 80, 8080, 8500, 5050
 Dependencies:
-  - /proc/net/tcp
+- /proc/net/tcp
 */
 
 type PortTCP struct{ port uint16 }
@@ -108,11 +107,11 @@ func (chk PortTCP) Status() (int, string, error) {
 #### PortUDP
 Description: Is this port open on the UDP protocol?
 Parameters:
-  - Number (uint16): Port number (decimal)
+- Number (uint16): Port number (decimal)
 Example parameters:
-  - 80, 8080, 8500, 5050
+- 80, 8080, 8500, 5050
 Dependencies:
-  - /proc/net/udp
+- /proc/net/udp
 */
 
 type PortUDP struct{ port uint16 }
@@ -146,9 +145,9 @@ func (chk PortUDP) Status() (int, string, error) {
 #### InterfaceExists
 Description: Does this interface exist?
 Parameters:
-  - Name (string): name of the interface
+- Name (string): name of the interface
 Example parameters:
-  - lo, wlp1s0, docker0
+- lo, wlp1s0, docker0
 */
 
 type InterfaceExists struct{ name string }
@@ -184,9 +183,9 @@ func (chk InterfaceExists) Status() (int, string, error) {
 #### Up
 Description: Is this interface up?
 Parameters:
-  - Name (string): name of the interface
+- Name (string): name of the interface
 Example parameters:
-  - lo, wlp1s0, docker0
+- lo, wlp1s0, docker0
 */
 
 type Up struct{ name string }
@@ -235,11 +234,11 @@ func ipCheck(name string, address *net.IP, version int) (int, string, error) {
 #### IP4
 Description: Does this interface have this IPV4 address?
 Parameters:
-  - Interface name (string)
-  - Address (IP address)
+- Interface name (string)
+- Address (IP address)
 Example parameters:
-  - lo, wlp1s0, docker0
-  - 192.168.0.21, 222.111.0.22
+- lo, wlp1s0, docker0
+- 192.168.0.21, 222.111.0.22
 */
 
 type IP4 struct {
@@ -269,11 +268,11 @@ func (chk IP4) Status() (int, string, error) {
 #### IP6
 Description: Does this interface have this IPV6 address?
 Parameters:
-  - Interface name (string)
-  - IP (IP address)
+- Interface name (string)
+- IP (IP address)
 Example parameters:
-  - lo, wlp1s0, docker0
-  - FE80:0000:0000:0000:0202:B3FF:FE1E:8329, 2001:db8:0:1:1:1:1:1
+- lo, wlp1s0, docker0
+- FE80:0000:0000:0000:0202:B3FF:FE1E:8329, 2001:db8:0:1:1:1:1:1
 */
 
 type IP6 struct {
@@ -302,9 +301,9 @@ func (chk IP6) Status() (int, string, error) {
 #### Gateway
 Description: Does the default Gateway have this IP?
 Parameters:
-  - IP (IP address)
+- IP (IP address)
 Example parameters:
-  - 192.168.0.21, 222.111.0.22
+- 192.168.0.21, 222.111.0.22
 */
 
 type Gateway struct{ ip net.IP }
@@ -344,9 +343,9 @@ func (chk Gateway) Status() (int, string, error) {
 #### GatewayInterface
 Description: Is the default Gateway is using a specified interface?
 Parameters:
-  - Name (string)
+- Name (string)
 Example parameters:
-  - lo, wlp1s0, docker0
+- lo, wlp1s0, docker0
 */
 
 type GatewayInterface struct{ name string }
@@ -410,38 +409,31 @@ func (chk Host) Status() (int, string, error) {
 	return 1, "Host cannot be resolved: " + chk.hostname, nil
 }
 
-// TODO improve/fix
-// getConnection(int, string, error) is an abstraction of TCP and UDP
-func connectionCheck(host string, protocol string, timeout time.Duration) (int, string, error) {
-	if netstatus.CanConnect(host, protocol, timeout) {
-		return errutil.Success()
-	}
-	return 1, "Could not connect over " + protocol + " to host: " + host, nil
-}
-
 /*
 #### TCP
 Description: Can a given IP/port can be reached with a TCP connection
 Parameters:
 Example parameters:
-  - 192.168.0.21, 222.111.0.22
+- 192.168.0.21, 222.111.0.22
 */
 
-type TCP struct{ name string }
+type TCP struct{ address string }
 
 func (chk TCP) ID() string { return "TCP" }
 
 func (chk TCP) New(params []string) (chkutil.Check, error) {
-	// TODO add default port of :80 if none is provided
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
 	}
-	chk.name = params[0]
+	chk.address = params[0]
 	return chk, nil
 }
 
 func (chk TCP) Status() (int, string, error) {
-	return connectionCheck(chk.name, "TCP", noTime)
+	if _, err := net.Dial("tcp", chk.address); err == nil {
+		return errutil.Success()
+	}
+	return 1, fmt.Sprintf("Couldn't connect to %s", chk.address), nil
 }
 
 /*
@@ -449,43 +441,44 @@ func (chk TCP) Status() (int, string, error) {
 Description: Like TCP but with UDP instead.
 */
 
-type UDP struct{ name string }
+type UDP struct{ address string }
 
 func (chk UDP) ID() string { return "UDP" }
 
 func (chk UDP) New(params []string) (chkutil.Check, error) {
-	// TODO add default port of :80 if none is provided
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
 	}
-	chk.name = params[0]
+	chk.address = params[0]
 	return chk, nil
 }
 
 func (chk UDP) Status() (int, string, error) {
-	return connectionCheck(chk.name, "UDP", noTime)
+	if _, err := net.Dial("udp", chk.address); err == nil {
+		return errutil.Success()
+	}
+	return 1, fmt.Sprintf("Couldn't connect to %s", chk.address), nil
 }
 
 /*
 #### TCPTimeout
 Description: Like TCP, but with a second parameter of a timeout
 Example parameters:
-  - 5s, 7μs, 12m, 5h, 3d
+- 5s, 7μs, 12m, 5h, 3d
 */
 
 type TCPTimeout struct {
-	name    string
+	address string
 	timeout time.Duration
 }
 
 func (chk TCPTimeout) ID() string { return "TCPTimeout" }
 
 func (chk TCPTimeout) New(params []string) (chkutil.Check, error) {
-	// TODO add default port of :80 if none is provided
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
-	chk.name = params[0]
+	chk.address = params[0]
 	duration, err := time.ParseDuration(params[1])
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "time.Duration"}
@@ -495,7 +488,10 @@ func (chk TCPTimeout) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk TCPTimeout) Status() (int, string, error) {
-	return connectionCheck(chk.name, "TCP", chk.timeout)
+	if _, err := net.DialTimeout("udp", chk.address, chk.timeout); err == nil {
+		return errutil.Success()
+	}
+	return 1, fmt.Sprintf("Couldn't connect to %s", chk.address), nil
 }
 
 /*
@@ -504,18 +500,17 @@ Description: Like TCPTimeout, but with UDP
 */
 
 type UDPTimeout struct {
-	name    string
+	address string
 	timeout time.Duration
 }
 
 func (chk UDPTimeout) ID() string { return "UDPTimeout" }
 
 func (chk UDPTimeout) New(params []string) (chkutil.Check, error) {
-	// TODO add default port of :80 if none is provided
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
-	chk.name = params[0]
+	chk.address = params[0]
 	duration, err := time.ParseDuration(params[1])
 	if err != nil {
 		return chk, errutil.ParameterTypeError{params[1], "time.Duration"}
@@ -525,7 +520,10 @@ func (chk UDPTimeout) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk UDPTimeout) Status() (int, string, error) {
-	return connectionCheck(chk.name, "UDP", chk.timeout)
+	if _, err := net.DialTimeout("udp", chk.address, chk.timeout); err == nil {
+		return errutil.Success()
+	}
+	return 1, fmt.Sprintf("Couldn't connect to %s", chk.address), nil
 }
 
 // returns a column of the routing table as a slice of strings
@@ -557,11 +555,11 @@ func RoutingTableMatch(col string, str string) (int, string, error) {
 #### RoutingTableDestination
 Description: Is this IP address in the kernel's IP routing table?
 Parameters:
-  - IP (IP address)
+- IP (IP address)
 Example parameters:
-  - 192.168.0.21, 222.111.0.22
+- 192.168.0.21, 222.111.0.22
 Dependencies:
-  - `route -n`
+- `route -n`
 */
 
 type RoutingTableDestination struct{ ip net.IP }
@@ -587,11 +585,11 @@ func (chk RoutingTableDestination) Status() (int, string, error) {
 #### RoutingTableInterface
 Description: Is this interface in the kernel's IP routing table?
 Parameters:
-  - Name (string)
+- Name (string)
 Example parameters:
-  - lo, wlp1s0, docker0
+- lo, wlp1s0, docker0
 Dependencies:
-  - `route -n`
+- `route -n`
 */
 
 type RoutingTableInterface struct{ name string }
@@ -614,9 +612,9 @@ func (chk RoutingTableInterface) Status() (int, string, error) {
 #### RoutingTableGateway
 Description: Is this the Gateway's IP address, as listed in the routing table?
 Parameters:
-  - IP (IP address)
+- IP (IP address)
 Example parameters:
-  - 192.168.0.21, 222.111.0.22
+- 192.168.0.21, 222.111.0.22
 */
 
 // routeTableGateway checks if an IP address is a Gateway's IP in the
@@ -652,11 +650,11 @@ func ResponseMatchesGeneral(urlstr string, re *regexp.Regexp, secure bool) (int,
 #### ResponseMatches
 Description: Does the response from this URL match this regexp?
 Parameters:
-  - URL (URL string)
-  - Regexp (regexp)
+- URL (URL string)
+- Regexp (regexp)
 Example parameters:
-  - http://my-server.example.com, http://eff.org
-  - "40[0-9]", "my welome message!", "key:value"
+- http://my-server.example.com, http://eff.org
+- "40[0-9]", "my welome message!", "key:value"
 */
 
 type ResponseMatches struct {
