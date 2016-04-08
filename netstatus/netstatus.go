@@ -77,11 +77,8 @@ func OpenPorts(protocol string) (ports []uint16) {
 // PortOpen reports whether or not the given (decimal) port is open
 // Its protocol argument can only be one of: "tcp" | "udp"
 func PortOpen(protocol string, port uint16) bool {
-	dur, err := time.ParseDuration("5s")
-	if err != nil {
-		log.Fatal(err)
-	}
-	return CanConnect(fmt.Sprintf("localhost:%v", port), protocol, dur)
+	_, err := net.Dial(protocol, fmt.Sprintf("localhost:%v", port))
+	return err == nil
 }
 
 // ValidIP returns a boolean answering the question "is this a valid IPV4/6
@@ -139,50 +136,12 @@ func Resolvable(host string) bool {
 
 // CanConnect tests whether a connection can be made to a given host on its
 // given port using protocol ("TCP"|"UDP")
-func CanConnect(host string, protocol string, timeout time.Duration) bool {
-	var conn net.Conn
+func CanConnect(address, protocol string, timeout time.Duration) bool {
 	var err error
-	var timeoutAddress string
-	protocol = strings.ToLower(protocol)
-	nanoseconds := timeout.Nanoseconds()
-	switch protocol {
-	case "tcp":
-		tcpaddr, err := net.ResolveTCPAddr(protocol, host)
-		if err != nil {
-			return false
-		}
-		timeoutAddress = tcpaddr.String()
-		if nanoseconds <= 0 {
-			conn, err = net.DialTCP(protocol, nil, tcpaddr)
-		}
-	case "udp":
-		udpaddr, err := net.ResolveUDPAddr(protocol, host)
-		if err != nil {
-			return false
-		}
-		timeoutAddress = udpaddr.String()
-		if nanoseconds <= 0 {
-			// TODO why the inconsistency here? with the tialTCP call
-			conn, err = net.DialUDP(protocol, nil, udpaddr)
-		}
-	default:
-		msg := "Probable configuration error: Unsupported protocol"
-		log.WithField("protocol", protocol).Fatal(msg)
-	}
-	if conn != nil {
-		defer conn.Close()
-	}
-	// if a duration was specified, use it
-	if nanoseconds > 0 {
-		conn, err = net.DialTimeout(protocol, timeoutAddress, timeout)
-		if conn != nil {
-			defer conn.Close()
-		}
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Debug("Error while connecting to host")
-		}
+	if timeout > 0 {
+		_, err = net.Dial(strings.ToLower(protocol), address)
+	} else {
+		_, err = net.DialTimeout(strings.ToLower(protocol), address, timeout)
 	}
 	if err == nil {
 		return true

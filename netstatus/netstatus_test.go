@@ -2,23 +2,10 @@ package netstatus
 
 import (
 	"fmt"
+	"net"
 	"testing"
 	"time"
 )
-
-func TestCanConnect(t *testing.T) {
-	t.Parallel()
-	badHosts := []string{"asdklfhabssdla.com:80", "lkjashldfb.com:80"}
-	for _, host := range badHosts {
-		duration, err := time.ParseDuration("20s")
-		if err != nil {
-			t.Error(err.Error())
-		}
-		if CanConnect(host, "TCP", duration) {
-			t.Error("Could connect to host " + host)
-		}
-	}
-}
 
 func TestGetHexPorts(t *testing.T) {
 	t.Parallel()
@@ -44,7 +31,8 @@ func TestOpenPorts(t *testing.T) {
 				t.Errorf(msg+": %d", port)
 			} else {
 				dur, _ := time.ParseDuration("10s")
-				if CanConnect(fmt.Sprintf("localhost:%v", port), protocol, dur) {
+				addr := fmt.Sprintf("localhost:%v", port)
+				if _, err := net.DialTimeout(protocol, addr, dur); err != nil {
 					couldConnect++
 				}
 			}
