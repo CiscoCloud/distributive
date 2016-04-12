@@ -1,13 +1,17 @@
 package checks
 
 import (
+	"os/exec"
+	"regexp"
+	"strings"
+
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
-	"os/exec"
-	"regexp"
-	"strings"
+	gossresource "github.com/aelsabbahy/goss/resource"
+	gosssystem "github.com/aelsabbahy/goss/system"
+	gossutil "github.com/aelsabbahy/goss/util"
 )
 
 // TODO implement package managers as interfaces
@@ -230,10 +234,10 @@ func existsRepoWithProperty(prop string, val *regexp.Regexp, manager string) (in
 #### RepoExists
 Description: Is this repo present?
 Parameters:
-  - Pakage manager: rpm | dpkg | pacman
-  - Regexp (regexp): Regexp to match the name of the repo
+- Pakage manager: rpm | dpkg | pacman
+- Regexp (regexp): Regexp to match the name of the repo
 Example parameters:
-  - "base", "firefox-[nN]ightly"
+- "base", "firefox-[nN]ightly"
 */
 
 type RepoExists struct {
@@ -267,12 +271,12 @@ func (chk RepoExists) Status() (int, string, error) {
 #### RepoExistsURI
 Description: Is a repo with this URI present?
 Parameters:
-  - Pakage manager: rpm | dpkg | pacman
-  - Regexp (regexp): Regexp to match the URI of the repo
+- Pakage manager: rpm | dpkg | pacman
+- Regexp (regexp): Regexp to match the URI of the repo
 Example parameters:
-  - "http://my-repo.example.com", "/path/to/repo"
+- "http://my-repo.example.com", "/path/to/repo"
 Depedencies:
-  - dpkg | pacman
+- dpkg | pacman
 */
 
 type RepoExistsURI struct {
@@ -306,11 +310,11 @@ func (chk RepoExistsURI) Status() (int, string, error) {
 #### PacmanIgnore
 Description: Are upgrades to this package ignored by pacman?
 Parameters:
-  - Package (string): Name of the package
+- Package (string): Name of the package
 Example parameters:
-  - node, python, etcd
+- node, python, etcd
 Depedencies:
-  - pacman, specifically /etc/pacman.conf
+- pacman, specifically /etc/pacman.conf
 */
 
 type PacmanIgnore struct{ pkg string }
@@ -347,11 +351,11 @@ func (chk PacmanIgnore) Status() (int, string, error) {
 #### Installed
 Description: Is this package Installed?
 Parameters:
-  - Package (string): Name of the package
+- Package (string): Name of the package
 Example parameters:
-  - node, python, etcd
+- node, python, etcd
 Depedencies:
-  - pacman | dpkg | rpm
+- pacman | dpkg | rpm | apk
 */
 
 type Installed struct{ pkg string }
@@ -367,29 +371,23 @@ func (chk Installed) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Installed) Status() (int, string, error) {
-	name := getManager()
-	options := managers[name]
-	cmd := exec.Command(name, options, chk.pkg)
-	out, err := cmd.CombinedOutput()
-	outstr := string(out)
-	var msg string
-	switch {
-	case err == nil && (name == "rpm" || name == "pacman"):
-		return errutil.Success()
-	// failures due to mising package
-	case name == "dpkg" && strings.Contains(outstr, "not installed"):
-	case name == "pacman" && strings.Contains(outstr, "not found"):
-	case name == "rpm" && strings.Contains(outstr, "not installed"):
-		msg := "Package was not found:"
-		msg += "\n\tPackage name: " + chk.pkg
-		msg += "\n\tPackage manager: " + name
-		msg += "\n\tCommand output: " + outstr
-		return 1, msg, nil
-	// failures that were not due to packages not being installed
-	case err != nil:
-		errutil.ExecError(cmd, outstr, err)
+	var pkg gosssystem.Package
+	switch gosssystem.DetectPackageManager() {
+	case "deb":
+		pkg = gosssystem.NewDebPackage(chk.pkg, nil, gossutil.Config{})
+	case "apk":
+		pkg = gosssystem.NewAlpinePackage(chk.pkg, nil, gossutil.Config{})
+	case "pacman":
+		pkg = gosssystem.NewPacmanPackage(chk.pkg, nil, gossutil.Config{})
 	default:
+		pkg = gosssystem.NewRpmPackage(chk.pkg, nil, gossutil.Config{})
+	}
+	// initialize the package
+	pkg2, err := gossresource.NewPackage(pkg, gossutil.Config{})
+	if err != nil {
+		return 1, "", err
+	} else if pkg2.Installed {
 		return errutil.Success()
 	}
-	return 1, msg, nil
+	return 1, "Package not found", nil
 }

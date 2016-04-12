@@ -1,13 +1,18 @@
 hash: 96c6cc063222cd885c21f622b7830fc4bee8fb3aae2998c8f0768dcf064703a4
-updated: 2016-03-30T11:10:31.005910067-07:00
+updated: 2016-04-11T14:42:58.639851742-07:00
 imports:
 - name: github.com/aelsabbahy/GOnetstat
   version: 2907f74398ebea717cab8187513bee184b1fdd26
 - name: github.com/aelsabbahy/goss
-  version: d28f3cc6d708fb012ea614acf712eb56712a7de3
+  version: 105a300d709ac0a9618b5251c3421df88beb6266
   subpackages:
   - system
   - util
+  - resource
+- name: github.com/cheekybits/genny
+  version: 670ed678f7799e3ead194eaf9a0848920a494889
+  subpackages:
+  - generic
 - name: github.com/codegangsta/cli
   version: 565493f259bf868adb54d45d5f4c68d405117adf
 - name: github.com/coreos/go-systemd
@@ -41,6 +46,20 @@ imports:
   version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
 - name: github.com/mitchellh/panicwrap
   version: 1655d88c8ff7495ae9d2c19fd8f445f4657e22b0
+- name: github.com/onsi/gomega
+  version: c72df929b80ef4930aaa75d5e486887ff2f3e06a
+  subpackages:
+  - types
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/testingtsupport
+  - matchers
+  - internal/oraclematcher
+  - format
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
 - name: github.com/opencontainers/runc
   version: 519529febe2e0acb14e39cf54112c292ccb2eabe
   subpackages:
