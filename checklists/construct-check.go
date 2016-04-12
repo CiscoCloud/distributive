@@ -10,7 +10,6 @@ import (
 
 // constructCheck returns a new Check interface compliant object, translated
 // from JSON and assigned its parameters
-// TODO think about origin tracing - even by line in a checklist
 func constructCheck(chkjs CheckJSON) chkutil.Check {
 	switch strings.ToLower(chkjs.ID) {
 	/***************** docker.go *****************/
@@ -143,6 +142,9 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 		return checks.UserHasGID{}
 	case "userhashomedir":
 		return checks.UserHasHomeDir{}
+		/***************** zookeeper.go *****************/
+	case "zookeeperruok":
+		return checks.ZooKeeperRUOK{}
 		/***************** default *****************/
 	default:
 		log.WithFields(log.Fields{
