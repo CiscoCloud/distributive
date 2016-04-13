@@ -5,7 +5,7 @@ import:
 - package: github.com/aelsabbahy/GOnetstat
   version: 2907f74398ebea717cab8187513bee184b1fdd26
 - package: github.com/aelsabbahy/goss
-  version: d28f3cc6d708fb012ea614acf712eb56712a7de3
+  version: 105a300d709ac0a9618b5251c3421df88beb6266
   subpackages:
   - system
   - util
@@ -34,3 +34,6 @@ import:
   version: c8b9e6388ef638d5a8a9d865c634befdc46a6784
   subpackages:
   - sha3
+- package: github.com/samuel/go-zookeeper
+  subpackages:
+  - zk

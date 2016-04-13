@@ -1,5 +1,5 @@
-hash: 96c6cc063222cd885c21f622b7830fc4bee8fb3aae2998c8f0768dcf064703a4
-updated: 2016-04-11T14:42:58.639851742-07:00
+hash: 726c1fb5980bb8f02dd214826b3d19977f9a71740f30918584d503b52623a4f5
+updated: 2016-04-12T14:52:59.19573283-07:00
 imports:
 - name: github.com/aelsabbahy/GOnetstat
   version: 2907f74398ebea717cab8187513bee184b1fdd26
@@ -64,6 +64,10 @@ imports:
   version: 519529febe2e0acb14e39cf54112c292ccb2eabe
   subpackages:
   - libcontainer/user
+- name: github.com/samuel/go-zookeeper
+  version: 218e9c81c0dd8b3b18172b2bbfad92cc7d6db55f
+  subpackages:
+  - zk
 - name: github.com/Sirupsen/logrus
   version: 418b41d23a1bf978c06faea5313ba194650ac088
 - name: golang.org/x/crypto
