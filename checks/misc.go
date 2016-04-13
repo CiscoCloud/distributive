@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -12,7 +13,6 @@ import (
 	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
 	"github.com/mitchellh/go-ps"
-	log "github.com/Sirupsen/logrus"
 )
 
 /*
@@ -161,8 +161,7 @@ Depedencies:
 - A configured lm-sensors (namely, `sensors`)
 */
 
-// TODO use uint
-type Temp struct{ max int16 }
+type Temp struct{ max uint16 }
 
 func (chk Temp) ID() string { return "Temp" }
 
@@ -177,58 +176,47 @@ func (chk Temp) New(params []string) (chkutil.Check, error) {
 	}
 	maxInt, err := strconv.ParseInt(maxStr, 10, 16)
 	if err != nil || maxInt < 0 {
-		return chk, errutil.ParameterTypeError{params[0], "+int16"}
+		return chk, errutil.ParameterTypeError{params[0], "uint16"}
 	}
-	chk.max = int16(maxInt)
+	chk.max = uint16(maxInt)
 	return chk, nil
 }
 
-func (chk Temp) Status() (int, string, error) {
-	// allCoreTemps returns the Temperature of each core
-	allCoreTemps := func() (Temps []int) {
-		cmd := exec.Command("sensors")
-		out, err := cmd.CombinedOutput()
-		outstr := string(out)
-		errutil.ExecError(cmd, outstr, err)
-		restr := `Core\s\d+:\s+[\+\-](?P<Temp>\d+)\.*\d*(°|\s)C`
-		re := regexp.MustCompile(restr)
-		for _, line := range regexp.MustCompile(`\n+`).Split(outstr, -1) {
-			if re.MatchString(line) {
-				// submatch captures only the integer part of the Temperature
-				matchDict := chkutil.SubmatchMap(re, line)
-				if _, ok := matchDict["Temp"]; !ok {
-					log.WithFields(log.Fields{
-						"regexp":    re.String(),
-						"matchDict": matchDict,
-						"output":    outstr,
-					}).Fatal("Couldn't find any Temperatures in `sensors` output")
-				}
-				TempInt64, err := strconv.ParseInt(matchDict["Temp"], 10, 64)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"regexp":    re.String(),
-						"matchDict": matchDict,
-						"output":    outstr,
-						"error":     err.Error(),
-					}).Fatal("Couldn't parse integer from `sensors` output")
-				}
-				Temps = append(Temps, int(TempInt64))
+// parse the output of `sensors` to get temperatures
+func parseSensorsOutput(out string) (Temps []int) {
+	re := regexp.MustCompile(`Core\s\d+:\s+[\+\-](?P<Temp>\d+)\.*\d*(°|\s)C`)
+	for _, line := range regexp.MustCompile(`\n+`).Split(out, -1) {
+		if re.MatchString(line) {
+			// submatch captures only the integer part of the Temperature
+			matchDict := chkutil.SubmatchMap(re, line)
+			if _, ok := matchDict["Temp"]; !ok {
+				return Temps
 			}
+			TempInt64, err := strconv.ParseInt(matchDict["Temp"], 10, 64)
+			if err != nil {
+				return Temps
+			}
+			Temps = append(Temps, int(TempInt64))
 		}
-		return Temps
 	}
-	// getCoreTemp returns an integer Temperature for a certain core
-	getCoreTemp := func(core int) (Temp int) {
-		Temps := allCoreTemps()
-		errutil.IndexError("No such core available", core, Temps)
-		return Temps[core]
+	return Temps
+}
+
+func (chk Temp) Status() (int, string, error) {
+	cmd := exec.Command("sensors")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		errutil.ExecError(cmd, string(out), err)
 	}
-	Temp := getCoreTemp(0)
-	if Temp < int(chk.max) {
+	temps := parseSensorsOutput(string(out))
+	if len(temps) <= 1 {
+		return 1, "", errors.New("Couldn't parse the output of lm-sensors")
+	}
+	if temps[0] < int(chk.max) {
 		return errutil.Success()
 	}
 	msg := "Core Temp exceeds defined maximum"
-	return errutil.GenericError(msg, chk.max, []string{fmt.Sprint(Temp)})
+	return errutil.GenericError(msg, chk.max, []string{fmt.Sprint(temps[0])})
 }
 
 /*
@@ -274,7 +262,7 @@ Description: Is this kernel parameter set?
 Parameters:
 - Name (string): Kernel parameter to check
 Example parameters:
-- TODO
+- "net.ipv6.route.gc_interval", "fs.file-max"
 Depedencies:
 - `/sbin/sysctl`
 */
@@ -317,9 +305,9 @@ Parameters:
 - Variable (string): PHP variable to check
 - Value (string): Expected value
 Example parameters:
-- TODO
+- "default_mimetype"
 Depedencies:
-- `php`
+- php
 */
 
 type PHPConfig struct{ variable, value string }
@@ -339,10 +327,8 @@ func (chk PHPConfig) Status() (int, string, error) {
 	// getPHPVariable returns the value of a PHP configuration value as a string
 	// or just "" if it doesn't exist
 	getPHPVariable := func(name string) (val string) {
-		quote := func(str string) string {
-			return "\"" + str + "\""
-		}
-		// php -r 'echo get_cfg_var("default_mimetype");'
+		quote := func(str string) string { return "\"" + str + "\"" }
+		// php -r 'echo get_cfg_var("variable_name");'
 		echo := fmt.Sprintf("echo get_cfg_var(%s);", quote(name))
 		cmd := exec.Command("php", "-r", echo)
 		out, err := cmd.CombinedOutput()
