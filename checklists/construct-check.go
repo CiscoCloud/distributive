@@ -91,10 +91,6 @@ func constructCheck(chkjs CheckJSON) chkutil.Check {
 	case "responsematchesinsecure":
 		return checks.ResponseMatchesInsecure{}
 		/***************** packages.go *****************/
-	case "repoexists":
-		return checks.RepoExists{}
-	case "repoexistsuri":
-		return checks.RepoExistsURI{}
 	case "pacmanignore":
 		return checks.PacmanIgnore{}
 	case "installed":

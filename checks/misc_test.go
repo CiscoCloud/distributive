@@ -45,18 +45,26 @@ func TestRunning(t *testing.T) {
 	testCheck(goodEggs, badEggs, Running{}, t)
 }
 
+func TestParseSensorsOutput(t *testing.T) {
+	sensorsOut := `
+	k8temp-pci-00c3
+	Adapter: PCI adapter
+	Core0 Temp:  +30.0°C
+	Core0 Temp:  +30.0°C
+	Core1 Temp:  +29.0°C
+	Core1 Temp:  +36.0°C
+	`
+	t.Parallel()
+	if len(parseSensorsOutput(sensorsOut)) < 1 {
+		t.Errorf("parseSensorsOutput didn't parse correctly")
+	}
+}
+
 func TestTemp(t *testing.T) {
 	t.Parallel()
 	validInputs := positiveInts[:len(positiveInts)-2] // only small ints
 	invalidInputs := append(append(names, notInts...), notLengthOne...)
-	goodEggs := [][]string{
-		{"1414"}, // melting temp. of silicon
-		{"1510"}, // " " " steel
-		{"1600"}, // " " " glass
-	}
-	badEggs := [][]string{{"0"}, {"1"}, {"2"}}
 	testParameters(validInputs, invalidInputs, Temp{}, t)
-	testCheck(goodEggs, badEggs, Temp{}, t)
 }
 
 func TestModule(t *testing.T) {
@@ -86,8 +94,5 @@ func TestPHPConfig(t *testing.T) {
 	t.Parallel()
 	validInputs := appendParameter(names, "dummy-value")
 	invalidInputs := notLengthTwo
-	goodEggs := [][]string{}
-	badEggs := validInputs
 	testParameters(validInputs, invalidInputs, PHPConfig{}, t)
-	testCheck(goodEggs, badEggs, PHPConfig{}, t)
 }
