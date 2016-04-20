@@ -21,7 +21,7 @@ import (
 type Check interface {
 	// ID is a uniquely identifying check name, like "running" or "temp"
 	ID() string
-	// New both validates the JSON-provided parameters (list of strings),
+	// New both validates the YAML-provided parameters (list of strings),
 	// and parses and stores them in an internal, typed field for later access.
 	New(parameters []string) (Check, error)
 	// Status returns the status of the check at the instant it is called.

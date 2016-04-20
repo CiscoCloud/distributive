@@ -1,0 +1,5 @@
+---
+name: Package checks
+Checklist:
+  - id: installed
+    parameters: [ git ]

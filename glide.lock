@@ -1,5 +1,5 @@
-hash: 726c1fb5980bb8f02dd214826b3d19977f9a71740f30918584d503b52623a4f5
-updated: 2016-04-12T14:52:59.19573283-07:00
+hash: 5327e284d91a8a924cf42507f54ea02933569700252b65e9f2e6bfc2a15e7e91
+updated: 2016-04-20T14:07:33.30579225-07:00
 imports:
 - name: github.com/aelsabbahy/GOnetstat
   version: 2907f74398ebea717cab8187513bee184b1fdd26
@@ -13,6 +13,8 @@ imports:
   version: 670ed678f7799e3ead194eaf9a0848920a494889
   subpackages:
   - generic
+- name: github.com/cloudfoundry-incubator/candiedyaml
+  version: 5cef21e2e4f0fd147973b558d4db7395176bcd95
 - name: github.com/codegangsta/cli
   version: 565493f259bf868adb54d45d5f4c68d405117adf
 - name: github.com/coreos/go-systemd
@@ -38,6 +40,8 @@ imports:
   - external/github.com/opencontainers/runc/libcontainer/user
   - external/github.com/docker/docker/pkg/ioutils
   - external/github.com/docker/docker/pkg/units
+- name: github.com/ghodss/yaml
+  version: 1a6f069841556a7bcaff4a397ca6e8328d266c2f
 - name: github.com/godbus/dbus
   version: e2cf28118e66a6a63db46cf6088a35d2054d3bb0
 - name: github.com/mitchellh/go-ps

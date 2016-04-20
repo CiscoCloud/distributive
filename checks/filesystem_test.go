@@ -73,9 +73,7 @@ func TestChecksum(t *testing.T) {
 		{"sha512", "chksum", "/proc/cpuinfo"},
 	}
 	// generate losers from all files - none of them have that checksum
-	invalidInputs := [][]string{
-		{}, {"", "", ""}, {"", ""}, {"sha256", "chksum", "/invalid/path"},
-	}
+	invalidInputs := [][]string{{}, {"", "", ""}, {"", ""}}
 	invalidInputs = append(invalidInputs, names...)
 	// TODO this fails when testing
 	//goodEggs := [][]string{validInputs[0], validInputs[1]}

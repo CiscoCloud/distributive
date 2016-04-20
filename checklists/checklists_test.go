@@ -5,51 +5,42 @@ import (
 )
 
 var validChecklistPaths = []string{
-	"../samples/filesystem.json",
-	"../samples/misc.json",
-	"../samples/network.json",
-	"../samples/packages.json",
-	//"../samples/systemctl.json",
-	"../samples/usage.json",
-	"../samples/users-and-groups.json",
+	"../samples/filesystem.yml",
+	"../samples/misc.yml",
+	"../samples/network.yml",
+	"../samples/packages.yml",
+	//"../samples/systemctl.yml",
+	"../samples/usage.yml",
+	"../samples/users-and-groups.yml",
 }
+
+var valid1 = []byte(`{ "Name": "test1",
+"Checklist" : [ { "ID" : "file", "Parameters" : ["/dev/null"] } ] }`)
+
+var valid2 = []byte(`{ "Name": "test2",
+"Checklist" : [ { "ID" : "directory", "Parameters" : ["/"] } ] }`)
+
+var invalid1 = []byte(`{ "asdf": "test1",
+"Checklist" : [ { "ID" : "", "Parameters" : ["/dev/null"] } ] }`)
+
+var invalid2 = []byte(`{ "Name": "test2",
+"aslk" : [ { "ID" : "directory", "Parameters" : ["/"] } ] }`)
+
+var invalid3 = []byte(`{ "Name": "test2",
+"Parameters" : [ { "asdf" : "directory", "Parameters" : ["/"] } ] }`)
 
 func TestChecklistFromBytes(t *testing.T) {
 	t.Parallel()
-	goodChklsts := [][]byte{[]byte(`
-	{
-		"Name": "test1",
-		"Checklist" : [ { "ID" : "file", "Parameters" : ["/dev/null"] } ]
-	}`),
-		[]byte(`
-	{
-		"Name": "test2",
-		"Checklist" : [ { "ID" : "directory", "Parameters" : ["/"] } ]
-	}`),
-	}
+	goodChklsts := [][]byte{valid1, valid2}
 	// won't work until logging and failing is properly decoupled from
 	// constructing checklists
 	/*
-	   badChklsts := [][]byte{[]byte(`
-	   {
-	   	"asdf": "test1",
-	   	"Checklist" : [ { "ID" : "", "Parameters" : ["/dev/null"] } ]
-	   }`),
-	   []byte(`
-	   {
-	   	"Name": "test2",
-	   	"aslk" : [ { "ID" : "directory", "Parameters" : ["/"] } ]
-	   }`),
-	   []byte(`
-	   {
-	   	"Name": "test2",
-	   	"Parameters" : [ { "asdf" : "directory", "Parameters" : ["/"] } ]
-	   }`),
-	   		}
+		badChklsts := [][]byte{invalid1, invalid2, invald3}
 	*/
 	for _, goodEgg := range goodChklsts {
-		if _, err := ChecklistFromBytes(goodEgg); err != nil {
-			t.Errorf("ChecklistFromBytes failed on:\n%s", string(goodEgg))
+		if i, err := ChecklistFromBytes(goodEgg); err != nil {
+			fmtStr := "ChecklistFromBytes failed on valid input %v with error %v"
+			t.Errorf(fmtStr, i, err)
 		}
 	}
 	/*

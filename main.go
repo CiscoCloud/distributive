@@ -71,7 +71,7 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 	return lsts
 }
 
-// main reads the command line flag -f, runs the Check specified in the JSON,
+// main reads the command line flag -f, runs the Check specified in the YAML,
 // and exits with the appropriate message and exit code.
 func main() {
 	// Set up global panic handling

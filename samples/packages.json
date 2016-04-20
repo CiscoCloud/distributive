@@ -1,9 +1,0 @@
-{
-    "Name": "Package checks",
-    "Checklist" : [
-        {
-            "ID" : "installed",
-            "Parameters" : ["git"]
-        }
-    ]
-}

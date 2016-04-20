@@ -1,0 +1,25 @@
+---
+name: Group checks
+Checklist:
+  - id: groupExists
+    parameters:
+      - sudo
+  - id: groupExists
+    parameters:
+      - bin
+  - id: groupId
+    parameters:
+      - root
+      - "0"
+  - id: userExists
+    parameters:
+      - root
+  - id: userHasUid
+    parameters:
+      - root
+      - "0"
+  - id: UserHasHomeDir
+    parameters:
+      - root
+      - /root
+

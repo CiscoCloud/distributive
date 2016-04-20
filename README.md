@@ -27,11 +27,11 @@ This readme documents the current (development) version of distributive.
 
 Distributive is a tool for running distributed health checks in datacenters.
 It was designed with Consul in mind, but is stack agnostic. It is simple
-to configure (with JSON checklists) and easy to deploy and run. It has no
+to configure (with YAML checklists) and easy to deploy and run. It has no
 dependencies, and can be shipped as a speedy 1.3MB (yes, megabytes!) binary.
 
 Usually, some external server will ask the host to execute this program, reading
-a checklist from a JSON file, and will record this program's exit code and
+a checklist from a YAML file, and will record this program's exit code and
 standard out. Distributive's output includes information about which checks
 in a checklist failed, and how so.
 
@@ -87,12 +87,12 @@ GLOBAL OPTIONS:
 Examples:
 
 ```
-$ /path/to/distributive --verbosity="warn" -f ./samples/filesystem.json
-$ distributive --f="/etc/distributive/samples/network.json" --verbosity=debug
+$ /path/to/distributive --verbosity="warn" -f ./samples/filesystem.yml
+$ distributive --f="/etc/distributive/samples/network.yaml" --verbosity=debug
 $ ./distributive -u "http://pastebin.com/raw.php?i=5c1BAxcX"
 $ /distributive --verbosity="info"
 $ /path/to/distributive -d "/etc/distributive.d/" # same as default behavior
-$ cat samples/filesystem.json | ./distributive -d "" -s=true --verbosity=fatal
+$ cat samples/filesystem.yml | ./distributive -d "" -s=true --verbosity=fatal
 ```
 
 Supported Frameworks

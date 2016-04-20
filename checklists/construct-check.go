@@ -9,8 +9,8 @@ import (
 )
 
 // constructCheck returns a new Check interface compliant object, translated
-// from JSON and assigned its parameters
-func constructCheck(chkjs CheckJSON) chkutil.Check {
+// from YAML and assigned its parameters
+func constructCheck(chkjs CheckYAML) chkutil.Check {
 	switch strings.ToLower(chkjs.ID) {
 	/***************** docker.go *****************/
 	case "dockerimage":

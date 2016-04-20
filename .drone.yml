@@ -26,6 +26,6 @@ build:
     # TODO: make all tests work in drone!  Missing: checklists, checks, memstatus, netstatus
     - go get github.com/Masterminds/glide
     - glide install
-    - go test . ./chkutil ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular
+    - go test . ./chkutil ./checklists ./dockerstatus ./errutil ./fsstatus ./netstatus ./systemdstatus ./tabular
     - go install .
     - distributive --verbosity=info -d "./samples"

@@ -37,3 +37,4 @@ import:
 - package: github.com/samuel/go-zookeeper
   subpackages:
   - zk
+- package: github.com/ghodss/yaml
