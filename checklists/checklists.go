@@ -105,10 +105,10 @@ type ChecklistYAML struct {
 
 /***************** Checklist constructors *****************/
 
-// ChecklistFromBytes takes a bytestring of utf8 encoded YAML and turns it into
+// FromBytes takes a bytestring of utf8 encoded YAML and turns it into
 // a checklist struct. Used by all checklist constructors below. It validates
 // the number of parameters that each check has.
-func ChecklistFromBytes(data []byte) (chklst Checklist, err error) {
+func FromBytes(data []byte) (chklst Checklist, err error) {
 	var chklstYAML ChecklistYAML
 	err = yaml.Unmarshal(data, &chklstYAML)
 	if err != nil {
@@ -147,16 +147,16 @@ func ChecklistFromBytes(data []byte) (chklst Checklist, err error) {
 	return chklst, nil
 }
 
-// ChecklistFromFile reads the file at the path and parses its utf8 encoded yaml
+// FromFile reads the file at the path and parses its utf8 encoded yaml
 // data, turning it into a checklist struct.
-func ChecklistFromFile(path string) (chklst Checklist, err error) {
-	log.Debug("Creating checklist from " + path)
-	return ChecklistFromBytes(chkutil.FileToBytes(path))
+func FromFile(path string) (chklst Checklist, err error) {
+	log.Debugf("Creating checklist from %s", path)
+	return FromBytes(chkutil.FileToBytes(path))
 }
 
-// ChecklistFromStdin reads the stdin pipe and parses its utf8 encoded yaml
+// FromStdin reads the stdin pipe and parses its utf8 encoded yaml
 // data, turning it into a checklist struct.
-func ChecklistFromStdin() (chklst Checklist, err error) {
+func FromStdin() (chklst Checklist, err error) {
 	stdinAsBytes := func() (data []byte) {
 		data, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
@@ -169,14 +169,16 @@ func ChecklistFromStdin() (chklst Checklist, err error) {
 		return data
 	}
 	log.Debug("Creating checklist from stdin")
-	return ChecklistFromBytes(stdinAsBytes())
+	return FromBytes(stdinAsBytes())
 }
 
-// ChecklistsFromDir reads all of the files in the path and parses their utf8
+// FromDirectory reads all of the files in the path and parses their utf8
 // encoded yaml data, turning it into a checklist struct.
-func ChecklistsFromDir(dirpath string) (chklsts []Checklist, err error) {
+func FromDirectory(dirpath string) (chklsts []Checklist, err error) {
 	log.Debug("Creating checklist(s) from " + dirpath)
 	paths := chkutil.GetFilesWithExtension(dirpath, ".yaml")
+	paths = append(paths, chkutil.GetFilesWithExtension(dirpath, ".yml")...)
+	paths = append(paths, chkutil.GetFilesWithExtension(dirpath, ".json")...)
 	// send one checklist per path to the channel
 	/*
 		out := make(chan Checklist)
@@ -200,7 +202,7 @@ func ChecklistsFromDir(dirpath string) (chklsts []Checklist, err error) {
 		close(errs)
 	*/
 	for _, path := range paths {
-		chklst, err := ChecklistFromFile(path)
+		chklst, err := FromFile(path)
 		if err != nil {
 			return chklsts, err
 		}
@@ -209,10 +211,10 @@ func ChecklistsFromDir(dirpath string) (chklsts []Checklist, err error) {
 	return chklsts, nil
 }
 
-// checklistsFromDir reads data retrieved from the URL and parses its utf8
+// FromURL reads data retrieved from the URL and parses its utf8
 // encoded yaml data, turning it into a checklist struct. It also optionally
 // caches this data at remoteCheckDir, currently "/var/run/distributive/".
-func ChecklistFromURL(urlstr string, cache bool) (chklst Checklist, err error) {
+func FromURL(urlstr string, cache bool) (chklst Checklist, err error) {
 	log.Debug("Creating/checking remote checklist dir")
 	if err := os.MkdirAll(remoteCheckDir, 0775); err != nil {
 		log.WithFields(log.Fields{
@@ -246,10 +248,10 @@ func ChecklistFromURL(urlstr string, cache bool) (chklst Checklist, err error) {
 		body := chkutil.URLToBytes(urlstr, true) // secure connection
 		log.Debug("Writing remote checklist to cache")
 		chkutil.BytesToFile(body, fullpath)
-		return ChecklistFromBytes(body)
+		return FromBytes(body)
 	}
 	log.WithFields(log.Fields{
 		"path": fullpath,
 	}).Info("Using local copy of remote checklist")
-	return ChecklistFromFile(fullpath)
+	return FromFile(fullpath)
 }

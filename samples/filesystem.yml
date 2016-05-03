@@ -19,7 +19,7 @@ Checklist:
   - id: fileMatches
     parameters:
       - /tmp/test.txt
-      - 'c[has]eck\\wum'
+      - 'c[has]eck\wum'
   - id: permissions
     parameters:
       - /tmp/test.txt

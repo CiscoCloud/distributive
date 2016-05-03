@@ -1,5 +1,5 @@
 ---
-name: Miscellaneous system checks
+name: Miscellaneous checks
 Checklist:
   - name: process running check
     id: running
@@ -14,6 +14,6 @@ Checklist:
   - id: commandOutputMatches
     parameters:
       - echo works
-      - '\\w[aeiou]+(y)*r[kl]s'
+      - 'w[aeiou]+r[kl]s'
   - id: module
     parameters: [bridge]

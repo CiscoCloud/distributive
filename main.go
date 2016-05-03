@@ -31,13 +31,13 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 	msg := "Creating checklist(s)..."
 	switch {
 	// checklists from file are already tagged with their origin
-	// this applies to FromFile, FromDir, FromURL
+	// this applies to FromFile, FromDirectory, FromURL
 	case file != "":
 		log.WithFields(log.Fields{
 			"type": "file",
 			"path": file,
 		}).Info(msg)
-		chklst, err := checklists.ChecklistFromFile(file)
+		chklst, err := checklists.FromFile(file)
 		parseError(file, err)
 		lsts = append(lsts, chklst)
 	case dir != "":
@@ -45,7 +45,7 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 			"type": "dir",
 			"path": dir,
 		}).Info(msg)
-		chklsts, err := checklists.ChecklistsFromDir(dir)
+		chklsts, err := checklists.FromDirectory(dir)
 		parseError(dir, err)
 		lsts = append(lsts, chklsts...)
 	case url != "":
@@ -53,7 +53,7 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 			"type": "url",
 			"path": url,
 		}).Info(msg)
-		chklst, err := checklists.ChecklistFromURL(url, useCache)
+		chklst, err := checklists.FromURL(url, useCache)
 		parseError(url, err)
 		lsts = append(lsts, chklst)
 	case stdin == true:
@@ -61,7 +61,7 @@ func getChecklists(file string, dir string, url string, stdin bool) (lsts []chec
 			"type": "url",
 			"path": url,
 		}).Info(msg)
-		checklist, err := checklists.ChecklistFromStdin()
+		checklist, err := checklists.FromStdin()
 		checklist.Origin = "stdin" // TODO put this in the method
 		parseError("stdin", err)
 		lsts = append(lsts, checklist)

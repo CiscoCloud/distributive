@@ -1,5 +1,5 @@
 ---
-name: Usage measurement checks
+name: Usage checks
 Checklist:
   - id: memoryUsage
     parameters: [ "90" ]
