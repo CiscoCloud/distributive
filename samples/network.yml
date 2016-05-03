@@ -1,0 +1,11 @@
+---
+name: Network checks
+Checklist:
+  - id: interfaceExists
+    parameters: [ eth0 ]
+  - id: up
+    parameters: [ eth0 ]
+  - id: gatewayInterface
+    parameters: [ eth0 ]
+  - id: routingTableInterface
+    parameters: [ eth0 ]

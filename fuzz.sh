@@ -25,7 +25,7 @@ cp checklists/checklists.go{,.bak} # save checklists.go
 echo "$to_append" >> "checklists/checklists.go"
 go-fuzz-build github.com/CiscoCloud/distributive/checklists
 mkdir fuzzing/corpus
-cp samples/*.json fuzzing/corpus
+cp samples/*.yaml fuzzing/corpus
 go-fuzz	-bin="checklists-fuzz.zip" -workdir=fuzzing
 cp checklists/checklists.go{.bak,} # restore checklists.go
 rm checklists/checklists.go.bak    # remove backup

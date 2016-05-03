@@ -2,14 +2,15 @@ package checks
 
 import (
 	"errors"
+	"os"
+	"regexp"
+	"strings"
+
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/fsstatus"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
-	"os"
-	"regexp"
-	"strings"
 )
 
 type fileCondition func(path string) (bool, error)
@@ -32,9 +33,9 @@ func isType(name string, checker fileCondition, path string) (int, string, error
 #### file
 Description: Does this regular file exist?
 Parameters:
-  - Path (filepath): Path to file
+- Path (filepath): Path to file
 Example parameters:
-  - "/var/mysoftware/config.file", "/foo/bar/baz"
+- "/var/mysoftware/config.file", "/foo/bar/baz"
 */
 
 type File struct{ path string }
@@ -57,9 +58,9 @@ func (chk File) Status() (int, string, error) {
 #### directory
 Description: Does this regular directory exist?
 Parameters:
-  - Path (filepath): Path to directory
+- Path (filepath): Path to directory
 Example parameters:
-  - "/var/run/mysoftware.d/", "/foo/bar/baz/"
+- "/var/run/mysoftware.d/", "/foo/bar/baz/"
 */
 
 type Directory struct{ path string }
@@ -82,9 +83,9 @@ func (chk Directory) Status() (int, string, error) {
 #### symlink
 Description: Does this symlink exist?
 Parameters:
-  - Path (filepath): Path to symlink
+- Path (filepath): Path to symlink
 Example parameters:
-  - "/var/run/mysoftware.d/", "/foo/bar/baz", "/bin/sh"
+- "/var/run/mysoftware.d/", "/foo/bar/baz", "/bin/sh"
 */
 
 type Symlink struct{ path string }
@@ -108,14 +109,14 @@ func (chk Symlink) Status() (int, string, error) {
 Description: Does this file match the expected checksum when using the specified
 algorithm?
 Parameters:
-  - Algorithm (string): MD5 | SHA1 | SHA224 | SHA256 | SHA384 | SHA512 |
-  SHA3224 | SHA3256 | SHA3384 | SHA3512
-  - Expected checksum (checksum/string)
-  - Path (filepath): Path to file to check the checksum of
+- Algorithm (string): MD5 | SHA1 | SHA224 | SHA256 | SHA384 | SHA512 |
+SHA3224 | SHA3256 | SHA3384 | SHA3512
+- Expected checksum (checksum/string)
+- Path (filepath): Path to file to check the checksum of
 Example parameters:
-  - MD5, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3224, SHA3256, SHA3384,
-  - d41d8cd98f00b204e9800998ecf8427e, c6cf669dbd4cf2fbd59d03cc8039420a48a037fe
-  - /dev/null, /etc/config/important-file.conf
+- MD5, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3224, SHA3256, SHA3384,
+- d41d8cd98f00b204e9800998ecf8427e, c6cf669dbd4cf2fbd59d03cc8039420a48a037fe
+- /dev/null, /etc/config/important-file.conf
 */
 
 type Checksum struct{ algorithm, expectedChksum, path string }
@@ -132,9 +133,6 @@ func (chk Checksum) New(params []string) (chkutil.Check, error) {
 	}
 	chk.algorithm = params[0]
 	path := params[2]
-	if _, err := os.Stat(path); err != nil {
-		return chk, errutil.ParameterTypeError{path, "filepath"}
-	}
 	chk.path = path
 	// TODO validate length of checksum string
 	chk.expectedChksum = params[1]
@@ -142,6 +140,10 @@ func (chk Checksum) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Checksum) Status() (int, string, error) {
+	if _, err := os.Stat(chk.path); err != nil {
+		return 2, "", err
+	}
+
 	// getFileChecksum is self-explanatory
 	fileChecksum := func(algorithm string, path string) string {
 		if path == "" {
@@ -167,11 +169,11 @@ func (chk Checksum) Status() (int, string, error) {
 #### FileMatches
 Description: Does this file match this regexp?
 Parameters:
-  - Path (filepath): Path to file to check the contents of
-  - Regexp (regexp): Regexp to query file with
+- Path (filepath): Path to file to check the contents of
+- Regexp (regexp): Regexp to query file with
 Example parameters:
-  - /dev/null, /etc/config/important-file.conf
-  - "str", "myvalue=expected", "IP=\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}"
+- /dev/null, /etc/config/important-file.conf
+- "str", "myvalue=expected", "IP=\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}"
 */
 
 type FileMatches struct {
@@ -191,14 +193,14 @@ func (chk FileMatches) New(params []string) (chkutil.Check, error) {
 	}
 	chk.re = re
 	path := params[0]
-	if _, err := os.Stat(path); err != nil {
-		return chk, errutil.ParameterTypeError{path, "filepath"}
-	}
 	chk.path = path
 	return chk, nil
 }
 
 func (chk FileMatches) Status() (int, string, error) {
+	if _, err := os.Stat(chk.path); err != nil {
+		return 2, "", err
+	}
 	if chk.re.Match(chkutil.FileToBytes(chk.path)) {
 		return errutil.Success()
 	}
@@ -212,11 +214,11 @@ func (chk FileMatches) Status() (int, string, error) {
 #### Permissions
 Description: Does this file have the given Permissions?
 Parameters:
-  - Path (filepath): Path to file to check the Permissions of
-  - Mode (filemode): Filemode to expect
+- Path (filepath): Path to file to check the Permissions of
+- Mode (filemode): Filemode to expect
 Example parameters:
-  - /dev/null, /etc/config/important-file.conf
-  - -rwxrwxrwx, -rw-rw---- -rw-------, -rwx-r-x-r-x
+- /dev/null, /etc/config/important-file.conf
+- -rwxrwxrwx, -rw-rw---- -rw-------, -rwx-r-x-r-x
 */
 
 type Permissions struct{ path, expectedPerms string }
@@ -227,13 +229,9 @@ func (chk Permissions) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
 	}
-	if _, err := os.Stat(params[0]); err != nil {
-		return chk, errutil.ParameterTypeError{params[0], "file"}
-	}
 	mode := params[1]
 	modeRe := `-([r-][w-][x-]){3}`
 	if len(mode) != 10 || !regexp.MustCompile(modeRe).MatchString(mode) {
-		log.Debug("Did not match regexp " + modeRe) // TODO remove
 		return chk, errutil.ParameterTypeError{mode, "filemode"}
 	}
 	chk.path = params[0]
@@ -242,6 +240,9 @@ func (chk Permissions) New(params []string) (chkutil.Check, error) {
 }
 
 func (chk Permissions) Status() (int, string, error) {
+	if _, err := os.Stat(chk.path); err != nil {
+		return 1, "", err
+	}
 	passed, err := fsstatus.FileHasPermissions(chk.expectedPerms, chk.path)
 	if err != nil {
 		return 1, "", err

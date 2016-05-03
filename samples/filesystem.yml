@@ -1,0 +1,26 @@
+---
+name: Filesystem checks
+Checklist:
+  - id: directory
+    parameters: [ "/" ]
+  - id: symlink
+    parameters:
+      - /fakeroot
+  - id: checksum
+    parameters:
+      - MD5
+      - d3b4ee24a6813207784ad46e93b2a24d
+      - /tmp/test.txt
+  - id: checksum
+    parameters:
+      - SHA1
+      - 5be648e76990668a6f684671fadf81dd18ed0863
+      - /tmp/test.txt
+  - id: fileMatches
+    parameters:
+      - /tmp/test.txt
+      - 'c[has]eck\wum'
+  - id: permissions
+    parameters:
+      - /tmp/test.txt
+      - -rw-r--r--

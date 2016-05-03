@@ -1,0 +1,19 @@
+---
+name: Miscellaneous checks
+Checklist:
+  - name: process running check
+    id: running
+    parameters: [distributive]
+  - id: phpConfig
+    parameters:
+      - default_mimetype
+      - text/html
+  - id: command
+    parameters:
+      - sleep .00001
+  - id: commandOutputMatches
+    parameters:
+      - echo works
+      - 'w[aeiou]+r[kl]s'
+  - id: module
+    parameters: [bridge]
