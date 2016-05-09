@@ -23,7 +23,11 @@ type ZooKeeperRUOK struct {
 	servers []string
 }
 
-func (chk ZooKeeperRUOK) ID() string { return "ZooKeeperRUOK" }
+func init() { 
+    chkutil.Register("ZooKeeperRUOK", func() chkutil.Check {
+        return &ZooKeeperRUOK{}
+    })
+}
 
 func (chk ZooKeeperRUOK) New(params []string) (chkutil.Check, error) {
 	if len(params) < 2 {

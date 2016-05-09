@@ -14,6 +14,7 @@ import (
 )
 
 // where remote checks are downloaded to
+// TODO:  use ~/.distributive for non-root user.
 var remoteCheckDir = "/var/run/distributive/"
 
 /***************** Checklist type *****************/
@@ -21,9 +22,9 @@ var remoteCheckDir = "/var/run/distributive/"
 // Checklist is a struct that provides a concise way of thinking about doing
 // several checks and then returning some kind of output.
 type Checklist struct {
-	Name   string
-	Checks []chkutil.Check // list of chkutil.Checks to run
-	Origin string          // where did it come from?
+	Name, Notes string
+	Checks      []*CheckWrapper  // list of (wrapped) chkutil.Checks to run
+	Origin      string          // where did it come from?
 }
 
 // MakeReport runs all checks concurrently, and produces a user-facing string
@@ -40,7 +41,7 @@ func (chklst *Checklist) MakeReport() (anyFailed bool, report string) {
 	msgs := make(chan string)
 	for _, chk := range chklst.Checks {
 		log.Info("Running check " + chk.ID())
-		go func(chk chkutil.Check, codes chan int, msgs chan string) {
+		go func(chk *CheckWrapper, codes chan int, msgs chan string) {
 			log.Debug("Running check " + chk.ID())
 			code, msg, err := chk.Status()
 			if err != nil {
@@ -115,16 +116,13 @@ func FromBytes(data []byte) (chklst Checklist, err error) {
 		return chklst, err
 	}
 	chklst.Name = chklstYAML.Name
-	// get workers for each check
-	out := make(chan chkutil.Check)
-	defer close(out)
-	for _, chk := range chklstYAML.Checklist {
-		go func(chkYAML CheckYAML, out chan chkutil.Check) {
+	chklst.Notes = chklstYAML.Notes
+	for _, chkJSON := range chklstYAML.Checklist {
 			chkStruct := constructCheck(chkYAML)
 			if chkStruct == nil {
 				log.Fatal("Check had nil struct: " + chkYAML.ID)
 			}
-			newChk, err := chkStruct.New(chkYAML.Parameters)
+			_, err := chkStruct.New(chkYAML.Parameters)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"check":  chkYAML.ID,
@@ -132,12 +130,7 @@ func FromBytes(data []byte) (chklst Checklist, err error) {
 					"error":  err.Error(),
 				}).Fatal("Error while constructing check")
 			}
-			out <- newChk
-		}(chk, out)
-	}
-	// grab all the data from the channel, mutating the checklist
-	for _ = range chklstYAML.Checklist {
-		chklst.Checks = append(chklst.Checks, <-out)
+			chklst.Checks = append(chklst.Checks, chkStruct)
 	}
 	if len(chklst.Checks) < 1 {
 		log.WithFields(log.Fields{
@@ -254,4 +247,33 @@ func FromURL(urlstr string, cache bool) (chklst Checklist, err error) {
 		"path": fullpath,
 	}).Info("Using local copy of remote checklist")
 	return FromFile(fullpath)
+}
+
+// Little unobtrusive wrapper to chkutils.Check to untie that bind us ;)
+type CheckWrapper struct {
+    wrapped chkutil.Check
+    json *CheckJSON
+}
+
+func constructCheck(chkJSON CheckJSON) *CheckWrapper {
+    if chk := chkutil.LookupCheck(chkJSON.ID); chk != nil {
+        cw := &CheckWrapper{
+            wrapped: chk,
+            json: &chkJSON,
+        }
+        return cw
+    }
+    return nil
+}
+
+func (cw *CheckWrapper) ID() string {
+    return cw.json.ID
+}
+
+func (cw *CheckWrapper) New(parameters []string) (chkutil.Check, error) {
+    return cw.wrapped.New(parameters)
+}
+
+func (cw *CheckWrapper) Status() (code int, msg string, err error) {
+    return cw.wrapped.Status()
 }
