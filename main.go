@@ -11,6 +11,7 @@ import (
 	"github.com/CiscoCloud/distributive/checklists"
 	log "github.com/Sirupsen/logrus"
 	"github.com/mitchellh/panicwrap"
+    _ "github.com/CiscoCloud/distributive/checks"
 )
 
 var useCache bool // should remote checks be run from the cache when possible?
