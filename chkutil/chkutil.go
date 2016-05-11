@@ -37,14 +37,16 @@ type Check interface {
 
 type MakeCheckT func() Check
 
-var registry = make(map[string]MakeCheckT)
+var registry = map[string]MakeCheckT{}
 
 func Register(name string, check MakeCheckT) {
-    registry[name] = check
+    lname := strings.ToLower(name)
+    registry[lname] = check
 }
 
 func LookupCheck(name string) Check {
-    if makeCheckFn, ok := registry[name]; !ok {
+    lname := strings.ToLower(name)
+    if makeCheckFn, ok := registry[lname]; ok {
         return makeCheckFn()
     }
     return nil
