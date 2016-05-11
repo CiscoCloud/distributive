@@ -25,7 +25,14 @@ Depedencies:
 
 type PacmanIgnore struct{ pkg string }
 
-func (chk PacmanIgnore) ID() string { return "PacmanIgnore" }
+func init() {
+    chkutil.Register("PacmanIgnore", func() chkutil.Check {
+        return &PacmanIgnore{}
+    })
+    chkutil.Register("Installed", func() chkutil.Check {
+        return &Installed{}
+    })
+}
 
 func (chk PacmanIgnore) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -65,8 +72,6 @@ Depedencies:
 */
 
 type Installed struct{ pkg string }
-
-func (chk Installed) ID() string { return "Installed" }
 
 func (chk Installed) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {

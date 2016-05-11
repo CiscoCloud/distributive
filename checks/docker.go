@@ -23,7 +23,17 @@ Example parameters:
 
 type DockerImage struct{ name string }
 
-func (chk DockerImage) ID() string { return "DockerImage" }
+func init() { 
+    chkutil.Register("DockerImage", func() chkutil.Check {
+        return &DockerImage{}
+    })
+    chkutil.Register("DockerRunning", func() chkutil.Check {
+        return &DockerRunning{}
+    })
+    chkutil.Register("DockerRunningRegext", func() chkutil.Check {
+        return &DockerRunningRegexp{}
+    })
+}
 
 func (chk DockerImage) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -149,8 +159,6 @@ Example parameters:
 
 type DockerRunningAPI struct{ path, name string }
 
-func (chk DockerRunningAPI) ID() string { return "DockerRunningAPI" }
-
 func (chk DockerRunningAPI) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -183,8 +191,6 @@ Example parameters:
   - "user/.+", "user/[cC](o){2,3}[nta]tai\w{2}r"
 */
 type DockerRunningRegexp struct{ re *regexp.Regexp }
-
-func (chk DockerRunningRegexp) ID() string { return "DockerRunningRegexp" }
 
 func (chk DockerRunningRegexp) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {

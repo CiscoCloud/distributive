@@ -22,7 +22,7 @@ var remoteCheckDir = "/var/run/distributive/"
 // Checklist is a struct that provides a concise way of thinking about doing
 // several checks and then returning some kind of output.
 type Checklist struct {
-	Name, Notes string
+	Name		string
 	Checks      []*CheckWrapper  // list of (wrapped) chkutil.Checks to run
 	Origin      string          // where did it come from?
 }
@@ -116,8 +116,7 @@ func FromBytes(data []byte) (chklst Checklist, err error) {
 		return chklst, err
 	}
 	chklst.Name = chklstYAML.Name
-	chklst.Notes = chklstYAML.Notes
-	for _, chkJSON := range chklstYAML.Checklist {
+	for _, chkYAML := range chklstYAML.Checklist {
 			chkStruct := constructCheck(chkYAML)
 			if chkStruct == nil {
 				log.Fatal("Check had nil struct: " + chkYAML.ID)
@@ -252,14 +251,14 @@ func FromURL(urlstr string, cache bool) (chklst Checklist, err error) {
 // Little unobtrusive wrapper to chkutils.Check to untie that bind us ;)
 type CheckWrapper struct {
     wrapped chkutil.Check
-    json *CheckJSON
+    yaml *CheckYAML
 }
 
-func constructCheck(chkJSON CheckJSON) *CheckWrapper {
-    if chk := chkutil.LookupCheck(chkJSON.ID); chk != nil {
+func constructCheck(chkYAML CheckYAML) *CheckWrapper {
+    if chk := chkutil.LookupCheck(chkYAML.ID); chk != nil {
         cw := &CheckWrapper{
             wrapped: chk,
-            json: &chkJSON,
+            yaml: &chkYAML,
         }
         return cw
     }
@@ -267,7 +266,7 @@ func constructCheck(chkJSON CheckJSON) *CheckWrapper {
 }
 
 func (cw *CheckWrapper) ID() string {
-    return cw.json.ID
+    return cw.yaml.ID
 }
 
 func (cw *CheckWrapper) New(parameters []string) (chkutil.Check, error) {

@@ -37,7 +37,7 @@ type Check interface {
 
 type MakeCheckT func() Check
 
-var registry map[string]MakeCheckT
+var registry = make(map[string]MakeCheckT)
 
 func Register(name string, check MakeCheckT) {
     registry[name] = check

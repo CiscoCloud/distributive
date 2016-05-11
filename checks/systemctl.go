@@ -20,7 +20,23 @@ Example parameters:
 
 type SystemctlLoaded struct{ service string }
 
-func (chk SystemctlLoaded) ID() string { return "SystemctlLoaded" }
+func init() {
+    chkutil.Register("SystemctlLoaded", func() chkutil.Check {
+        return &SystemctlLoaded{}
+    })
+    chkutil.Register("SystemctlActive", func() chkutil.Check {
+        return &SystemctlActive{}
+    })
+    chkutil.Register("SystemctlSock", func() chkutil.Check {
+        return &SystemctlSockListening{}
+    })
+    chkutil.Register("SystemctlTimerLoaded", func() chkutil.Check {
+        return &SystemctlTimerLoaded{}
+    })
+    chkutil.Register("SystemctlUnitFileStatus", func() chkutil.Check {
+        return &SystemctlUnitFileStatus{}
+    })
+}
 
 func (chk SystemctlLoaded) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -51,8 +67,6 @@ Example parameters:
 
 type SystemctlActive struct{ service string }
 
-func (chk SystemctlActive) ID() string { return "SystemctlActive" }
-
 func (chk SystemctlActive) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -81,8 +95,6 @@ Example parameters:
 */
 
 type SystemctlSockListening struct{ path string }
-
-func (chk SystemctlSockListening) ID() string { return "SystemctlSock" }
 
 func (chk SystemctlSockListening) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -126,8 +138,6 @@ Example parameters:
 */
 
 type SystemctlTimer struct{ unit string }
-
-func (chk SystemctlTimer) ID() string { return "SystemctlTimer" }
 
 func (chk SystemctlTimer) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -178,8 +188,6 @@ Example parameters:
 */
 
 type SystemctlUnitFileStatus struct{ unit, status string }
-
-func (chk SystemctlUnitFileStatus) ID() string { return "SystemctlUnitFileStatus" }
 
 func (chk SystemctlUnitFileStatus) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {

@@ -76,7 +76,26 @@ Example parameters:
 
 type UserInGroup struct{ user, group string }
 
-func (chk UserInGroup) ID() string { return "UserInGroup" }
+func init() {
+    chkutil.Register("UserInGroup", func() chkutil.Check {
+        return &UserInGroup{}
+    })
+    chkutil.Register("GroupID", func() chkutil.Check {
+        return &GroupID{}
+    })
+    chkutil.Register("UserExists", func() chkutil.Check {
+        return &UserExists{}
+    })
+    chkutil.Register("UserHasUID", func() chkutil.Check {
+        return &UserHasUID{}
+    })
+    chkutil.Register("UserHasHomeDir", func() chkutil.Check {
+        return &UserHasHomeDir{}
+    })
+    chkutil.Register("UserHasGID", func() chkutil.Check {
+        return &UserHasGID{}
+    })
+}
 
 func (chk UserInGroup) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
@@ -118,8 +137,6 @@ type GroupID struct {
 	id   int
 }
 
-func (chk GroupID) ID() string { return "GroupID" }
-
 func (chk GroupID) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -156,8 +173,6 @@ Example parameters:
 */
 
 type UserExists struct{ username string }
-
-func (chk UserExists) ID() string { return "UserExists" }
 
 func (chk UserExists) New(params []string) (chkutil.Check, error) {
 	// TODO validate username
@@ -234,8 +249,6 @@ type UserHasGID struct {
 	expectedGID int
 }
 
-func (chk UserHasGID) ID() string { return "UserHasGID" }
-
 func (chk UserHasGID) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -273,8 +286,6 @@ Example parameters:
 */
 
 type UserHasHomeDir struct{ username, expectedHomeDir string }
-
-func (chk UserHasHomeDir) ID() string { return "UserHasHomeDir" }
 
 func (chk UserHasHomeDir) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
