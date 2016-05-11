@@ -43,8 +43,6 @@ Example parameters:
 
 type GroupExists struct{ name string }
 
-func (chk GroupExists) ID() string { return "GroupExists" }
-
 func (chk GroupExists) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -85,6 +83,9 @@ func init() {
     })
     chkutil.Register("UserExists", func() chkutil.Check {
         return &UserExists{}
+    })
+    chkutil.Register("GroupExists", func() chkutil.Check {
+        return &GroupExists{}
     })
     chkutil.Register("UserHasUID", func() chkutil.Check {
         return &UserHasUID{}
