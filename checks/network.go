@@ -40,6 +40,62 @@ Dependencies:
 type Port struct{ port uint16 }
 
 func (chk Port) ID() string { return "Port" }
+func init() {
+    chkutil.Register("Port", func() chkutil.Check {
+        return &Port{}
+    })
+    chkutil.Register("PortTCP", func() chkutil.Check {
+        return &PortTCP{}
+    })
+    chkutil.Register("PortUDP", func() chkutil.Check {
+        return &PortUDP{}
+    })
+    chkutil.Register("Up", func() chkutil.Check {
+        return &Up{}
+    })
+    chkutil.Register("InterfaceExists", func() chkutil.Check {
+        return &InterfaceExists{}
+    })
+    chkutil.Register("IP", func() chkutil.Check {
+        return &IP4{}
+    })
+    chkutil.Register("IP6", func() chkutil.Check {
+        return &IP6{}
+    })
+    chkutil.Register("RoutingTableGateway", func() chkutil.Check {
+        return &RoutingTableGateway{}
+    })
+    chkutil.Register("RoutingTableDestination", func() chkutil.Check {
+        return &RoutingTableDestination{}
+    })
+    chkutil.Register("RoutingTableInterface", func() chkutil.Check {
+        return &RoutingTableInterface{}
+    })
+    chkutil.Register("Gateway", func() chkutil.Check {
+        return &Gateway{}
+    })
+    chkutil.Register("GatewayInterface", func() chkutil.Check {
+        return &GatewayInterface{}
+    })
+    chkutil.Register("ResponseMatches", func() chkutil.Check {
+        return &ResponseMatches{}
+    })
+    chkutil.Register("ResponseMatchesInsecure", func() chkutil.Check {
+        return &ResponseMatchesInsecure{}
+    })
+    chkutil.Register("TCP", func() chkutil.Check {
+        return &TCP{}
+    })
+    chkutil.Register("TCPTimeout", func() chkutil.Check {
+        return &TCPTimeout{}
+    })
+    chkutil.Register("UDPTimeout", func() chkutil.Check {
+        return &UDPTimeout{}
+    })
+    chkutil.Register("UDP", func() chkutil.Check {
+        return &UDP{}
+    })
+}
 
 func (chk Port) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -78,8 +134,6 @@ Dependencies:
 
 type PortTCP struct{ port uint16 }
 
-func (chk PortTCP) ID() string { return "PortTCP" }
-
 func (chk PortTCP) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -116,8 +170,6 @@ Dependencies:
 
 type PortUDP struct{ port uint16 }
 
-func (chk PortUDP) ID() string { return "PortUDP" }
-
 func (chk PortUDP) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -151,8 +203,6 @@ Example parameters:
 */
 
 type InterfaceExists struct{ name string }
-
-func (chk InterfaceExists) ID() string { return "InterfaceExists" }
 
 func (chk InterfaceExists) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -189,8 +239,6 @@ Example parameters:
 */
 
 type Up struct{ name string }
-
-func (chk Up) ID() string { return "Up" }
 
 func (chk Up) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -246,8 +294,6 @@ type IP4 struct {
 	ip   net.IP
 }
 
-func (chk IP4) ID() string { return "IP4" }
-
 func (chk IP4) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -280,8 +326,6 @@ type IP6 struct {
 	ip   net.IP
 }
 
-func (chk IP6) ID() string { return "IP6" }
-
 func (chk IP6) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -307,8 +351,6 @@ Example parameters:
 */
 
 type Gateway struct{ ip net.IP }
-
-func (chk Gateway) ID() string { return "Gateway" }
 
 func (chk Gateway) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -350,8 +392,6 @@ Example parameters:
 
 type GatewayInterface struct{ name string }
 
-func (chk GatewayInterface) ID() string { return "GatewayInterface" }
-
 func (chk GatewayInterface) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -392,8 +432,6 @@ Example parameters:
 
 type Host struct{ hostname string }
 
-func (chk Host) ID() string { return "Host" }
-
 func (chk Host) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -419,8 +457,6 @@ Example parameters:
 
 type TCP struct{ address string }
 
-func (chk TCP) ID() string { return "TCP" }
-
 func (chk TCP) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -442,8 +478,6 @@ Description: Like TCP but with UDP instead.
 */
 
 type UDP struct{ address string }
-
-func (chk UDP) ID() string { return "UDP" }
 
 func (chk UDP) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -471,8 +505,6 @@ type TCPTimeout struct {
 	address string
 	timeout time.Duration
 }
-
-func (chk TCPTimeout) ID() string { return "TCPTimeout" }
 
 func (chk TCPTimeout) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
@@ -503,8 +535,6 @@ type UDPTimeout struct {
 	address string
 	timeout time.Duration
 }
-
-func (chk UDPTimeout) ID() string { return "UDPTimeout" }
 
 func (chk UDPTimeout) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
@@ -564,8 +594,6 @@ Dependencies:
 
 type RoutingTableDestination struct{ ip net.IP }
 
-func (chk RoutingTableDestination) ID() string { return "RoutingTableDestination" }
-
 func (chk RoutingTableDestination) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -594,8 +622,6 @@ Dependencies:
 
 type RoutingTableInterface struct{ name string }
 
-func (chk RoutingTableInterface) ID() string { return "RoutingTableInterface" }
-
 func (chk RoutingTableInterface) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -620,8 +646,6 @@ Example parameters:
 // routeTableGateway checks if an IP address is a Gateway's IP in the
 // kernel's IP routing table, as accessed by `route -n`.
 type RoutingTableGateway struct{ name string }
-
-func (chk RoutingTableGateway) ID() string { return "RoutingTableDestination" }
 
 func (chk RoutingTableGateway) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -662,8 +686,6 @@ type ResponseMatches struct {
 	re     *regexp.Regexp
 }
 
-func (chk ResponseMatches) ID() string { return "RoutingTableDestination" }
-
 func (chk ResponseMatches) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -691,8 +713,6 @@ type ResponseMatchesInsecure struct {
 	urlstr string
 	re     *regexp.Regexp
 }
-
-func (chk ResponseMatchesInsecure) ID() string { return "RoutingTableDestination" }
 
 func (chk ResponseMatchesInsecure) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {

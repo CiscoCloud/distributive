@@ -40,7 +40,26 @@ Example parameters:
 
 type File struct{ path string }
 
-func (chk File) ID() string { return "File" }
+func init() {
+    chkutil.Register("File", func() chkutil.Check {
+        return &File{}
+    })
+    chkutil.Register("Directory", func() chkutil.Check {
+        return &Directory{}
+    })
+    chkutil.Register("Symlink", func() chkutil.Check {
+        return &Symlink{}
+    })
+    chkutil.Register("Permissions", func() chkutil.Check {
+        return &Permissions{}
+    })
+    chkutil.Register("Checksum", func() chkutil.Check {
+        return &Checksum{}
+    })
+    chkutil.Register("FileMatches", func() chkutil.Check {
+        return &FileMatches{}
+    })
+}
 
 func (chk File) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -65,8 +84,6 @@ Example parameters:
 
 type Directory struct{ path string }
 
-func (chk Directory) ID() string { return "Directory" }
-
 func (chk Directory) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -89,8 +106,6 @@ Example parameters:
 */
 
 type Symlink struct{ path string }
-
-func (chk Symlink) ID() string { return "Symlink" }
 
 func (chk Symlink) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -181,8 +196,6 @@ type FileMatches struct {
 	re   *regexp.Regexp
 }
 
-func (chk FileMatches) ID() string { return "FileMatches" }
-
 func (chk FileMatches) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -222,8 +235,6 @@ Example parameters:
 */
 
 type Permissions struct{ path, expectedPerms string }
-
-func (chk Permissions) ID() string { return "Permissions" }
 
 func (chk Permissions) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {

@@ -19,11 +19,10 @@ import (
 // necessary behaviors, while allowing each check to parse and store type-safe
 // parameters.
 type Check interface {
-	// ID is a uniquely identifying check name, like "running" or "temp"
-	ID() string
 	// New both validates the YAML-provided parameters (list of strings),
 	// and parses and stores them in an internal, typed field for later access.
 	New(parameters []string) (Check, error)
+
 	// Status returns the status of the check at the instant it is called.
 	//
 	// msg is a descriptive, human-readable description of the status.
@@ -32,6 +31,25 @@ type Check interface {
 	// considered passing, 1 is failing, with other values reserved for later
 	// use.
 	Status() (code int, msg string, err error)
+}
+
+/// Checks registry
+
+type MakeCheckT func() Check
+
+var registry = map[string]MakeCheckT{}
+
+func Register(name string, check MakeCheckT) {
+    lname := strings.ToLower(name)
+    registry[lname] = check
+}
+
+func LookupCheck(name string) Check {
+    lname := strings.ToLower(name)
+    if makeCheckFn, ok := registry[lname]; ok {
+        return makeCheckFn()
+    }
+    return nil
 }
 
 //// STRING UTILITIES

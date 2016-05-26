@@ -27,7 +27,29 @@ Example parameters:
 // TODO use a uint
 type MemoryUsage struct{ maxPercentUsed uint8 }
 
-func (chk MemoryUsage) ID() string { return "MemoryUsage" }
+func init() {
+    chkutil.Register("MemoryUsage", func() chkutil.Check {
+        return &MemoryUsage{}
+    })
+    chkutil.Register("SwapUsage", func() chkutil.Check {
+        return &SwapUsage{}
+    })
+    chkutil.Register("FreeMemory", func() chkutil.Check {
+        return &FreeMemory{}
+    })
+    chkutil.Register("FreeSwap", func() chkutil.Check {
+        return &FreeSwap{}
+    })
+    chkutil.Register("CPUUsage", func() chkutil.Check {
+        return &CPUUsage{}
+    })
+    chkutil.Register("DiskUsage", func() chkutil.Check {
+        return &DiskUsage{}
+    })
+    chkutil.Register("InodeUsage", func() chkutil.Check {
+        return &InodeUsage{}
+    })
+}
 
 func (chk MemoryUsage) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -131,8 +153,6 @@ Example parameters:
 
 type FreeMemory struct{ amount string }
 
-func (chk FreeMemory) ID() string { return "FreeMemory" }
-
 func (chk FreeMemory) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -155,8 +175,6 @@ Description: Like FreeMemory, but with swap instead.
 */
 
 type FreeSwap struct{ amount string }
-
-func (chk FreeSwap) ID() string { return "FreeSwap" }
 
 func (chk FreeSwap) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -214,8 +232,6 @@ Example parameters:
 // TODO use a uint
 type CPUUsage struct{ maxPercentUsed int8 }
 
-func (chk CPUUsage) ID() string { return "CPUUsage" }
-
 func (chk CPUUsage) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -263,8 +279,6 @@ type DiskUsage struct {
 	path           string
 	maxPercentUsed int8
 }
-
-func (chk DiskUsage) ID() string { return "DiskUsage" }
 
 func (chk DiskUsage) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
@@ -321,8 +335,6 @@ type InodeUsage struct {
 	filesystem     string
 	maxPercentUsed uint8
 }
-
-func (chk InodeUsage) ID() string { return "DiskUsage" }
 
 func (chk InodeUsage) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {

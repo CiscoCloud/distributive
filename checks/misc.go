@@ -26,7 +26,29 @@ Example parameters:
 
 type Command struct{ Command string }
 
-func (chk Command) ID() string { return "Command" }
+func init() { 
+    chkutil.Register("Command", func() chkutil.Check {
+        return &Command{}
+    })
+    chkutil.Register("CommandOutputMatches", func() chkutil.Check {
+        return &CommandOutputMatches{}
+    })
+    chkutil.Register("Running", func() chkutil.Check {
+        return &Running{}
+    })
+    chkutil.Register("Temp", func() chkutil.Check {
+        return &Running{}
+    })
+    chkutil.Register("Module", func() chkutil.Check {
+        return &Module{}
+    })
+    chkutil.Register("KernelParameter", func() chkutil.Check {
+        return &KernelParameter{}
+    })
+    chkutil.Register("PHPConfig", func() chkutil.Check {
+        return &PHPConfig{}
+    })
+}
 
 func (chk Command) New(params []string) (chkutil.Check, error) {
 	// TODO further validation with LookPath - maybe in parameter-validation.go
@@ -84,8 +106,6 @@ type CommandOutputMatches struct {
 	re      *regexp.Regexp
 }
 
-func (chk CommandOutputMatches) ID() string { return "CommandOutputMatches" }
-
 func (chk CommandOutputMatches) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
 		return chk, errutil.ParameterLengthError{2, params}
@@ -125,8 +145,6 @@ Depedencies:
 
 type Running struct{ name string }
 
-func (chk Running) ID() string { return "Running" }
-
 func (chk Running) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -162,8 +180,6 @@ Depedencies:
 */
 
 type Temp struct{ max uint16 }
-
-func (chk Temp) ID() string { return "Temp" }
 
 func (chk Temp) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -232,8 +248,6 @@ Depedencies:
 
 type Module struct{ name string }
 
-func (chk Module) ID() string { return "Module" }
-
 func (chk Module) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
 		return chk, errutil.ParameterLengthError{1, params}
@@ -268,8 +282,6 @@ Depedencies:
 */
 
 type KernelParameter struct{ name string }
-
-func (chk KernelParameter) ID() string { return "KernelParameter" }
 
 func (chk KernelParameter) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -311,8 +323,6 @@ Depedencies:
 */
 
 type PHPConfig struct{ variable, value string }
-
-func (chk PHPConfig) ID() string { return "PHPConfig" }
 
 func (chk PHPConfig) New(params []string) (chkutil.Check, error) {
 	if len(params) != 2 {
