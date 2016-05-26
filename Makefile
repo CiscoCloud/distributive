@@ -17,7 +17,7 @@ build: deps
 test: deps
 	go test $(TEST) $(TESTARGS) -timeout=30s -parallel=4
 
-package: test build
-	tar -zcvf bin/distributive.tar.gz distributive
+package: build
+	tar -zcvf bin/$(NAME).tar.gz bin/$(NAME)
 
 .PHONY: all deps updatedeps build test package
