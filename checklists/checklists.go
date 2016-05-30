@@ -270,7 +270,9 @@ func (cw *CheckWrapper) ID() string {
 }
 
 func (cw *CheckWrapper) New(parameters []string) (chkutil.Check, error) {
-    return cw.wrapped.New(parameters)
+    var e error
+    cw.wrapped, e = cw.wrapped.New(parameters)
+    return cw.wrapped, e
 }
 
 func (cw *CheckWrapper) Status() (code int, msg string, err error) {
