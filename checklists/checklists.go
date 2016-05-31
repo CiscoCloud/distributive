@@ -22,9 +22,9 @@ var remoteCheckDir = "/var/run/distributive/"
 // Checklist is a struct that provides a concise way of thinking about doing
 // several checks and then returning some kind of output.
 type Checklist struct {
-	Name		string
-	Checks      []*CheckWrapper  // list of (wrapped) chkutil.Checks to run
-	Origin      string          // where did it come from?
+	Name   string
+	Checks []*CheckWrapper // list of (wrapped) chkutil.Checks to run
+	Origin string          // where did it come from?
 }
 
 // MakeReport runs all checks concurrently, and produces a user-facing string
@@ -117,19 +117,23 @@ func FromBytes(data []byte) (chklst Checklist, err error) {
 	}
 	chklst.Name = chklstYAML.Name
 	for _, chkYAML := range chklstYAML.Checklist {
-			chkStruct := constructCheck(chkYAML)
-			if chkStruct == nil {
-				log.Fatal("Check had nil struct: " + chkYAML.ID)
-			}
-			_, err := chkStruct.New(chkYAML.Parameters)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"check":  chkYAML.ID,
-					"params": chkYAML.Parameters,
-					"error":  err.Error(),
-				}).Fatal("Error while constructing check")
-			}
-			chklst.Checks = append(chklst.Checks, chkStruct)
+		chkStruct := constructCheck(chkYAML)
+		if chkStruct == nil {
+			log.WithFields(log.Fields{
+				"check":     chkYAML.ID,
+				"checklist": chklst.Name,
+				"params":    chkYAML.Parameters,
+			}).Fatal("Unable to parse check")
+		}
+		_, err := chkStruct.New(chkYAML.Parameters)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"check":  chkYAML.ID,
+				"params": chkYAML.Parameters,
+				"error":  err.Error(),
+			}).Fatal("Error while constructing check")
+		}
+		chklst.Checks = append(chklst.Checks, chkStruct)
 	}
 	if len(chklst.Checks) < 1 {
 		log.WithFields(log.Fields{
@@ -250,31 +254,31 @@ func FromURL(urlstr string, cache bool) (chklst Checklist, err error) {
 
 // Little unobtrusive wrapper to chkutils.Check to untie that bind us ;)
 type CheckWrapper struct {
-    wrapped chkutil.Check
-    yaml *CheckYAML
+	wrapped chkutil.Check
+	yaml    *CheckYAML
 }
 
 func constructCheck(chkYAML CheckYAML) *CheckWrapper {
-    if chk := chkutil.LookupCheck(chkYAML.ID); chk != nil {
-        cw := &CheckWrapper{
-            wrapped: chk,
-            yaml: &chkYAML,
-        }
-        return cw
-    }
-    return nil
+	if chk := chkutil.LookupCheck(chkYAML.ID); chk != nil {
+		cw := &CheckWrapper{
+			wrapped: chk,
+			yaml:    &chkYAML,
+		}
+		return cw
+	}
+	return nil
 }
 
 func (cw *CheckWrapper) ID() string {
-    return cw.yaml.ID
+	return cw.yaml.ID
 }
 
 func (cw *CheckWrapper) New(parameters []string) (chkutil.Check, error) {
-    var e error
-    cw.wrapped, e = cw.wrapped.New(parameters)
-    return cw.wrapped, e
+	var e error
+	cw.wrapped, e = cw.wrapped.New(parameters)
+	return cw.wrapped, e
 }
 
 func (cw *CheckWrapper) Status() (code int, msg string, err error) {
-    return cw.wrapped.Status()
+	return cw.wrapped.Status()
 }
