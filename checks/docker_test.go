@@ -5,10 +5,10 @@ import (
 )
 
 func TestDockerImage(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
 		validInputs := names
 		invalidInputs := notLengthOne
 		// inputs that should lead to success
@@ -22,10 +22,10 @@ func TestDockerImage(t *testing.T) {
 }
 
 func TestDockerImageRegexp(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
 		validInputs := [][]string{
 			{"name"}, {"test*"}, {`win\d{1}`},
 		}
@@ -41,10 +41,10 @@ func TestDockerImageRegexp(t *testing.T) {
 }
 
 func TestDockerRunning(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
 		validInputs := names
 		invalidInputs := notLengthOne
 		goodEggs := [][]string{}
@@ -55,36 +55,11 @@ func TestDockerRunning(t *testing.T) {
 	}
 }
 
-/*
-func TestDockerRunningAPI(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping docker tests in short mode")
-	} else {
-		t.Parallel()
-		validInputs := [][]string{
-			{"/var/run/docker.sock", "name"},
-			{"/var/run/docker.sock", "test"},
-			{"/var/run/docker.sock", "win"},
-		}
-		invalidInputs := notLengthOne
-		invalidInputs = append(invalidInputs, names...)
-		goodEggs := [][]string{}
-		badEggs := [][]string{
-			{"/var/run/docker.sock", "failme"},
-			{"/var/run/docker.sock", "fail"},
-			{"/var/run/docker.sock", "loser"},
-		}
-		testParameters(validInputs, invalidInputs, DockerRunningAPI{}, t)
-		testCheck(goodEggs, badEggs, DockerRunningAPI{}, t)
-	}
-}
-*/
-
 func TestDockerRunningRegexp(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping docker tests in short mode")
 	} else {
-		t.Parallel()
 		validInputs := names
 		// TODO invalid regexps
 		invalidInputs := notLengthOne
@@ -93,5 +68,18 @@ func TestDockerRunningRegexp(t *testing.T) {
 		badEggs = append(badEggs, names...)
 		testParameters(validInputs, invalidInputs, DockerRunning{}, t)
 		testCheck(goodEggs, badEggs, DockerRunning{}, t)
+	}
+}
+
+func TestDockerDaemonTimeout(t *testing.T) {
+	t.Parallel()
+	if testing.Short() {
+		t.Skip("Skipping docker tests in short mode")
+	} else {
+		validInputs := [][]string{{"5s"}, {"0m"}, {"1h"}}
+		invalidInputs := append(notLengthOne, []string{"1fail", "sec"})
+		badEggs := [][]string{{"0s"}, {".1μs"}}
+		testParameters(validInputs, invalidInputs, DockerDaemonTimeout{}, t)
+		testCheck([][]string{}, badEggs, DockerDaemonTimeout{}, t)
 	}
 }

@@ -66,3 +66,10 @@ func RunningContainers() (containers []string, err error) {
 	}
 	return parseRunningContainers(string(out)), nil
 }
+
+// DaemonResponding checks to see if the Docker daemon responds to commands
+// within the given timeout. If everything goes well, it returns nil.
+func DaemonResponding(timeout time.Duration) error {
+	_, err := chkutil.CommandTimeout(exec.Command("docker", "ps"), timeout)
+	return err
+}

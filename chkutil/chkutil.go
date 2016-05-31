@@ -92,11 +92,13 @@ func CommandTimeout(cmd *exec.Cmd, timeout time.Duration) (string, error) {
 	case cmdOutput := <-out:
 		return cmdOutput.Out, cmdOutput.Err
 	case <-timedOut:
-		err := cmd.Process.Kill()
-		if err != nil {
-			return "", fmt.Errorf("Error while killing timed out process %v: %v", cmd, err)
+		if cmd != nil && cmd.Process != nil {
+			err := cmd.Process.Kill()
+			if err != nil {
+				return "", fmt.Errorf("Error while killing timed out process %v: %v", cmd, err)
+			}
 		}
-		return "", fmt.Errorf("Command timed out: %v", cmd)
+		return "", fmt.Errorf("cmd's Process pointer was nil: %v", cmd)
 	}
 }
 
