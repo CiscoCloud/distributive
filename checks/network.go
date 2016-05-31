@@ -41,60 +41,60 @@ type Port struct{ port uint16 }
 
 func (chk Port) ID() string { return "Port" }
 func init() {
-    chkutil.Register("Port", func() chkutil.Check {
-        return &Port{}
-    })
-    chkutil.Register("PortTCP", func() chkutil.Check {
-        return &PortTCP{}
-    })
-    chkutil.Register("PortUDP", func() chkutil.Check {
-        return &PortUDP{}
-    })
-    chkutil.Register("Up", func() chkutil.Check {
-        return &Up{}
-    })
-    chkutil.Register("InterfaceExists", func() chkutil.Check {
-        return &InterfaceExists{}
-    })
-    chkutil.Register("IP", func() chkutil.Check {
-        return &IP4{}
-    })
-    chkutil.Register("IP6", func() chkutil.Check {
-        return &IP6{}
-    })
-    chkutil.Register("RoutingTableGateway", func() chkutil.Check {
-        return &RoutingTableGateway{}
-    })
-    chkutil.Register("RoutingTableDestination", func() chkutil.Check {
-        return &RoutingTableDestination{}
-    })
-    chkutil.Register("RoutingTableInterface", func() chkutil.Check {
-        return &RoutingTableInterface{}
-    })
-    chkutil.Register("Gateway", func() chkutil.Check {
-        return &Gateway{}
-    })
-    chkutil.Register("GatewayInterface", func() chkutil.Check {
-        return &GatewayInterface{}
-    })
-    chkutil.Register("ResponseMatches", func() chkutil.Check {
-        return &ResponseMatches{}
-    })
-    chkutil.Register("ResponseMatchesInsecure", func() chkutil.Check {
-        return &ResponseMatchesInsecure{}
-    })
-    chkutil.Register("TCP", func() chkutil.Check {
-        return &TCP{}
-    })
-    chkutil.Register("TCPTimeout", func() chkutil.Check {
-        return &TCPTimeout{}
-    })
-    chkutil.Register("UDPTimeout", func() chkutil.Check {
-        return &UDPTimeout{}
-    })
-    chkutil.Register("UDP", func() chkutil.Check {
-        return &UDP{}
-    })
+	chkutil.Register("Port", func() chkutil.Check {
+		return &Port{}
+	})
+	chkutil.Register("PortTCP", func() chkutil.Check {
+		return &PortTCP{}
+	})
+	chkutil.Register("PortUDP", func() chkutil.Check {
+		return &PortUDP{}
+	})
+	chkutil.Register("Up", func() chkutil.Check {
+		return &Up{}
+	})
+	chkutil.Register("InterfaceExists", func() chkutil.Check {
+		return &InterfaceExists{}
+	})
+	chkutil.Register("IP", func() chkutil.Check {
+		return &IP4{}
+	})
+	chkutil.Register("IP6", func() chkutil.Check {
+		return &IP6{}
+	})
+	chkutil.Register("RoutingTableGateway", func() chkutil.Check {
+		return &RoutingTableGateway{}
+	})
+	chkutil.Register("RoutingTableDestination", func() chkutil.Check {
+		return &RoutingTableDestination{}
+	})
+	chkutil.Register("RoutingTableInterface", func() chkutil.Check {
+		return &RoutingTableInterface{}
+	})
+	chkutil.Register("Gateway", func() chkutil.Check {
+		return &Gateway{}
+	})
+	chkutil.Register("GatewayInterface", func() chkutil.Check {
+		return &GatewayInterface{}
+	})
+	chkutil.Register("ResponseMatches", func() chkutil.Check {
+		return &ResponseMatches{}
+	})
+	chkutil.Register("ResponseMatchesInsecure", func() chkutil.Check {
+		return &ResponseMatchesInsecure{}
+	})
+	chkutil.Register("TCP", func() chkutil.Check {
+		return &TCP{}
+	})
+	chkutil.Register("TCPTimeout", func() chkutil.Check {
+		return &TCPTimeout{}
+	})
+	chkutil.Register("UDPTimeout", func() chkutil.Check {
+		return &UDPTimeout{}
+	})
+	chkutil.Register("UDP", func() chkutil.Check {
+		return &UDP{}
+	})
 }
 
 func (chk Port) New(params []string) (chkutil.Check, error) {
@@ -112,13 +112,7 @@ func (chk Port) Status() (int, string, error) {
 	if netstatus.PortOpen("tcp", chk.port) || netstatus.PortOpen("udp", chk.port) {
 		return errutil.Success()
 	}
-	// convert ports to string to send to errutil.GenericError
-	var strPorts []string
-	openPorts := append(netstatus.OpenPorts("tcp"), netstatus.OpenPorts("udp")...)
-	for _, port := range openPorts {
-		strPorts = append(strPorts, fmt.Sprint(port))
-	}
-	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
+	return 1, fmt.Sprintf("Port not open: %s", chk.port), nil
 }
 
 /*
@@ -149,12 +143,7 @@ func (chk PortTCP) Status() (int, string, error) {
 	if netstatus.PortOpen("tcp", chk.port) {
 		return errutil.Success()
 	}
-	// convert ports to string to send to errutil.GenericError
-	var strPorts []string
-	for _, port := range netstatus.OpenPorts("tcp") {
-		strPorts = append(strPorts, fmt.Sprint(port))
-	}
-	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
+	return 1, fmt.Sprintf("Port not open: %s", chk.port), nil
 }
 
 /*
@@ -185,12 +174,7 @@ func (chk PortUDP) Status() (int, string, error) {
 	if netstatus.PortOpen("udp", chk.port) {
 		return errutil.Success()
 	}
-	// convert ports to string to send to errutil.GenericError
-	var strPorts []string
-	for _, port := range netstatus.OpenPorts("udp") {
-		strPorts = append(strPorts, fmt.Sprint(port))
-	}
-	return errutil.GenericError("Port not open", fmt.Sprint(chk.port), strPorts)
+	return 1, fmt.Sprintf("Port not open: %s", chk.port), nil
 }
 
 /*

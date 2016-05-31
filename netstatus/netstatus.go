@@ -5,74 +5,11 @@ package netstatus
 import (
 	"fmt"
 	"net"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/CiscoCloud/distributive/chkutil"
-	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
 )
-
-// GetHexPorts gets all open ports as hex strings from /proc/net/{tcp,udp}
-// Its protocol argument can only be one of: "tcp" | "udp"
-func GetHexPorts(protocol string) (ports []string) {
-	var path string
-	switch strings.ToLower(protocol) {
-	case "tcp":
-		path = "/proc/net/tcp"
-	case "udp":
-		path = "/proc/net/udp"
-	default:
-		log.WithFields(log.Fields{
-			"protocol":        protocol,
-			"valid protocols": "tcp|udp",
-		}).Fatal("Invalid protocol passed to GetHexPorts!")
-	}
-	data := chkutil.FileToString(path)
-	rowSep := regexp.MustCompile(`\n+`)
-	colSep := regexp.MustCompile(`\s+`)
-	table := tabular.SeparateString(rowSep, colSep, data)
-	localAddresses := tabular.GetColumnByHeader("local_address", table)
-	portRe := regexp.MustCompile(`([0-9A-F]{8}):([0-9A-F]{4})`)
-	for _, address := range localAddresses {
-		port := portRe.FindString(address)
-		if port != "" {
-			if len(port) < 10 {
-				log.WithFields(log.Fields{
-					"port":   port,
-					"length": len(port),
-				}).Fatal("Couldn't parse port number in " + path)
-			}
-			portString := string(port[9:])
-			ports = append(ports, portString)
-		}
-	}
-	return ports
-}
-
-// OpenPorts gets a list of open/listening TCP or UDP ports as integers from
-// the information at /proc/net/tcp and /proc/net/udp, which may not reflect
-// all of the ports that can be accessed externally.
-// Its protocol argument can only be one of: "tcp" | "udp"
-func OpenPorts(protocol string) (ports []uint16) {
-	// strHexToDecimal converts from string containing hex number to int
-	strHexToDecimal := func(hex string) int {
-		portInt, err := strconv.ParseInt(hex, 16, 64)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"number": hex,
-				"error":  err.Error(),
-			}).Fatal("Couldn't parse hex number")
-		}
-		return int(portInt)
-	}
-	for _, port := range GetHexPorts(protocol) {
-		ports = append(ports, uint16(strHexToDecimal(port)))
-	}
-	return ports
-}
 
 // PortOpen reports whether or not the given (decimal) port is open
 // Its protocol argument can only be one of: "tcp" | "udp"
