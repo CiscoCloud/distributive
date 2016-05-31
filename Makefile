@@ -23,7 +23,8 @@ build: deps
 	go build -o bin/$(NAME)
 
 test: glide deps
-	go test -v $(shell $(GLIDE) novendor | grep -v checks)
+	#go test -v $(shell $(GLIDE) novendor)
+	go test -v ./chkutil/... ./dockerstatus/... ./errutil/... ./fsstatus/... ./memstatus/... ./netstatus/... ./systemdstatus/... ./tabular/... .
 
 package: build
 	tar -zcvf bin/$(NAME).tar.gz bin/$(NAME)
