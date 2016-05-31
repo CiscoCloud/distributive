@@ -21,8 +21,10 @@ func TestParseRunningContainers(t *testing.T) {
 	for i, input := range []string{mantlTestStr, emptyTestStr} {
 		expected := outputs[i]
 		actual := parseRunningContainers(input)
-		if !reflect.DeepEqual(actual, expected) {
-			t.Logf("Expected: %v\nActual: %v", expected, actual)
+		if len(actual) != 0 || len(expected) != 0 {
+			if !reflect.DeepEqual(actual, expected) {
+				t.Logf("Expected: %v\nActual: %v", expected, actual)
+			}
 		}
 	}
 }
