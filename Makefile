@@ -24,7 +24,7 @@ build: deps
 
 test: glide deps
 	#go test -v $(shell $(GLIDE) novendor)
-	go test -v ./chkutil/... ./dockerstatus/... ./errutil/... ./fsstatus/... ./memstatus/... ./netstatus/... ./systemdstatus/... ./tabular/... .
+	go test -v ./chkutil/... ./dockerstatus/... ./errutil/... ./fsstatus/... ./netstatus/... ./systemdstatus/... ./tabular/... .
 
 package: build
 	tar -zcvf bin/$(NAME).tar.gz bin/$(NAME)
