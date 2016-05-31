@@ -93,7 +93,6 @@ func TestInodeCountingFunctions(t *testing.T) {
 	t.Parallel()
 	cmd := exec.Command("df", "-i")
 	out, _ := cmd.CombinedOutput()
-	t.Logf("Output of `df -i`: %v", string(out))
 	testInodeCountingFunction(t, FreeInodes, "FreeInodes")
 	testInodeCountingFunction(t, UsedInodes, "UsedInodes")
 	testInodeCountingFunction(t, TotalInodes, "TotalInodes")
@@ -103,10 +102,12 @@ func TestInodeCountingFunctions(t *testing.T) {
 	total, totalErr := TotalInodes(inodeFilesystem)
 	for _, err := range []error{freeErr, usedErr, totalErr} {
 		if err != nil {
+			t.Logf("Output of `df -i`: %v", string(out))
 			t.Error(err)
 		}
 	}
 	if free+used != total {
+		t.Logf("Output of `df -i`: %v", string(out))
 		msg := "(free inodes) + (used inodes) != (total inodes), %v + %v != %v"
 		t.Errorf(msg, free, used, total)
 	}
@@ -124,9 +125,9 @@ func TestInodePercentFunction(t *testing.T) {
 	// GNU Coreutils rounds the percent up. see lines 1092-1095 here:
 	// http://git.savannah.gnu.org/gitweb/?p=coreutils.git;a=blob;f=src/df.c;h=c1c1e683178f843febeb167224fe8ad2a1122a4f;hb=5148302771f1e36f3ea3e7ed33e55bd7a7a1cc3b
 	calculatedPercent := uint8(math.Ceil((float64(used) / float64(total)) * 100))
-	t.Logf("Used: %v, total: %v", used, total)
-	t.Logf("used/total = %v", float32(used)/float32(total))
 	if math.Abs(float64(calculatedPercent-givenPercent)) >= 1 {
+		t.Logf("Used: %v, total: %v", used, total)
+		t.Logf("used/total = %v", float32(used)/float32(total))
 		msg := "Calculated percent (%v) ≉ Given percent: (%v)"
 		t.Errorf(msg, calculatedPercent, givenPercent)
 	}
