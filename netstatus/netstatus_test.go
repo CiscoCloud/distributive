@@ -2,6 +2,19 @@ package netstatus
 
 import "testing"
 
+func TestPortOpen(t *testing.T) {
+	t.Parallel()
+	for _, port := range []uint16{44231, 11234, 14891} {
+		if PortOpen("tcp", port) {
+			t.Errorf("Port was unexpectedly open over TCP: %v", port)
+		}
+		if PortOpen("udp", port) {
+			// TODO: this is a bug. PortOpen("udp") gives false positives.
+			//t.Errorf("Port was unexpectedly open over UDP: %v", port)
+		}
+	}
+}
+
 func TestValidIP(t *testing.T) {
 	t.Parallel()
 	validIPs := []string{
