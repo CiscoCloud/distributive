@@ -10,13 +10,6 @@ var dummyServices = []string{"foo", "bar", "ipsum lorem", "541"}
 
 func TestServiceLoaded(t *testing.T) {
 	t.Parallel()
-	path, err := exec.LookPath("systemctl")
-	if path != "" {
-		t.Logf("executable path: %s", path)
-	}
-	if err != nil {
-		t.Log(err)
-	}
 	if _, err := exec.LookPath("systemctl"); err != nil {
 		t.Logf("Couldn't find systemctl binary, skipping test %v", err)
 	} else {

@@ -6,7 +6,6 @@ import (
 
 var fileParameters = [][]string{
 	{"/proc/net/tcp"},
-	{"/bin/sh"},
 	{"/proc/filesystems"},
 	{"/proc/uptime"},
 	{"/proc/cpuinfo"},

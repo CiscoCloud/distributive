@@ -20,15 +20,16 @@ func TestSwapOrMemory(t *testing.T) {
 			for _, unit := range units {
 				amt, err := swapOrMemory(status, swapOrMem, unit)
 				if err != nil {
+					logFreeOutput(t)
 					t.Errorf("swapOrMemory failed unexpectedly: %v", err)
 				}
 				if amt < 0 {
+					logFreeOutput(t)
 					t.Logf("swapOrMemory reported negative: %v", amt)
 				}
 			}
 		}
 	}
-	logFreeOutput(t)
 }
 
 func TestFreeMemory(t *testing.T) {
@@ -36,13 +37,14 @@ func TestFreeMemory(t *testing.T) {
 	for _, unit := range append(units, "percent") {
 		amt, err := FreeMemory(unit)
 		if err != nil {
+			logFreeOutput(t)
 			t.Error("FreeMemory failed unexpectedly")
 		}
 		if amt < 0 {
+			logFreeOutput(t)
 			t.Errorf("FreeMemory reported negative: %v", amt)
 		}
 	}
-	logFreeOutput(t)
 }
 
 func TestUsedMemory(t *testing.T) {
@@ -50,13 +52,14 @@ func TestUsedMemory(t *testing.T) {
 	for _, unit := range append(units, "percent") {
 		amt, err := UsedMemory(unit)
 		if err != nil {
+			logFreeOutput(t)
 			t.Error("UsedMemory failed unexpectedly")
 		}
 		if amt < 0 {
+			logFreeOutput(t)
 			t.Errorf("UsedMemory reported negative: %v", amt)
 		}
 	}
-	logFreeOutput(t)
 }
 
 func TestFreeSwap(t *testing.T) {
@@ -64,13 +67,14 @@ func TestFreeSwap(t *testing.T) {
 	for _, unit := range append(units, "percent") {
 		amt, err := FreeSwap(unit)
 		if err != nil {
+			logFreeOutput(t)
 			t.Error("FreeSwap failed unexpectedly")
 		}
 		if amt < 0 {
+			logFreeOutput(t)
 			t.Errorf("FreeSwap reported negative: %v", amt)
 		}
 	}
-	logFreeOutput(t)
 }
 
 func TestUsedSwap(t *testing.T) {
@@ -78,11 +82,12 @@ func TestUsedSwap(t *testing.T) {
 	for _, unit := range append(units, "percent") {
 		amt, err := UsedSwap(unit)
 		if err != nil {
+			logFreeOutput(t)
 			t.Error("UsedSwap failed unexpectedly")
 		}
 		if amt < 0 {
+			logFreeOutput(t)
 			t.Errorf("UsedSwap reported negative: %v", amt)
 		}
 	}
-	logFreeOutput(t)
 }
