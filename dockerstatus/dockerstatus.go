@@ -7,19 +7,23 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/tabular"
 )
+
+var dockerCmdTimeout, _ = time.ParseDuration("10s")
 
 // DockerImageRepositories returns a slice of the names of the Docker images
 // present on the host (what's under the REPOSITORIES column of `docker images`)
 func DockerImageRepositories() (images []string, err error) {
 	cmd := exec.Command("docker", "images")
-	out, err := cmd.CombinedOutput()
+	out, err := chkutil.CommandTimeout(cmd, dockerCmdTimeout)
 	if err != nil {
 		// try escalating to sudo, the error might have been one of permissions
 		cmd = exec.Command("sudo", "docker", "images")
-		out, err = cmd.CombinedOutput()
+		out, err = chkutil.CommandTimeout(cmd, dockerCmdTimeout)
 		if err != nil {
 			return images, err
 		}
@@ -50,16 +54,22 @@ func parseRunningContainers(output string) (containers []string) {
 func RunningContainers() (containers []string, err error) {
 	outputFormat := `{{.Image}}\t{{.Status}}\t{{.Names}}`
 	cmd := exec.Command("docker", "ps", "-a", "--format", outputFormat)
-	out, err := cmd.CombinedOutput()
+	out, err := chkutil.CommandTimeout(cmd, dockerCmdTimeout)
 	if err != nil {
 		cmd = exec.Command("sudo", "docker", "ps", "-a", "--format", outputFormat)
-		out, err = cmd.CombinedOutput()
+		out, err = chkutil.CommandTimeout(cmd, dockerCmdTimeout)
 		if err != nil {
-			return containers, err
+			return []string{}, err
 		}
-	} else if out == nil {
-		err = fmt.Errorf("The command %v produced no output", cmd.Args)
-		return containers, err
+	} else if out == "" {
+		return []string{}, fmt.Errorf("Command produced no output: %v", cmd.Args)
 	}
 	return parseRunningContainers(string(out)), nil
+}
+
+// DaemonResponding checks to see if the Docker daemon responds to commands
+// within the given timeout. If everything goes well, it returns nil.
+func DaemonResponding(timeout time.Duration) error {
+	_, err := chkutil.CommandTimeout(exec.Command("docker", "ps"), timeout)
+	return err
 }

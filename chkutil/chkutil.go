@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"crypto/tls"
 	"errors"
-	"github.com/CiscoCloud/distributive/errutil"
-	"github.com/CiscoCloud/distributive/tabular"
-	log "github.com/Sirupsen/logrus"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/CiscoCloud/distributive/errutil"
+	"github.com/CiscoCloud/distributive/tabular"
+	log "github.com/Sirupsen/logrus"
 )
 
 // Check is a unified interface for health checks, it defines only the minimal
@@ -40,16 +43,16 @@ type MakeCheckT func() Check
 var registry = map[string]MakeCheckT{}
 
 func Register(name string, check MakeCheckT) {
-    lname := strings.ToLower(name)
-    registry[lname] = check
+	lname := strings.ToLower(name)
+	registry[lname] = check
 }
 
 func LookupCheck(name string) Check {
-    lname := strings.ToLower(name)
-    if makeCheckFn, ok := registry[lname]; ok {
-        return makeCheckFn()
-    }
-    return nil
+	lname := strings.ToLower(name)
+	if makeCheckFn, ok := registry[lname]; ok {
+		return makeCheckFn()
+	}
+	return nil
 }
 
 //// STRING UTILITIES
@@ -65,6 +68,40 @@ func CommandOutput(cmd *exec.Cmd) string {
 	return outStr
 }
 
+// CommandTimeout runs a command, and either returns its output as a string, or
+// kills it if it takes longer than the given timeout to complete, returning an
+// error.
+func CommandTimeout(cmd *exec.Cmd, timeout time.Duration) (string, error) {
+	timedOut := time.After(timeout)
+
+	out := make(chan struct {
+		Out string
+		Err error
+	}, 1)
+
+	// Run the command, send the output and error back on the channel `out`
+	go func() {
+		outBytes, err := cmd.CombinedOutput()
+		out <- struct {
+			Out string
+			Err error
+		}{string(outBytes), err}
+	}()
+
+	select {
+	case cmdOutput := <-out:
+		return cmdOutput.Out, cmdOutput.Err
+	case <-timedOut:
+		if cmd != nil && cmd.Process != nil {
+			err := cmd.Process.Kill()
+			if err != nil {
+				return "", fmt.Errorf("Error while killing timed out process %v: %v", cmd.Args, err)
+			}
+		}
+		return "", fmt.Errorf("cmd's Process pointer was nil: %v", cmd.Args)
+	}
+}
+
 // CommandColumnNoHeader returns a specified column of the output of a command,
 // without that column's header. Useful for parsing the output of shell commands,
 // which many of the Checks require.
@@ -73,7 +110,7 @@ func CommandColumnNoHeader(col int, cmd *exec.Cmd) []string {
 	return tabular.GetColumnNoHeader(col, tabular.StringToSlice(out))
 }
 
-// SeparateByteUnits: The integer part of a string representing a size unit,
+// SeparateByteUnits gets the integer part of a string representing a size unit,
 // the unit: b | kb | mb | gb | tb, and an error if applicable.
 // 90KB -> (90, kb, nil), 800ads -> (0, "", error)
 // NOTE: this doesn't differentiate between kb and kib, and I don't know how

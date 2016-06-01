@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestCommandOutput(t *testing.T) {
@@ -25,6 +26,17 @@ func TestCommandOutput(t *testing.T) {
 			msg += "\n\tExpected output: " + expected
 			msg += "\n\tActual output: " + actual
 		}
+	}
+}
+
+func TestCommandTimeout(t *testing.T) {
+	t.Parallel()
+	timeout, _ := time.ParseDuration(".1s")
+	if _, err := CommandTimeout(exec.Command("echo"), timeout); err != nil {
+		t.Errorf("CommandTimeout failed on `echo` with timeout .2s. The error was: %v", err)
+	}
+	if _, err := CommandTimeout(exec.Command("sleep", ".2"), timeout); err == nil {
+		t.Errorf("CommandTimeout succeeded on `sleep .2` with timeout .1s")
 	}
 }
 
