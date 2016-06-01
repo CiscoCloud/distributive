@@ -28,7 +28,7 @@ This readme documents the current (development) version of distributive.
 Distributive is a tool for running distributed health checks in datacenters.
 It was designed with Consul in mind, but is stack agnostic. It is simple
 to configure (with YAML checklists) and easy to deploy and run. It has no
-dependencies, and can be shipped as a speedy 1.3MB (yes, megabytes!) binary.
+runtime dependencies, and can be shipped as a single binary.
 
 Usually, some external server will ask the host to execute this program, reading
 a checklist from a YAML file, and will record this program's exit code and
@@ -51,15 +51,12 @@ Installation/Building
 ---------------------
 
 To install the development version (potentially unstable):
- 1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive`
- 2. Get [Godep] [godep].
- 3. (Optional) Test with `drone exec`
- 4. Build a binary with `go build .`
- 5. Follow the "Usage" instructions below
-
-We also provide premade RPM packages on [Bintray][bintray] for versioned
-releases. You can view the RPM source and build RPM snapshots at
-[distributive-rpm][distributive-rpm].
+ 1. Clone this repo: `git clone https://github.com/CiscoCloud/distributive && cd distributive`
+ 2. Get [Glide][glide].
+ 3. Install dependencies with `glide install`
+ 4. (Optional) Test with `go test $(glide novendor)`
+ 5. Build a binary with `go build .`
+ 6. Follow the "Usage" instructions below
 
 Distributive currently only supports Linux.
 
@@ -111,17 +108,16 @@ the `samples/` directory, sorted by category. There is extensive documentation
 for each check available on our [Github wiki][wiki].
 
 If you'd like to see how Distributive is used in production environments, take
-a look at the [RPM source][distributive-rpm], which includes checks used in
-[Mantl][mi].
+a look at the [RPM source][mantl-packaging], which includes checks used in
+[Mantl][mantl].
 
 
 Dependencies
 ============
 
-Distributive itself has no dependencies; it is compiled as a statically linked
-standalone Go binary. Some checks, however, rely on output from specific
-packages. These dependencies are outlined for each check on our
-[Github wiki][wiki].
+Distributive itself has no dependencies; it is a standalone binary. Some checks,
+however, rely on output from specific commands. These dependencies are outlined
+for each check on our [Github wiki][wiki].
 
 Comparison to Other Software
 ============================
@@ -183,15 +179,10 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [license]: http://www.apache.org/licenses/LICENSE-2.0
 [wiki]: https://github.com/CiscoCloud/distributive/wiki
 [issues]: https://github.com/CiscoCloud/distributive/issues
-[bintray]: https://bintray.com/ciscocloud/rpm/Distributive/view#files
-[UPX]: http://sourceforge.net/projects/upx/
-[goupx]: https://github.com/pwaller/goupx
 [consul]: https://www.consul.io/docs/agent/checks.html
 [sensu]: https://sensuapp.org/docs/0.18/checks
 [nagios]: https://nagios-plugins.org/doc/guidelines.html#AEN78
 [kubernetes]: http://kubernetes.io/v1.0/docs/user-guide/walkthrough/k8s201.html#health-checking
-[gopath]: https://golang.org/doc/code.html#GOPATH
-[direnv]: https://github.com/direnv/direnv
-[distributive-rpm]: https://github.com/CiscoCloud/distributive-rpm
-[mi]: https://github.com/CiscoCloud/microservices-infrastructure/
-[godep]: https://github.com/tools/godep
+[mantl]: https://github.com/CiscoCloud/mantl
+[glide]: https://github.com/Masterminds/glide
+[mantl-packaging]: https://github.com/asteris-llc/mantl-packaging/tree/master/distributive
