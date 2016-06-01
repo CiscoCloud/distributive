@@ -1,39 +1,43 @@
 package checks
 
 import (
+	"os"
+	"regexp"
+	"strings"
+
 	"github.com/CiscoCloud/distributive/chkutil"
 	"github.com/CiscoCloud/distributive/dockerstatus"
 	"github.com/CiscoCloud/distributive/errutil"
 	"github.com/CiscoCloud/distributive/tabular"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
-	"os"
-	"regexp"
-	"strings"
 )
+
+func init() {
+	chkutil.Register("DockerImage", func() chkutil.Check {
+		return &DockerImage{}
+	})
+	chkutil.Register("DockerImageRegexp", func() chkutil.Check {
+		return &DockerRunningRegexp{}
+	})
+	chkutil.Register("DockerRunning", func() chkutil.Check {
+		return &DockerRunning{}
+	})
+	chkutil.Register("DockerRunningRegexp", func() chkutil.Check {
+		return &DockerRunningRegexp{}
+	})
+}
 
 /*
 #### DockerImage
 Description: Is this Docker image present?
 Parameters:
-  - Name (string):  Name of the image
+- Name (string):  Name of the image
 Example parameters:
-  - "user/image", "ubuntu"
+- "user/image", "ubuntu"
 */
 
 type DockerImage struct{ name string }
-
-func init() { 
-    chkutil.Register("DockerImage", func() chkutil.Check {
-        return &DockerImage{}
-    })
-    chkutil.Register("DockerRunning", func() chkutil.Check {
-        return &DockerRunning{}
-    })
-    chkutil.Register("DockerRunningRegext", func() chkutil.Check {
-        return &DockerRunningRegexp{}
-    })
-}
 
 func (chk DockerImage) New(params []string) (chkutil.Check, error) {
 	if len(params) != 1 {
@@ -92,9 +96,9 @@ func (chk DockerImageRegexp) Status() (int, string, error) {
 #### DockerRunning
 Description: Is this Docker container running?
 Parameters:
-  - Name (string):  Name of the container
+- Name (string):  Name of the container
 Example parameters:
-  - "user/container", "user/container:latest"
+- "user/container", "user/container:latest"
 */
 
 type DockerRunning struct{ name string }
@@ -150,11 +154,11 @@ func getRunningContainersAPI(endpoint string) (containers []string) {
 Description: Works like DockerRunning, but fetches information from the Docker
 API endpoint instead.
 Parameters:
-  - Path (filepath): Path to Docker socket
-  - Name (string): Name of the container
+- Path (filepath): Path to Docker socket
+- Name (string): Name of the container
 Example parameters:
-  - "/var/run/docker.sock", "/path/to/docker.sock"
-  - "user/container", "user/container:latest"
+- "/var/run/docker.sock", "/path/to/docker.sock"
+- "user/container", "user/container:latest"
 */
 
 type DockerRunningAPI struct{ path, name string }
@@ -186,9 +190,9 @@ func (chk DockerRunningAPI) Status() (int, string, error) {
 Description: Works like DockerRunning, but matches with a regexp instead of a
 string.
 Parameters:
-  - Regexp (regexp): Regexp to match names with
+- Regexp (regexp): Regexp to match names with
 Example parameters:
-  - "user/.+", "user/[cC](o){2,3}[nta]tai\w{2}r"
+- "user/.+", "user/[cC](o){2,3}[nta]tai\w{2}r"
 */
 type DockerRunningRegexp struct{ re *regexp.Regexp }
 
